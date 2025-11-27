@@ -41,6 +41,7 @@ import { ROUTING } from '../constants/routes';
 import DynamicFormList from '../features/forms/components/FormList';
 import ServiceCategoryList from '../features/serviceCategory/components/ServiceCategoryList';
 import ServiceCategoryForm from '../features/serviceCategory/components/ServiceCategoryForm';
+import ServiceCategoryFormInputs from '../features/serviceCategory/components/ServiceCategoryFormInputs';
 import VenueList from '../features/venue/components/VenueList';
 import VendorList from '../features/vendorManagement/components/VendorList';
 import VendorForm from '../features/vendorManagement/components/VendorForm';
@@ -52,9 +53,12 @@ import BookingIndex from '../features/booking/components/BookingIndex';
 import BookingList from '../features/booking/components/BookingList';
 import BookingForm from '../features/booking/components/BookingForm';
 import BookingDashboard from '../features/booking/components/BookingMangement';
+import BookingDetail from '../features/booking/components/BookingDetail';
+
 
 import NotFoundPage from '../pages/NotFoundPage';
 import UnauthorizedPage from '../pages/UnauthorizedPage';
+import ServiceCategoryFormInputList from '../features/serviceCategory/components/ServiceCategoryFormInputList';
 
 const AppRoutes = () => {
   return (
@@ -67,6 +71,7 @@ const AppRoutes = () => {
         <Route path={ROUTING.REGISTER} element={<RegisterForm />} />
         <Route path={ROUTING.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={ROUTING.RESET_PASSWORD} element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ------------------ Protected Routes ------------------- */}
         <Route path={ROUTING.DASHBOARD} element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -101,6 +106,9 @@ const AppRoutes = () => {
         <Route path={ROUTING.GET_ALL_CATEGORIES} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="read"><ServiceCategoryList /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_CATEGORY} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="write"><ServiceCategoryForm /></ProtectedRoute>} />
         <Route path={ROUTING.UPDATE_CATEGORY} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="write"><ServiceCategoryForm /></ProtectedRoute>} />
+        <Route path={ROUTING.ADD_CATEGORY_FORM_INPUTS} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="write"><ServiceCategoryFormInputs /></ProtectedRoute>} />
+        <Route path={ROUTING.EDIT_CATEGORY_FORM_INPUTS} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="write"><ServiceCategoryFormInputs /></ProtectedRoute>} />
+        {/* <Route path={ROUTING.CATEGORY_FORM_INPUTS} element={<ProtectedRoute requiredFeature="service_category" requiredPermission="read"><ServiceCategoryFormInputList /></ProtectedRoute>} /> */}
 
         {/* Vendor Management - Protected by Vendor Management feature permission */}
         <Route path={ROUTING.VENDOR_MANAGEMENT} element={<ProtectedRoute requiredFeature="vendor_management" requiredPermission="read"><VendorList /></ProtectedRoute>} />
@@ -133,7 +141,13 @@ const AppRoutes = () => {
         <Route path={ROUTING.BOOKING_DASHBOARD} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="read"><BookingDashboard /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_BOOKING} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="write"><BookingForm /></ProtectedRoute>} />
         <Route path={ROUTING.UPDATE_BOOKING} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="write"><BookingForm /></ProtectedRoute>} />
-        <Route path={ROUTING.VIEW_BOOKING} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="read"><BookingForm /></ProtectedRoute>} />
+        <Route path={ROUTING.VIEW_BOOKING} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="read"><BookingDetail /></ProtectedRoute>} />
+
+        {/* Quotation Management - Protected by Quotation Management feature permission */}
+        {/* <Route path={ROUTING.QUOTATION_MANAGEMENT} element={<ProtectedRoute requiredFeature="quotation_management" requiredPermission="read"><QuotationList /></ProtectedRoute>} />
+        <Route path={ROUTING.ADD_QUOTATION} element={<ProtectedRoute requiredFeature="quotation_management" requiredPermission="write"><QuotationForm /></ProtectedRoute>} />
+        <Route path={ROUTING.UPDATE_QUOTATION} element={<ProtectedRoute requiredFeature="quotation_management" requiredPermission="write"><QuotationForm /></ProtectedRoute>} />
+        <Route path={ROUTING.VIEW_QUOTATION} element={<ProtectedRoute requiredFeature="quotation_management" requiredPermission="read"><QuotationForm /></ProtectedRoute>} /> */}
 
         {/* -------------------- Error Pages -------------------- */}
         <Route path="/unauthorized" element={<UnauthorizedPage />} />

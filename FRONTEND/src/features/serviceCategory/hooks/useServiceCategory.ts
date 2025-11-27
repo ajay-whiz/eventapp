@@ -10,6 +10,10 @@ export function useServiceCategory() {
       formLoading: state.serviceCategories.formLoading, // For form operations
       error: state.serviceCategories.error,
       pagination: state.serviceCategories.pagination,
+
+      formInputs: state.serviceCategories.formInputs,
+      formInputsPagination: state.serviceCategories.formInputsPagination,
+      formInputsLoading: state.serviceCategories.formInputsLoading,
     }),
     shallowEqual
   );

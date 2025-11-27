@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Role, Enterprise } from '../../../types/User';
+import type { Role } from '../../../types/User';
+import type { Enterprise } from '../../../types/Enterprise';
 
 interface EnterpriseState {
   enterprises: Enterprise[];
@@ -124,7 +125,7 @@ export const enterpriseSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    resetPasswordSuccess(state, action: PayloadAction<string>) {
+    resetPasswordSuccess(state, _action: PayloadAction<string>) {
       state.loading = false;
       state.error = null;
     },

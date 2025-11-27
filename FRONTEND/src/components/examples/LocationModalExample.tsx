@@ -39,9 +39,9 @@ const LocationModalExample: React.FC = () => {
             This example demonstrates the simplified location modal with automatic geocoding.
           </p>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-blue-800 mb-2">Features:</h3>
-            <ul className="text-blue-700 space-y-1">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-sky-800 mb-2">Features:</h3>
+            <ul className="text-sky-700 space-y-1">
               <li>• Simplified address fields: Address, City, State, PIN Code</li>
               <li>• Automatic geocoding when address fields change</li>
               <li>• Manual geocoding button</li>

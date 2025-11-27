@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose, Transform, Type } from 'class-transformer'
+import { TimeSlot } from '../../entities/booking.entity'
 
 export class BookingVenueResponseDto {
   @ApiProperty()
@@ -68,6 +69,10 @@ export class BookingDetailResponseDto {
   @ApiProperty()
   @Expose()
   endTime: string
+
+  @ApiProperty({ required: false, enum: TimeSlot, enumName: 'TimeSlot' })
+  @Expose()
+  timeSlot?: TimeSlot
 
   @ApiProperty({ required: false })
   @Expose()
@@ -142,6 +147,14 @@ export class BookingDetailResponseDto {
   @ApiProperty({ required: false })
   @Expose()
   foodPreference?: string
+
+  @ApiProperty({ description: 'Whether this booking has any offers', example: true })
+  @Expose()
+  hasOffers?: boolean
+
+  @ApiProperty({ description: 'Whether the current user has already submitted an offer for this booking', example: false })
+  @Expose()
+  userHasSubmittedOffer?: boolean
 
   @ApiProperty({ required: false })
   @Expose()
@@ -221,6 +234,26 @@ export class BookingDetailResponseDto {
     id: string
     name: string
   }
+
+  @ApiProperty({ description: 'User ID who created this booking', example: 'USER123' })
+  @Expose()
+  @Transform(({ obj }) => obj.createdBy || '')
+  createdBy?: string;
+
+  @ApiProperty({ description: 'Full name of user who created this booking', example: 'Shiv Kumar' })
+  @Expose()
+  @Transform(({ obj }) => obj.createdByName || '')
+  createdByName?: string;
+
+  @ApiProperty({ description: 'User ID who last updated this booking', example: 'USER456' })
+  @Expose()
+  @Transform(({ obj }) => obj.updatedBy || '')
+  updatedBy?: string;
+
+  @ApiProperty({ description: 'Full name of user who last updated this booking', example: 'Rahul Yadav' })
+  @Expose()
+  @Transform(({ obj }) => obj.updatedByName || '')
+  updatedByName?: string;
 }
 
 

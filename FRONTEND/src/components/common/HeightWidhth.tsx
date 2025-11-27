@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // Tailwind size maps
 // const sizeOptions = ['sm', 'md', 'lg'] as const;

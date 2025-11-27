@@ -89,7 +89,7 @@ const LocationModalWithAutocomplete: React.FC<LocationModalProps> = ({
 
   const getGeocodingIcon = () => {
     if (geocodingStatus === 'loading') {
-      return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+      return <Loader2 className="w-4 h-4 animate-spin text-sky-500" />;
     }
     if (geocodingStatus === 'success') {
       return <CheckCircle className="w-4 h-4 text-green-500" />;

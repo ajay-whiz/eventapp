@@ -116,23 +116,23 @@ export const VendorRequirements: React.FC = () => {
   // Table columns for requirements
   const columns = [
     {
-      key: 'requirementNumber',
-      title: 'Requirement ID',
+      key: 'requirementNumber' as keyof RequirementRow,
+      label: 'Requirement ID',
       sortable: true,
-      render: (value: string, row: RequirementRow) => (
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <button
           onClick={() => navigate(`/vendor/requirements/${row.id}`)}
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className="text-sky-600 hover:text-sky-800 font-medium"
         >
           {value}
         </button>
       ),
     },
     {
-      key: 'customerName',
-      title: 'Customer',
+      key: 'customerName' as keyof RequirementRow,
+      label: 'Customer',
       sortable: true,
-      render: (value: string, row: RequirementRow) => (
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div>
           <div className="font-medium text-gray-900">{value}</div>
           <div className="text-sm text-gray-500">{row.customerEmail}</div>
@@ -140,30 +140,30 @@ export const VendorRequirements: React.FC = () => {
       ),
     },
     {
-      key: 'eventType',
-      title: 'Event Type',
+      key: 'eventType' as keyof RequirementRow,
+      label: 'Event Type',
       sortable: true,
-      render: (value: string) => (
-        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
+        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-sky-100 text-sky-800">
           {value}
         </span>
       ),
     },
     {
-      key: 'eventDate',
-      title: 'Event Date',
+      key: 'eventDate' as keyof RequirementRow,
+      label: 'Event Date',
       sortable: true,
-      render: (value: string) => (
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div className="flex items-center gap-1">
           <Calendar className="w-4 h-4 text-gray-400" />
-          <span className="text-sm">{new Date(value).toLocaleDateString()}</span>
+          <span className="text-sm">{typeof value === 'string' ? new Date(value).toLocaleDateString() : 'N/A'}</span>
         </div>
       ),
     },
     {
-      key: 'location',
-      title: 'Location',
-      render: (value: string) => (
+      key: 'location' as keyof RequirementRow,
+      label: 'Location',
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div className="flex items-center gap-1">
           <MapPin className="w-4 h-4 text-gray-400" />
           <span className="text-sm">{value}</span>
@@ -171,33 +171,33 @@ export const VendorRequirements: React.FC = () => {
       ),
     },
     {
-      key: 'guestCount',
-      title: 'Guests',
+      key: 'guestCount' as keyof RequirementRow,
+      label: 'Guests',
       sortable: true,
-      render: (value: number) => (
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div className="flex items-center gap-1">
           <Users className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium">{value}</span>
+          <span className="text-sm font-medium">{typeof value === 'number' ? value : '0'}</span>
         </div>
       ),
     },
     {
-      key: 'budget',
-      title: 'Budget',
+      key: 'budget' as keyof RequirementRow,
+      label: 'Budget',
       sortable: true,
-      render: (value: number) => (
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div className="flex items-center gap-1">
           <DollarSign className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium">₹{value.toLocaleString()}</span>
+          <span className="text-sm font-medium">₹{typeof value === 'number' ? value.toLocaleString() : '0'}</span>
         </div>
       ),
     },
     {
-      key: 'quotesCount',
-      title: 'Quotes',
-      render: (value: number, row: RequirementRow) => (
+      key: 'quotesCount' as keyof RequirementRow,
+      label: 'Quotes',
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => (
         <div className="text-center">
-          <div className="text-sm font-medium">{value}</div>
+          <div className="text-sm font-medium">{typeof value === 'number' ? value : '0'}</div>
           {row.isQuoted && (
             <div className="text-xs text-green-600">You quoted</div>
           )}
@@ -205,10 +205,10 @@ export const VendorRequirements: React.FC = () => {
       ),
     },
     {
-      key: 'status',
-      title: 'Status',
+      key: 'status' as keyof RequirementRow,
+      label: 'Status',
       sortable: true,
-      render: (value: string) => {
+      render: (value: string | number | boolean, row: RequirementRow, index: number) => {
         const getStatusConfig = (status: string) => {
           switch (status.toLowerCase()) {
             case 'open':
@@ -222,7 +222,7 @@ export const VendorRequirements: React.FC = () => {
           }
         };
 
-        const config = getStatusConfig(value);
+        const config = getStatusConfig(value as string);
 
         return (
           <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
@@ -314,7 +314,6 @@ export const VendorRequirements: React.FC = () => {
                 placeholder="Search requirements..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                icon={<Search className="w-4 h-4 text-gray-400" />}
                 name="search"
               />
             </div>
@@ -385,25 +384,12 @@ export const VendorRequirements: React.FC = () => {
           data={requirements}
           columns={columns}
           loading={loading}
-          pagination={{
-            currentPage,
-            totalPages: Math.ceil(requirements.length / rowsPerPage),
-            totalItems: requirements.length,
-            itemsPerPage: rowsPerPage,
-          }}
+          total={requirements.length}
           currentPage={currentPage}
           rowsPerPage={rowsPerPage}
           onPageChange={setCurrentPage}
           onRowsPerPageChange={setRowsPerPage}
           onRowAction={handleRowAction}
-          featureName="Vendor Requirements"
-          uniqueId="vendor_requirements"
-          showActions={true}
-          customActions={[
-            { key: 'view', label: 'View Details', icon: Eye },
-            { key: 'quote', label: 'Submit Quote', icon: DollarSign },
-            { key: 'chat', label: 'Chat', icon: MessageSquare },
-          ]}
         />
       </div>
     </Layout>

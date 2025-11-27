@@ -136,7 +136,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
       <div
         className={`
           border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white
-          ${dragActive ? 'border-blue-500 bg-blue-50' : ''}
+          ${dragActive ? 'border-sky-500 bg-sky-50' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
         onDragEnter={handleDragIn}
@@ -179,7 +179,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
           {/* Upload Slot */}
           <label
             htmlFor="image-upload"
-            className={`flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md  cursor-pointer ${getPreviewSizeClasses()} hover:border-blue-400`}
+            className={`flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md  cursor-pointer ${getPreviewSizeClasses()} hover:border-sky-400`}
           >
             <Plus className="w-6 h-6 text-gray-400" />
             <input

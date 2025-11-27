@@ -84,21 +84,21 @@ const LocationSearchDemo: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">No Manual State/City Entry</h3>
                 <p className="text-sm text-gray-600">Users don't need to manually select state and city from dropdowns</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">Real-time Suggestions</h3>
                 <p className="text-sm text-gray-600">Get location suggestions as you type</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">Auto-filled Details</h3>
                 <p className="text-sm text-gray-600">City, state, and PIN code are automatically filled</p>
@@ -107,21 +107,21 @@ const LocationSearchDemo: React.FC = () => {
           </div>
           <div className="space-y-3">
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">Accurate Coordinates</h3>
                 <p className="text-sm text-gray-600">Precise latitude and longitude from Google's database</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">Keyboard Navigation</h3>
                 <p className="text-sm text-gray-600">Use arrow keys and Enter to navigate suggestions</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+              <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
               <div>
                 <h3 className="font-medium">Fallback to Manual Entry</h3>
                 <p className="text-sm text-gray-600">Option to enter details manually if needed</p>
@@ -132,18 +132,18 @@ const LocationSearchDemo: React.FC = () => {
       </div>
 
       {/* Setup Instructions */}
-      <div className="bg-blue-50 rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4 text-blue-900">Setup Requirements</h2>
-        <div className="space-y-3 text-blue-800">
+      <div className="bg-sky-50 rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4 text-sky-900">Setup Requirements</h2>
+        <div className="space-y-3 text-sky-800">
           <p>✅ <strong>Google Maps API Key:</strong> Configured in environment variables</p>
           <p>✅ <strong>Places API:</strong> Enabled in Google Cloud Console</p>
           <p>✅ <strong>@react-google-maps/api:</strong> Already installed</p>
           <p>✅ <strong>TypeScript Types:</strong> Google Maps types available</p>
         </div>
-        <div className="mt-4 p-3 bg-blue-100 rounded-md">
-          <p className="text-sm text-blue-700">
+        <div className="mt-4 p-3 bg-sky-100 rounded-md">
+          <p className="text-sm text-sky-700">
             <strong>Note:</strong> Make sure you have a valid Google Maps API key with Places API enabled. 
-            See <code className="bg-blue-200 px-1 rounded">GOOGLE_MAPS_SETUP.md</code> for detailed instructions.
+            See <code className="bg-sky-200 px-1 rounded">GOOGLE_MAPS_SETUP.md</code> for detailed instructions.
           </p>
         </div>
       </div>

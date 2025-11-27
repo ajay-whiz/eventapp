@@ -133,7 +133,7 @@ export const FormFieldComponent = ({
             <Button
               type="button"
               onClick={() => onChange?.(!value)}
-              className={`relative inline-flex h-6 w-11 items-center  transition-colors focus:outline-none focus:ring-0 focus:ring-primary focus:ring-offset-0 ${value ? 'primary' : 'bg-blue-600 text-white hover:bg-blue-700'
+              className={`relative inline-flex h-6 w-11 items-center  transition-colors focus:outline-none focus:ring-0 focus:ring-primary focus:ring-offset-0 ${value ? 'primary' : 'bg-sky-600 text-white hover:bg-sky-700'
                 }`}
               role="switch"
               aria-checked={value}
@@ -155,7 +155,7 @@ export const FormFieldComponent = ({
                         id={field.id}
                         type="button"
                         onClick={() => onChange && onChange(field.id)}
-                        className="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-0 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+                        className="px-4 py-2 bg-sky-600 text-white font-medium text-sm rounded-md hover:bg-sky-700 focus:outline-none focus:ring-0 focus:ring-sky-500 focus:ring-offset-2 transition-colors duration-200"
                     >
                         {field.label}
                     </Button>

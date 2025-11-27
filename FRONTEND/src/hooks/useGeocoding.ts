@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 // Initialize react-geocode
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AKIA52JBVXHFBSPG4DFI';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB5qrAEl1OYv3rGr9rKA5AHewc__M33nYY';
 
 export interface GeocodingResult {
   latitude: number;
@@ -53,12 +53,6 @@ export const useGeocoding = (): UseGeocodingReturn => {
       }
 
       const addressString = addressComponents.join(', ');
-      
-      // Check if API key is configured
-      if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
-        setError('Google Maps API key is not configured. Please add VITE_GOOGLE_MAPS_API_KEY to your environment variables.');
-        return null;
-      }
       
       // Use Google Maps Geocoding API directly
       const response = await fetch(

@@ -61,7 +61,7 @@ export const Modal: React.FC<ModalProps> = ({
             {/* {title && <h2 className="text-lg font-semibold">{title}</h2>} */}
             {!hideCloseButton && (
               <Button
-                variant="secondary"
+                variant="muted"
                 onClick={onClose}
                 className="text-gray-900 hover:text-gray-700"
                 aria-label="Close"

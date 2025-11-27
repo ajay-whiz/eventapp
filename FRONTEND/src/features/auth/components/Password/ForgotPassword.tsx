@@ -46,9 +46,9 @@ const ForgotPassword: React.FC = () => {
         </Button>
 
         <div className="flex items-center my-4">
-          <div className="flex-1 h-px bg-blue-300" />
+          <div className="flex-1 h-px bg-sky-300" />
           <span className="px-3 text-sm text-gray-800">OR</span>
-          <div className="flex-1 h-px bg-blue-300" />
+          <div className="flex-1 h-px bg-sky-300" />
         </div>
 
         <Form<ForgotPasswordFormValues>

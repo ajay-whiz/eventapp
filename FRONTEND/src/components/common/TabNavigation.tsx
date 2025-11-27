@@ -38,7 +38,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               className={`
                 group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200
                 ${isActive
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-sky-500 text-sky-600'
                   : isCompleted
                     ? 'border-green-500 text-green-600 hover:border-green-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -49,7 +49,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               {/* Tab Icon/Status */}
               <div className={`
                 mr-2 flex-shrink-0 w-5 h-5 flex items-center justify-center
-                ${isCompleted ? 'text-green-600' : isActive ? 'text-blue-600' : 'text-gray-400'}
+                ${isCompleted ? 'text-green-600' : isActive ? 'text-sky-600' : 'text-gray-400'}
               `}>
                 {isCompleted ? (
                   <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -65,7 +65,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{tab.title}</span>
                   {index === 0 && (
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full">
                       Step 1
                     </span>
                   )}
@@ -77,7 +77,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 </div>
                 <div className={`
                   text-xs mt-0.5
-                  ${isActive ? 'text-blue-500' : isCompleted ? 'text-green-500' : 'text-gray-400'}
+                  ${isActive ? 'text-sky-500' : isCompleted ? 'text-green-500' : 'text-gray-400'}
                 `}>
                   {tab.description}
                 </div>

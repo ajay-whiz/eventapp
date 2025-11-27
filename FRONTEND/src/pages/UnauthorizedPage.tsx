@@ -69,7 +69,7 @@ const UnauthorizedPage: React.FC = () => {
         <div className="space-y-3">
           <Button
             onClick={handleGoBack}
-            variant="outline"
+            variant="default"
             className="w-full flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />

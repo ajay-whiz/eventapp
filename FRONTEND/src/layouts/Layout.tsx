@@ -3,18 +3,18 @@ import { useLocation } from "react-router-dom";
 import Header from "./dashboardHeader";
 import Sidebar from "./sidebar";
 // import { AnimatePresence } from "framer-motion";
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 
-const layoutVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 },
-};
-const slideVariants = {
-  hidden: { opacity: 0, x: 100 },     // Slide in from right
-  visible: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -100 },      // Slide out to left
-};
+// const layoutVariants = {
+//   hidden: { opacity: 0, y: 20 },
+//   visible: { opacity: 1, y: 0 },
+//   exit: { opacity: 0, y: -20 },
+// };
+// const slideVariants = {
+//   hidden: { opacity: 0, x: 100 },     // Slide in from right
+//   visible: { opacity: 1, x: 0 },
+//   exit: { opacity: 0, x: -100 },      // Slide out to left
+// };
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   
@@ -62,7 +62,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('sidebarExpanded', JSON.stringify(isExpanded));
   }, [isExpanded]);
 
-  const toggleSidebar = () => setIsExpanded((prev) => !prev);
+  const toggleSidebar = () => setIsExpanded((prev: boolean) => !prev);
   return (
     // <motion.div
     //   initial="hidden"
@@ -86,7 +86,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             //  `}
             >
               <Header />
-              <div className="overflow-y-auto p-6 text-gray-800 mt-[71.2px] ">
+              <div className="overflow-y-auto p-6 text-gray-800 mt-[71.2px] w-full">
                 {children}
               </div>
             </main>

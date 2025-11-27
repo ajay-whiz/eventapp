@@ -32,10 +32,10 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <>
       <select
-        className={`rounded-md focus:outline-none transition text-neutral-700 focus:ring-0 focus:border-blue-500
-          ${sizeMap[size]} 
-          ${variantMap[variant]} 
-          ${isError ? 'border-red-500 focus:ring-0 focus:border-red-500 focus:ring-red-500' : 'focus:ring-0 focus:ring-blue-500'} 
+        className={`rounded-md focus:outline-none transition text-neutral-700 focus:ring-0 focus:border-sky-500
+          ${sizeMap[size as keyof typeof sizeMap]} 
+          ${variantMap[variant as keyof typeof variantMap]} 
+          ${isError ? 'border-red-500 focus:ring-0 focus:border-red-500 focus:ring-red-500' : 'focus:ring-0 focus:ring-sky-500'} 
           ${className}`}
         {...props}
       >

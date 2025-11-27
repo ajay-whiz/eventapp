@@ -150,7 +150,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div className={`border rounded-lg ${
-      error ? 'border-red-500' : isFocused ? 'border-blue-500' : 'border-gray-300'
+      error ? 'border-red-500' : isFocused ? 'border-sky-500' : 'border-gray-300'
     } ${className}`}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-gray-200 rounded-md">

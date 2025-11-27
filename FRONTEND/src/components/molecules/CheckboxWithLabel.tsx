@@ -33,7 +33,7 @@ export const CheckboxWithLabel: React.FC<CheckboxWithLabelProps> = ({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="form-checkbox h-4 w-4 text-blue-600 disabled:cursor-not-allowed"
+        className="form-checkbox h-4 w-4 text-sky-600 disabled:cursor-not-allowed"
       />
       {label && <span>{label}</span>}
     </label>

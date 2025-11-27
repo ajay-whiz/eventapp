@@ -1,5 +1,4 @@
-import React from 'react';
-import { Bell, Menu, User } from 'lucide-react';
+import { Bell, User } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 import { IMAGE_BASE_URL } from '../config/api';
 
@@ -16,7 +15,7 @@ import { IMAGE_BASE_URL } from '../config/api';
       
       {/* Right - Icons & Avatar */}
       <div className="flex items-center gap-6 ">
-        <button className="relative text-gray-600 hover:text-blue-600 transition">
+        <button className="relative text-gray-600 hover:text-sky-600 transition">
           <Bell className="h-5 w-5" />
           <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full ring-2 ring-white"></span>
         </button>

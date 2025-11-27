@@ -1,4 +1,3 @@
-import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "../atoms/Button";
 
@@ -128,7 +127,7 @@ export default function PaginationBar({
             <Button variant="muted" size="sm" key={p} 
               className={`rounded text-sm h-6 w-6  p-0 border-0 ${
               p === currentPage
-                ? "text-black font-semibold bg-blue-600 text-white hover:text-black "
+                ? "text-black font-semibold bg-sky-600 text-white hover:text-black "
                 : "hover:bg-neutral-100 text-neutral-800"
             }`} onClick={() => goto(p as number)} aria-current={p === currentPage ? "page" : undefined}>
               

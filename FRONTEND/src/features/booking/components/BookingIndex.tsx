@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Filter, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Filter, X, Eye, DollarSign, Package, Edit2, CheckCircle } from 'lucide-react';
 import Layout from '../../../layouts/Layout';
 import Breadcrumbs from '../../../components/common/BreadCrumb';
 import { useBooking } from '../hooks/useBooking';
 import { useBookingActions } from '../hooks/useBookingActions';
-import { useVendor } from '../../../features/vendorManagement/hooks/useVendor';
-import { useVendorActions } from '../../../features/vendorManagement/hooks/useVendorActions';
-import { useVenue } from '../../../features/venue/hooks/useVenue';
-import { useVenueActions } from '../../../features/venue/hooks/useVenueAction';
 import { RowActionMenu } from '../../../components/atoms/RowActionMenu';
 import { DropDown } from '../../../components/atoms/DropDown';
 import { Button } from '../../../components/atoms/Button';
 import { Textarea } from '../../../components/atoms/Textarea';
 import { useToast } from '../../../components/atoms/Toast';
-import { getUserDataFromStorage } from '../../../utils/permissions';
+import { getUserDataFromStorage, isSuperAdmin } from '../../../utils/permissions';
+import { VendorOfferModal } from './VendorOfferModal';
+import type { VendorOffer } from './OfferList';
 
 // Define a more flexible booking interface for the component
 interface BookingItem {
@@ -59,7 +58,7 @@ interface QuotationData {
   totalAmount: number;
 }
 
-type TabType = 'all' | 'completed' | 'upcoming' | 'pending' | 'rejected';
+type TabType = 'all' | 'confirmed' | 'pending' | 'rejected';
 
 interface Tab {
   id: TabType;
@@ -68,20 +67,15 @@ interface Tab {
 }
 
 export const BookingIndex: React.FC = () => {
+  const navigate = useNavigate();
   const bookingState = useBooking();
   const { bookings = [] } = bookingState;
-  const { getBookingList, submitQuotation } = useBookingActions();
-  
-  // Vendor and Venue hooks
-  const vendorState = useVendor();
-  const { getVendorList } = useVendorActions();
-  const venueState = useVenue();
-  const { getVenueList } = useVenueActions();
+  const { getBookingList, submitQuotation, getBookingOffers, submitVendorOffer } = useBookingActions();
+  const userData = getUserDataFromStorage();
+  const isAdmin = isSuperAdmin(userData) || userData?.roles?.some((r: any) => r.name?.toLowerCase().includes('admin'));
   
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [open, setOpen] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<string>('');
-  const [selectedVenue, setSelectedVenue] = useState<string>('');
   const [selectedServiceType, setSelectedServiceType] = useState<string>('all');
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [quotationData, setQuotationData] = useState<QuotationData>({
@@ -94,32 +88,192 @@ export const BookingIndex: React.FC = () => {
     totalAmount: 0
   });
   const [filteredBookings, setFilteredBookings] = useState<BookingItem[]>([]);
+  const [bookingOffers, setBookingOffers] = useState<Record<string, VendorOffer[]>>({});
+  const [selectedBookingForOffer, setSelectedBookingForOffer] = useState<BookingItem | null>(null);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<VendorOffer | null>(null);
   const toast = useToast();
+  
   // Load basic stats on component mount
   useEffect(() => {
-    // Load all bookings to get proper counts
+    console.log('📋 BookingIndex: Component mounted, loading bookings...');
+    // Load all bookings to get proper counts using booking/all API
     getBookingList(1, 100, '', {});
-    getVendorList(1, 100, ''); // Load vendors for filter dropdown
-    getVenueList(1, 100, ''); // Load venues for filter dropdown
   }, []);
+
+  // Load offers for all bookings when bookings change (only for admin users)
+  useEffect(() => {
+    if (bookings.length > 0 && isAdmin) {
+      loadAllBookingOffers();
+    }
+  }, [bookings.length, isAdmin]); // Only depend on length to avoid infinite loops
+
+  const loadAllBookingOffers = async () => {
+    if (!isAdmin) return;
+    
+    const offersMap: Record<string, VendorOffer[]> = {};
+    const userData = getUserDataFromStorage();
+    const currentUserId = userData?.id || userData?._id;
+    
+    // Helper function to compare vendor/user IDs (handle string and object ID formats)
+    const isCurrentUserOffer = (offer: any): boolean => {
+      if (!currentUserId) return false;
+      // Check offerAddedBy first (new API field), then userId, then vendorId
+      const offerUserId = offer.offerAddedBy || offer.userId || offer.vendorId || (offer as any).vendor?._id || (offer as any).vendor?.id;
+      // Compare as strings to handle different ID formats
+      return String(offerUserId) === String(currentUserId);
+    };
+    
+    // Load offers for each booking in parallel
+    const offerPromises = bookings.map(async (booking: any) => {
+      const bookingId = booking.bookingId || booking.id || booking.bookingNumber;
+      if (!bookingId) return;
+      
+      try {
+        const offersData = await getBookingOffers(bookingId);
+        const offersList = Array.isArray(offersData) ? offersData : offersData?.offers || [];
+        
+        // Transform API response to match VendorOffer interface
+        const transformedOffers: VendorOffer[] = offersList.map((offer: any) => ({
+          offerId: offer.offerId,
+          id: offer.offerId || offer.id,
+          bookingId: offer.bookingId,
+          userId: offer.userId,
+          userName: offer.userName,
+          offerAddedBy: offer.offerAddedBy,
+          amount: offer.amount,
+          offerAmount: offer.amount || offer.offerAmount,
+          extraServices: offer.extraServices,
+          notes: offer.notes,
+          status: offer.status,
+          createdAt: offer.createdAt,
+          // Legacy fields
+          vendorId: offer.userId || offer.vendorId,
+          vendorName: offer.userName || offer.vendorName,
+        }));
+        
+        // Filter to only show offers from current admin user
+        const adminOffers = transformedOffers.filter(isCurrentUserOffer);
+        offersMap[bookingId] = adminOffers;
+      } catch (error) {
+        // Silently fail if offers endpoint doesn't exist or booking has no offers
+        offersMap[bookingId] = [];
+      }
+    });
+    
+    await Promise.all(offerPromises);
+    setBookingOffers(offersMap);
+  };
+
+  const getBookingOffer = (booking: any): VendorOffer | null => {
+    const bookingId = booking.bookingId || booking.id || booking.bookingNumber;
+    if (!bookingId) return null;
+    
+    const offers = bookingOffers[bookingId] || [];
+    // Since we already filter offers by current admin user in loadAllBookingOffers,
+    // we can just return the first one (admin can only have one offer per booking)
+    return offers[0] || null;
+  };
+
+  const handleSubmitOffer = (booking: BookingItem) => {
+    setSelectedBookingForOffer(booking);
+    setEditingOffer(null);
+    setShowOfferModal(true);
+  };
+
+  const handleEditOffer = (booking: BookingItem, offer: VendorOffer) => {
+    setSelectedBookingForOffer(booking);
+    setEditingOffer(offer);
+    setShowOfferModal(true);
+  };
+
+  const handleOfferSuccess = async () => {
+    if (selectedBookingForOffer) {
+      const bookingId = selectedBookingForOffer.bookingId || selectedBookingForOffer.bookingNumber;
+      if (bookingId) {
+        try {
+          const offersData = await getBookingOffers(bookingId);
+          const offersList = Array.isArray(offersData) ? offersData : offersData?.offers || [];
+          
+          // Transform API response to match VendorOffer interface
+          const transformedOffers: VendorOffer[] = offersList.map((offer: any) => ({
+            offerId: offer.offerId,
+            id: offer.offerId || offer.id,
+            bookingId: offer.bookingId,
+            userId: offer.userId,
+            userName: offer.userName,
+            offerAddedBy: offer.offerAddedBy,
+            amount: offer.amount,
+            offerAmount: offer.amount || offer.offerAmount,
+            extraServices: offer.extraServices,
+            notes: offer.notes,
+            status: offer.status,
+            createdAt: offer.createdAt,
+            // Legacy fields
+            vendorId: offer.userId || offer.vendorId,
+            vendorName: offer.userName || offer.vendorName,
+          }));
+          
+          // Filter to only show offers from current admin user (same as loadAllBookingOffers)
+          const userData = getUserDataFromStorage();
+          const currentUserId = userData?.id || userData?._id;
+          
+          // Helper function to compare vendor/user IDs (handle string and object ID formats)
+          const isCurrentUserOffer = (offer: VendorOffer): boolean => {
+            if (!currentUserId) return false;
+            // Check offerAddedBy first (new API field), then userId, then vendorId
+            const offerUserId = offer.offerAddedBy || offer.userId || offer.vendorId || (offer as any).vendor?._id || (offer as any).vendor?.id;
+            // Compare as strings to handle different ID formats
+            return String(offerUserId) === String(currentUserId);
+          };
+          
+          const adminOffers = transformedOffers.filter(isCurrentUserOffer);
+          
+          setBookingOffers(prev => ({
+            ...prev,
+            [bookingId]: adminOffers,
+          }));
+          
+          // Also reload all booking offers to ensure consistency
+          if (bookings.length > 0) {
+            await loadAllBookingOffers();
+          }
+        } catch (error) {
+          console.error('Failed to reload offers:', error);
+        }
+      }
+    }
+    setShowOfferModal(false);
+    setSelectedBookingForOffer(null);
+    setEditingOffer(null);
+  };
 
   // Update filtered bookings when bookings data, active tab, or service type changes
   useEffect(() => {
     let filtered = [...bookings];
     
+    // Helper function to get status (check both status and bookingStatus fields, case-insensitive)
+    const getStatus = (booking: any) => {
+      const status = booking.status || booking.bookingStatus || '';
+      return status.toLowerCase();
+    };
+    
     // Filter by status tab
     switch (activeTab) {
-      case 'completed':
-        filtered = bookings.filter(b => b.status === 'completed');
-        break;
-      case 'upcoming':
-        filtered = bookings.filter(b => b.status === 'confirmed');
+      case 'confirmed':
+        filtered = bookings.filter(b => {
+          const status = getStatus(b);
+          return status === 'confirmed' || status === 'CONFIRMED';
+        });
         break;
       case 'pending':
-        filtered = bookings.filter(b => b.status === 'pending');
+        filtered = bookings.filter(b => getStatus(b) === 'pending');
         break;
       case 'rejected':
-        filtered = bookings.filter(b => b.status === 'rejected' || b.status === 'cancelled');
+        filtered = bookings.filter(b => {
+          const status = getStatus(b);
+          return status === 'rejected' || status === 'REJECTED';
+        });
         break;
       case 'all':
       default:
@@ -132,12 +286,15 @@ export const BookingIndex: React.FC = () => {
       filtered = filtered.filter(booking => {
         // Check if booking has vendor services
         if (selectedServiceType === 'vendor') {
-          return booking.vendorId || booking.vendor || 
+          return booking.bookingType === 'vendor' || 
+                 booking.vendorId ||
+                 booking.vendor || 
                  booking.services?.some((service: any) => service.type === 'vendor' || service.vendorId);
         }
         // Check if booking has venue services
         if (selectedServiceType === 'venue') {
-          return booking.venueId || booking.venue || 
+          return booking.bookingType === 'venue' ||
+                 booking.venueId ||
                  booking.services?.some((service: any) => service.type === 'venue' || service.venueId);
         }
         return true;
@@ -147,18 +304,28 @@ export const BookingIndex: React.FC = () => {
     setFilteredBookings(filtered);
   }, [bookings, activeTab, selectedServiceType]);
 
+  // Helper function to get status (check both status and bookingStatus fields, case-insensitive)
+  const getBookingStatus = (booking: any) => {
+    const status = booking.status || booking.bookingStatus || '';
+    return status.toLowerCase();
+  };
+
   // Calculate counts for each tab
   const allCount = bookings.length;
-  const completedCount = bookings.filter(b => b.status === 'completed').length;
-  const upcomingCount = bookings.filter(b => b.status === 'confirmed').length;
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
-  const rejectedCount = bookings.filter(b => b.status === 'rejected' || b.status === 'cancelled').length;
+  const confirmedCount = bookings.filter(b => {
+    const status = getBookingStatus(b);
+    return status === 'confirmed' || status === 'CONFIRMED';
+  }).length;
+  const pendingCount = bookings.filter(b => getBookingStatus(b) === 'pending').length;
+  const rejectedCount = bookings.filter(b => {
+    const status = getBookingStatus(b);
+    return status === 'rejected' || status === 'REJECTED';
+  }).length;
 
   // Tab configuration
   const tabs: Tab[] = [
     { id: 'all', label: 'All Bookings', count: allCount },
-    { id: 'completed', label: 'Completed', count: completedCount },
-    { id: 'upcoming', label: 'Upcoming', count: upcomingCount },
+    { id: 'confirmed', label: 'Confirmed', count: confirmedCount },
     { id: 'pending', label: 'Pending', count: pendingCount },
     { id: 'rejected', label: 'Rejected', count: rejectedCount },
   ];
@@ -169,17 +336,14 @@ export const BookingIndex: React.FC = () => {
     // Define filters based on selected tab
     let filters: any = {};
     switch (tabId) {
-      case 'completed':
-        filters = { status: 'completed' };
-        break;
-      case 'upcoming':
-        filters = { status: 'confirmed' };
+      case 'confirmed':
+        filters = { status: 'CONFIRMED' };
         break;
       case 'pending':
         filters = { status: 'pending' };
         break;
       case 'rejected':
-        filters = { status: ['rejected', 'cancelled'] };
+        filters = { status: 'REJECTED' };
         break;
       case 'all':
       default:
@@ -192,7 +356,7 @@ export const BookingIndex: React.FC = () => {
       filters.serviceType = selectedServiceType;
     }
     
-    // Fetch bookings with the selected filter
+    // Fetch bookings with the selected filter using booking/all API
     getBookingList(1, 100, '', filters);
   };
 
@@ -281,7 +445,7 @@ export const BookingIndex: React.FC = () => {
         taxes: quotationData.taxes,
         totalAmount: quotationData.totalAmount,
         serviceId: 'service-id-placeholder', // You may need to get this from the selected booking or service
-        userId: userData.id || userData.userId, // Assuming user data has an id field
+        userId: (userData as any).id || (userData as any)._id, // Assuming user data has an id field
         enterpriseId: userData.enterpriseId,
         enterpriseName: userData.organizationName,
         status: 'pending', // Initial status
@@ -302,6 +466,9 @@ export const BookingIndex: React.FC = () => {
         taxes: 0,
         totalAmount: 0
       });
+      
+      // Reload bookings list using booking/all API
+      await getBookingList(1, 100, '', {});
     } catch (error) {
       console.error('Error saving quotation:', error);
       // Error handling is done in the submitQuotation function
@@ -323,19 +490,21 @@ export const BookingIndex: React.FC = () => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-100 text-green-600';
+    const statusLower = status?.toLowerCase() || '';
+    switch (statusLower) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-600';
       case 'confirmed':
-        return 'bg-blue-100 text-blue-600';
+        return 'bg-sky-100 text-sky-600';
       case 'rejected':
+        return 'bg-red-100 text-red-600';
+      case 'cancelled':
         return 'bg-gray-100 text-gray-600';
       default:
         return 'bg-gray-100 text-gray-600';
     }
   };
+
 
 
   return (
@@ -357,7 +526,6 @@ export const BookingIndex: React.FC = () => {
                   ]}
                   value={selectedServiceType}
                   onChange={handleServiceTypeChange}
-                  placeholder="Filter by service type"
                 />
               </div>
             </div>
@@ -365,7 +533,7 @@ export const BookingIndex: React.FC = () => {
       
                 {/* Tabs */}
          
-          <div className=" mt-0">
+          <div className=" mt-0 overflow-hidden ">
             {/* Tabs */}
             <div className="border-gray-200 border-b-0 p-0 m-0">
               <div className="px-0 pt-0">
@@ -374,23 +542,21 @@ export const BookingIndex: React.FC = () => {
                     <button
                       className={`pb-2 px-3  font-medium flex items-center cursor-pointer space-x-1 pt-2  ${
                         activeTab === tab.id
-                          ? 'border-b-2 border-blue-500 text-black bg-blue-100 rounded-md  font-semibold rounded-b-none'
-                          : 'text-gray-500 hover:text-black  hover:border-blue-500'
+                          ? 'border-b-2 border-sky-500 text-black bg-sky-100 rounded-md  font-semibold rounded-b-none'
+                          : 'text-gray-500 hover:text-black  hover:border-sky-500'
                       }`}
                       key={tab.id}
                       onClick={() => handleTabChange(tab.id)}
                     >
                       <span
                         className={`w-2 h-2 rounded-full ${
-                          tab.id === 'completed'
-                            ? 'bg-green-600'
-                            : tab.id === 'upcoming'
-                            ? 'bg-blue-600'
+                          tab.id === 'confirmed'
+                            ? 'bg-sky-600'
                             : tab.id === 'pending'
                             ? 'bg-yellow-600'
                             : tab.id === 'rejected'
                             ? 'bg-red-600'
-                            : 'bg-blue-600'
+                            : 'bg-sky-600'
                         }`}
                       ></span>
                       <span className="font-medium">{tab.label}</span>
@@ -404,104 +570,201 @@ export const BookingIndex: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="overflow-hidden border border-gray-300">
-              <table className="w-full rounded-b-xl overflow-hidden">
-                <thead className="min-w-full divide-y divide-gray-200 text-left text-md bg-white">
+            <div className="overflow-hidden rounded-xl border border-gray-300 scheme-light">
+              <div className="max-h-[600px] overflow-y-auto overflow-x-scroll">
+                <table className="min-w-full rounded-b-xl table-fixed">
+                  <thead className="sticky top-0 z-10 divide-y divide-gray-200 text-left text-md bg-white">
                   <tr className="bg-neutral-100 font-normal cursor-pointer">
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semiboldr">
-                      Booking ID
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[120px]">
+                    Booking ID
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[150px]">
+                    Event Type
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[200px]">
+                    Location
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[150px]">
+                    Date & Time
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm sm:text-base font-semibold w-[380px]">
+                    Specific Requirements
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[120px]">
+                    Status
+                  </th>
+                  {isAdmin && (
+                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[120px]">
+                      Offer Status
                     </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Event Type
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Location
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Date & Time
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Specific Requirements
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold">
-                      Action
-                    </th>
+                  )}
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[200px]">
+                    Managed By
+                  </th>
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold w-[250px]">
+                    Action
+                  </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200 rounded-b-sm">
-                  {bookingState.loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span>Loading bookings...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredBookings.length > 0 ? (
-                    filteredBookings.map((booking: BookingItem, index) => (
-                      <tr key={booking.bookingId || index} className="hover:bg-gray-50 cursor-default">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-                          {booking.bookingNumber || `BOKID-${Math.floor(Math.random() * 9999)}`}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.type || booking.customer?.name || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.location || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.date
-                            ? new Date(booking.date).toLocaleDateString()
-                            : 'N/A'}{' '}
-                          {booking.startTime || ''}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.specialRequests || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                              booking.status
-                            )}`}
-                          >
-                            {booking.status || 'Pending'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          <Button
-                            onClick={() => setShowQuotationModal(true)}
-                            className="px-4 py-2 bg-black text-white rounded-lg"
-                          >
-                            Create Event Quotation
-                          </Button>
+                  {/* Bookings Table */}
+                  <>
+                    {bookingState.loading ? (
+                      <tr>
+                        <td colSpan={isAdmin ? 9 : 8} className="px-4 py-8 text-center text-gray-500">
+                          <div className="flex items-center justify-center space-x-2 min-h-[300px]">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sky-600"></div>
+                            <span>Loading bookings...</span>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    // No bookings found message
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                        <div className="flex flex-col items-center justify-center space-y-2">
-                          <div className="text-gray-400">
-                            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
+                    ) : filteredBookings.length > 0 ? (
+                      filteredBookings.map((booking: any, index) => (
+                        <tr key={booking.id || booking.bookingId || index} className="hover:bg-gray-50 cursor-default">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-sky-600">
+                            {booking.bookingNumber || booking.bookingId || `BOKID-${Math.floor(Math.random() * 9999)}`}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {booking.bookingType || booking.type || booking.title || 'N/A'}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-900">
+                            <div className="max-w-[200px] truncate" title={booking.location?.address || booking.location || 'N/A'}>
+                              {booking.location?.address || booking.location || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {booking.startDateTime || booking.eventDate || booking.date
+                              ? new Date(booking.startDateTime || booking.eventDate || booking.date).toLocaleDateString()
+                              : 'N/A'}{' '}
+                            {booking.startTime || ''}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-900">
+                            <div className="max-w-[200px] truncate" title={booking.specialRequirement || booking.specialRequests || 'N/A'}>
+                              {booking.specialRequirement || booking.specialRequests || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                                getBookingStatus(booking)
+                              )}`}
+                            >
+                              {(() => {
+                                const status = booking.status || booking.bookingStatus || 'pending';
+                                return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+                              })()}
+                            </span>
+                          </td>
+                          {isAdmin && (
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              {(() => {
+                                const existingOffer = getBookingOffer(booking);
+                                if (existingOffer) {
+                                  return (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 border border-green-200">
+                                      <CheckCircle className="w-3 h-3" />
+                                      Offer Sent
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="text-xs text-gray-400">No Offer</span>
+                                );
+                              })()}
+                            </td>
+                          )}
+                          <td className="px-4 py-4 text-sm">
+                            <div className="text-sm">
+                              <div className="text-gray-900">
+                                <span className="font-medium">Created:</span> {booking.createdByName && booking.createdByName.trim() !== '' ? booking.createdByName : '---'}
+                              </div>
+                              <div className="text-gray-600 mt-1">
+                                <span className="font-medium">Updated:</span> {booking.updatedByName && booking.updatedByName.trim() !== '' ? booking.updatedByName : '---'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                onClick={() => navigate(`/booking-management/${booking.bookingId || booking.id || booking.bookingNumber}`)}
+                                className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs whitespace-nowrap flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                View Details
+                              </Button>
+                              
+                              {isAdmin && (() => {
+                                const existingOffer = getBookingOffer(booking);
+                                if (existingOffer) {
+                                  return (
+                                    <>
+                                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 border border-green-200">
+                                        <CheckCircle className="w-3 h-3" />
+                                        Offer Sent
+                                      </span>
+                                      <Button
+                                        onClick={() => handleEditOffer(booking, existingOffer)}
+                                        className="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-xs whitespace-nowrap flex items-center gap-1"
+                                      >
+                                        <Edit2 className="w-3 h-3" />
+                                        Edit Offer
+                                      </Button>
+                                    </>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    onClick={() => handleSubmitOffer(booking)}
+                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs whitespace-nowrap flex items-center gap-1"
+                                  >
+                                    <DollarSign className="w-3 h-3" />
+                                    Submit Offer
+                                  </Button>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      // No bookings found message
+                      <tr>
+                        <td colSpan={isAdmin ? 9 : 8} className="px-4 py-8 text-center text-gray-500">
+                          <div className="flex flex-col items-center justify-center space-y-2 min-h-[300px]">
+                            <div className="text-gray-400">
+                              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              </svg>
+                            </div>
+                            <span className="text-lg font-medium">No bookings found</span>
+                            <span className="text-sm">Try adjusting your filters or check back later</span>
                           </div>
-                          <span className="text-lg font-medium">No bookings found</span>
-                          <span className="text-sm">Try adjusting your filters or check back later</span>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Admin Offer Modal */}
+        {showOfferModal && selectedBookingForOffer && (
+          <VendorOfferModal
+            isOpen={showOfferModal}
+            onClose={() => {
+              setShowOfferModal(false);
+              setSelectedBookingForOffer(null);
+              setEditingOffer(null);
+            }}
+            bookingId={selectedBookingForOffer.bookingId || selectedBookingForOffer.bookingNumber || ''}
+            bookingNumber={selectedBookingForOffer.bookingNumber}
+            existingOffer={editingOffer || undefined}
+            onSuccess={handleOfferSuccess}
+          />
+        )}
 
         {/* Event Quotation Modal - Right Side Slide */}
         {showQuotationModal && (
@@ -511,14 +774,14 @@ export const BookingIndex: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 shrink-0">
                 <h3 className="text-lg font-semibold text-gray-900">Event Quotation</h3>
-                <button
+                <Button
                   onClick={handleCancelQuotation}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
 
               {/* Modal Body */}
@@ -532,7 +795,7 @@ export const BookingIndex: React.FC = () => {
                       type="text"
                       value={quotationData.quotationTitle}
                       onChange={(e) => handleQuotationChange('quotationTitle', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="e.g., Wedding Photography Premium Package"
                     />
                   </div>
@@ -544,7 +807,7 @@ export const BookingIndex: React.FC = () => {
                       value={quotationData.description}
                       onChange={(e) => handleQuotationChange('description', e.target.value)}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="Explain your offer and services in detail..."
                     />
                   </div>
@@ -556,7 +819,7 @@ export const BookingIndex: React.FC = () => {
                       type="number"
                       value={quotationData.price}
                       onChange={(e) => handleQuotationChange('price', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                       min="0"
                     />
@@ -569,7 +832,7 @@ export const BookingIndex: React.FC = () => {
                       value={quotationData.breakdownOfCharges}
                       onChange={(e) => handleQuotationChange('breakdownOfCharges', e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="Item 1: ₹1000&#10;Item 2: ₹2000&#10;Item 3: ₹1500"
                     />
                   </div>
@@ -581,7 +844,7 @@ export const BookingIndex: React.FC = () => {
                       type="number"
                       value={quotationData.discounts}
                       onChange={(e) => handleQuotationChange('discounts', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                       min="0"
                     />
@@ -594,7 +857,7 @@ export const BookingIndex: React.FC = () => {
                       type="number"
                       value={quotationData.taxes}
                       onChange={(e) => handleQuotationChange('taxes', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                       min="0"
                     />
@@ -604,7 +867,7 @@ export const BookingIndex: React.FC = () => {
                   <div className="pt-3 border-t border-gray-200">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-gray-900">Total Amount</span>
-                      <span className="text-lg font-bold text-blue-600">₹{quotationData.totalAmount.toLocaleString()}</span>
+                      <span className="text-lg font-bold text-sky-600">₹{quotationData.totalAmount.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

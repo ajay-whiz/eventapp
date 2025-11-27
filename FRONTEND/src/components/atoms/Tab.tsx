@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { CSSTransition, SwitchTransition } from "react-transition-group"; // Optional, for smoother transitions
-import { Button } from "./Button";
 
 const tabs = ["Overview", "Projects", "Settings"];
 
@@ -25,12 +24,12 @@ export default function Tabs() {
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 font-semibold transition-colors duration-300  w-50 ${
               activeTab === tab
-                ? "border-b-0 border-0 text-blue-600 hover:text-bg-blue-100 focus:ring-offset-0"
-                : "text-Neutral-500 hover:bg-blue-50 hover:text-bg-blue-100 focus:ring-offset-0 focus:ring-blue-500 focus:ring-4px"
+                ? "border-b-0 border-0 text-sky-600 hover:text-bg-sky-100 focus:ring-offset-0"
+                : "text-Neutral-500 hover:bg-sky-50 hover:text-bg-sky-100 focus:ring-offset-0 focus:ring-sky-500 focus:ring-4px"
             }`}
           >
             {tab}
-            <span className="text-blue-600 slide"></span>
+            <span className="text-sky-600 slide"></span>
           </button>
         ))}
       </div>

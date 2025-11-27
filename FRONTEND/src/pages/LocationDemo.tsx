@@ -104,9 +104,9 @@ const LocationDemo: React.FC = () => {
           </div>
           
           {Object.keys(locationFieldValue).length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 className="font-medium text-blue-800 mb-2">Location Field Value:</h3>
-              <pre className="text-blue-700 text-sm overflow-auto">
+            <div className="mt-4 p-4 bg-sky-50 border border-sky-200 rounded-md">
+              <h3 className="font-medium text-sky-800 mb-2">Location Field Value:</h3>
+              <pre className="text-sky-700 text-sm overflow-auto">
                 {JSON.stringify(locationFieldValue, null, 2)}
               </pre>
             </div>
@@ -143,21 +143,21 @@ const LocationDemo: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">No Manual State/City Entry</h3>
                   <p className="text-sm text-gray-600">Users don't need to navigate through dropdown menus</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Real-time Suggestions</h3>
                   <p className="text-sm text-gray-600">Get location suggestions as you type</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Auto-filled Details</h3>
                   <p className="text-sm text-gray-600">City, state, and PIN code are automatically filled</p>
@@ -166,21 +166,21 @@ const LocationDemo: React.FC = () => {
             </div>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Accurate Coordinates</h3>
                   <p className="text-sm text-gray-600">Precise latitude and longitude from Google's database</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Database Integration</h3>
                   <p className="text-sm text-gray-600">Locations are automatically saved to the database</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Multiple Locations</h3>
                   <p className="text-sm text-gray-600">Add multiple locations per vendor/listing</p>
@@ -189,21 +189,21 @@ const LocationDemo: React.FC = () => {
             </div>
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Keyboard Navigation</h3>
                   <p className="text-sm text-gray-600">Use arrow keys and Enter to navigate suggestions</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Fallback to Manual Entry</h3>
                   <p className="text-sm text-gray-600">Option to enter details manually if needed</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full mt-2 flex-shrink-0"></div>
                 <div>
                   <h3 className="font-medium">Visual Feedback</h3>
                   <p className="text-sm text-gray-600">Clear status indicators and error handling</p>
@@ -214,30 +214,30 @@ const LocationDemo: React.FC = () => {
         </div>
 
         {/* Implementation Guide */}
-        <div className="bg-blue-50 rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4 text-blue-900">Implementation Guide</h2>
-          <div className="space-y-4 text-blue-800">
+        <div className="bg-sky-50 rounded-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4 text-sky-900">Implementation Guide</h2>
+          <div className="space-y-4 text-sky-800">
             <div>
               <h3 className="font-medium mb-2">1. For Vendor Forms:</h3>
-              <p className="text-sm">Use <code className="bg-blue-100 px-1 rounded">VendorFormWithLocation</code> component which includes location field support.</p>
+              <p className="text-sm">Use <code className="bg-sky-100 px-1 rounded">VendorFormWithLocation</code> component which includes location field support.</p>
             </div>
             <div>
               <h3 className="font-medium mb-2">2. For Dynamic Forms:</h3>
-              <p className="text-sm">Add a field with <code className="bg-blue-100 px-1 rounded">type: 'location'</code> to your dynamic form configuration.</p>
+              <p className="text-sm">Add a field with <code className="bg-sky-100 px-1 rounded">type: 'location'</code> to your dynamic form configuration.</p>
             </div>
             <div>
               <h3 className="font-medium mb-2">3. For Listings:</h3>
-              <p className="text-sm">Use <code className="bg-blue-100 px-1 rounded">ListingLocationManager</code> component to manage multiple locations.</p>
+              <p className="text-sm">Use <code className="bg-sky-100 px-1 rounded">ListingLocationManager</code> component to manage multiple locations.</p>
             </div>
             <div>
               <h3 className="font-medium mb-2">4. Standalone Usage:</h3>
-              <p className="text-sm">Use <code className="bg-blue-100 px-1 rounded">LocationField</code> or <code className="bg-blue-100 px-1 rounded">GooglePlacesAutocomplete</code> for custom implementations.</p>
+              <p className="text-sm">Use <code className="bg-sky-100 px-1 rounded">LocationField</code> or <code className="bg-sky-100 px-1 rounded">GooglePlacesAutocomplete</code> for custom implementations.</p>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-blue-100 rounded-md">
-            <p className="text-sm text-blue-700">
+          <div className="mt-4 p-3 bg-sky-100 rounded-md">
+            <p className="text-sm text-sky-700">
               <strong>Note:</strong> Make sure you have a valid Google Maps API key with Places API enabled. 
-              See <code className="bg-blue-200 px-1 rounded">GOOGLE_MAPS_SETUP.md</code> for detailed instructions.
+              See <code className="bg-sky-200 px-1 rounded">GOOGLE_MAPS_SETUP.md</code> for detailed instructions.
             </p>
           </div>
         </div>

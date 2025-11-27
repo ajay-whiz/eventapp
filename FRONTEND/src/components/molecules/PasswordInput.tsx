@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react'; // ✅ Use consistent icon names
 import Input from '../atoms/Input';
 
 interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -12,7 +11,7 @@ interface PasswordInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 const PasswordInput: React.FC<PasswordInputProps> = ({ label, className = '', size = 'md', ...inputProps }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword] = useState(false);
 
   const validatePassword = (value: string): string => {
     if (value.length < 8) return 'Password must be at least 8 characters';

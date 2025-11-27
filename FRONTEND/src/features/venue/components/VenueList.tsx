@@ -28,7 +28,7 @@ const VenueList: React.FC = () => {
   const [showLocationDeleteModal, setShowLocationDeleteModal] = useState(false);
   const [selectedVenueForLocation, setSelectedVenueForLocation] = useState<VenueRow | null>(null);
   const [locationToDelete, setLocationToDelete] = useState<any>(null);
-  type VenueRow = { id: string; name: string };
+  type VenueRow = { id: string; name: string; description?: string };
   const [selectedUser, setSelectedUser] = useState<VenueRow | null>(null);
 
   // Fetch users when page or search changes
@@ -72,11 +72,31 @@ const VenueList: React.FC = () => {
 
   const columns: TableColumn<VenueRow>[] = [
     { key: 'name', label: 'Name', width: 300, sortable: true, searchable: true },
+    { 
+      key: 'description', 
+      label: 'Description', 
+      width: 400, 
+      sortable: false, 
+      searchable: true,
+      render: (value) => {
+        const description = value as string || '';
+        // Truncate long descriptions and add ellipsis
+        if (description.length > 100) {
+          return (
+            <span title={description}>
+              {description.substring(0, 100)}...
+            </span>
+          );
+        }
+        return <span>{description || '-'}</span>;
+      }
+    },
   ];
 
   const sanitizedVenues: VenueRow[] = (venues as any[])?.filter(Boolean).map((v: any) => ({
     id: (v.id ?? v.key ?? `${v.name || 'venue'}-${Math.random().toString(36).slice(2,8)}`) as string,
     name: (v.name ?? '') as string,
+    description: (v.description ?? '') as string,
   })) ?? [];
 
   return (

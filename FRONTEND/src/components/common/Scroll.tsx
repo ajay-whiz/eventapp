@@ -18,7 +18,7 @@ const directionMap = {
 
 const variantMap = {
   default: "bg-white border border-gray-300",
-  lightBlue: "bg-lightBlue-50 border-lightBlue-300",
+  lightBlue: "bg-lightsky-50 border-lightsky-300",
   vendor: "bg-vendor-50 border-vendor-300",
 };
 

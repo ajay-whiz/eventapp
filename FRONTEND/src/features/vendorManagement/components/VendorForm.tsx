@@ -107,7 +107,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
           <Textarea
             id={field.id}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-sky-500 focus:border-sky-500"
             placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
@@ -154,7 +154,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
                       onChange(currentValues.filter((v: string) => v !== option.value));
                     }
                   }}
-                  className="h-4 w-4 text-blue-600 focus:border-blue-500 border-gray-300 rounded-sm"
+                  className="h-4 w-4 text-sky-600 focus:border-sky-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor={`${field.id}_${option.value}`} className="ml-2 block text-sm text-gray-900">
                   {option.label}
@@ -269,7 +269,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             }
           />
           {uploadingImages[field.id] && (
-            <div className="mt-2 text-sm text-blue-600">
+            <div className="mt-2 text-sm text-sky-600">
               📤 Uploading images...
             </div>
           )}
@@ -382,10 +382,46 @@ const VendorForm: React.FC = () => {
           
           // Handle both array and object formats for fields
           if (Array.isArray(selectedVendor.formData.fields)) {
-            // If fields is an array (old format)
+            // If fields is an array (format: [{ id, type, actualValue: [...] }])
             selectedVendor.formData.fields.forEach((field: any) => {
               if (field.actualValue !== undefined) {
-                extractedData[field.id] = field.actualValue;
+                // Handle MultiImageUpload fields with url.imageUrl structure
+                if (field.type === 'MultiImageUpload' && Array.isArray(field.actualValue)) {
+                  const transformedImages = field.actualValue.map((img: any) => {
+                    let imageUrl = '';
+                    
+                    // Handle the format: { id, name, url: { imageUrl: "..." } }
+                    if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
+                      imageUrl = img.url.imageUrl;
+                    } else if (typeof img.url === 'string') {
+                      imageUrl = img.url;
+                    } else if (typeof img === 'string') {
+                      imageUrl = img;
+                    } else if (img?.preview && typeof img.preview === 'string') {
+                      imageUrl = img.preview;
+                    }
+                    
+                    // If the URL is relative, construct the full URL
+                    if (imageUrl && imageUrl.startsWith('/uploads/')) {
+                      const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
+                        (import.meta.env.VITE_API_BASE_URL 
+                          ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
+                          : 'http://localhost:10030');
+                      imageUrl = `${imageBaseUrl}${imageUrl}`;
+                    }
+                    
+                    // Return in format expected by MultiImageUpload component
+                    return {
+                      id: img.id || `img_${Date.now()}_${Math.random()}`,
+                      name: img.name || imageUrl || 'image',
+                      url: imageUrl, // Store as flat string for component
+                      uploaded: true // Mark as already uploaded
+                    };
+                  });
+                  extractedData[field.id] = transformedImages;
+                } else {
+                  extractedData[field.id] = field.actualValue;
+                }
               }
             });
           } else if (typeof selectedVendor.formData.fields === 'object') {
@@ -399,33 +435,38 @@ const VendorForm: React.FC = () => {
                   // Handle MultiImageUpload fields specially
                   if (matchingField.type === 'MultiImageUpload' && Array.isArray(value)) {
                     // Transform the image data to match the expected format
-                     const transformedImages = value.map((img: any) => {
-                       let imageUrl = '';
-                       
-                       // Safely extract URL from various possible structures
-                       if (typeof img === 'string') {
-                         imageUrl = img;
-                       } else if (img?.url?.data && typeof img.url.data === 'string') {
-                         imageUrl = img.url.data;
-                       } else if (img?.url && typeof img.url === 'string') {
-                         imageUrl = img.url;
-                       } else if (img?.preview && typeof img.preview === 'string') {
-                         imageUrl = img.preview;
-                       }
-                       
-                       // If the URL is relative, construct the full URL
-                       if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                         const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:10030";
-                         imageUrl = `${baseUrl.replace('/api/v1/', '')}${imageUrl}`;
-                       }
-                       
-                       return {
-                         id: img.id || `img_${Date.now()}_${Math.random()}`,
-                         name: img.name || 'image',
-                         url: imageUrl,
-                         uploaded: true // Mark as already uploaded
-                       };
-                     });
+                    // Handle format: [{ id, name, url: { imageUrl: "..." } }]
+                    const transformedImages = value.map((img: any) => {
+                      let imageUrl = '';
+                      
+                      // Handle the format: { id, name, url: { imageUrl: "..." } }
+                      if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
+                        imageUrl = img.url.imageUrl;
+                      } else if (typeof img.url === 'string') {
+                        imageUrl = img.url;
+                      } else if (typeof img === 'string') {
+                        imageUrl = img;
+                      } else if (img?.preview && typeof img.preview === 'string') {
+                        imageUrl = img.preview;
+                      }
+                      
+                      // If the URL is relative, construct the full URL
+                      if (imageUrl && imageUrl.startsWith('/uploads/')) {
+                        const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
+                          (import.meta.env.VITE_API_BASE_URL 
+                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
+                            : 'http://localhost:10030');
+                        imageUrl = `${imageBaseUrl}${imageUrl}`;
+                      }
+                      
+                      // Return in format expected by MultiImageUpload component
+                      return {
+                        id: img.id || `img_${Date.now()}_${Math.random()}`,
+                        name: img.name || imageUrl || 'image',
+                        url: imageUrl, // Store as flat string for component
+                        uploaded: true // Mark as already uploaded
+                      };
+                    });
                     extractedData[matchingField.id] = transformedImages;
                   } else {
                     extractedData[matchingField.id] = value;
@@ -468,25 +509,103 @@ const VendorForm: React.FC = () => {
     loadDynamicForm();
   }, [watchedCategoryId, selectedCategoryId, isEditMode, selectedVendor]);
 
-  // Helper function to upload a single image immediately
+  // Helper function to upload a single image immediately to Supabase
+  // This uploads to Supabase storage via the backend API endpoint (same as profile section)
   const uploadSingleImage = async (file: File): Promise<string> => {
+    // Validate file before upload (same as profile section)
+    if (!file) {
+      throw new Error('No file provided');
+    }
+    
+    // Check file size (limit to 5MB) - same as profile section
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('File size too large. Maximum size is 5MB.');
+    }
+    
+    // Check file type - same as profile section
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Invalid file type. Only JPEG, PNG, and GIF files are allowed.');
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
     try {
-      const response = await api.post('/vendors/upload-image', formData, {
+      console.log('Uploading image to Supabase:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+      
+      // Upload to Supabase via venues/upload-image endpoint (same as venue module)
+      const response = await api.post('/venues/upload-image', formData, {
         headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      return response.data.data; // Return the image URL
-    } catch (error) {
-      throw error;
+      
+      console.log('Upload response:', response.data);
+      
+      // Handle response structure - same as venue section
+      // Venues/upload-image returns: { status: "OK", data: { imageUrl: "..." } }
+      const imageUrl = response.data?.data?.imageUrl || 
+                      response.data?.data || 
+                      response.data?.url || 
+                      response.data?.imageUrl ||
+                      response.data;
+      
+      // Ensure we got a valid Supabase URL
+      if (!imageUrl) {
+        console.error('Invalid response structure:', response.data);
+        throw new Error('Invalid response: No image URL returned from server');
+      }
+      
+      // Ensure fileUrl is a string
+      const imageUrlString = typeof imageUrl === 'string' ? imageUrl : String(imageUrl);
+      
+      if (imageUrlString.startsWith('data:')) {
+        throw new Error('Invalid response: Received data URL instead of Supabase URL');
+      }
+      
+      console.log('Image uploaded successfully to Supabase:', imageUrlString);
+      return imageUrlString; // Return the Supabase URL
+    } catch (error: any) {
+      console.error('Error uploading image to Supabase:', error);
+      
+      // Extract detailed error message (same pattern as profile section)
+      let errorMessage = 'Image upload failed';
+      
+      if (error?.response?.status === 500) {
+        errorMessage = 'Server error during image upload. Please try again or contact support.';
+      } else if (error?.response?.status === 413) {
+        errorMessage = 'File too large. Please choose a smaller image.';
+      } else if (error?.response?.status === 415) {
+        errorMessage = 'Unsupported file type. Please use JPEG, PNG, or GIF images.';
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('Upload error details:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: errorMessage,
+        endpoint: '/venues/upload-image'
+      });
+      
+      throw new Error(errorMessage);
     }
   };
 
-  // Helper function to handle immediate image upload when images are selected
+  // Helper function to handle immediate image upload to Supabase when images are selected
+  // This ensures images are uploaded to Supabase storage immediately, not stored locally
   const handleImageUpload = async (fieldId: string, images: any[]) => {
     setUploadingImages(prev => ({ ...prev, [fieldId]: true }));
     
@@ -494,15 +613,15 @@ const VendorForm: React.FC = () => {
       const uploadedImages = await Promise.all(
         images.map(async (img: any) => {
           if (img.file && !img.url) {
-            // Upload new file
-            const url = await uploadSingleImage(img.file);
+            // Upload new file to Supabase immediately (not stored locally)
+            const supabaseUrl = await uploadSingleImage(img.file);
             return {
               ...img,
-              url: url,
+              url: supabaseUrl, // Store Supabase URL, not local data URL
               uploaded: true
             };
           }
-          // Return existing image (already uploaded)
+          // Return existing image (already uploaded to Supabase)
           return {
             ...img,
             uploaded: true
@@ -510,14 +629,22 @@ const VendorForm: React.FC = () => {
         })
       );
       
-      // Update the form data with uploaded images
+      // Update the form data with Supabase URLs
       setDynamicFormData(prev => ({
         ...prev,
         [fieldId]: uploadedImages
       }));
       
-    } catch (error) {
-      toast.error('Failed to upload images. Please try again.');
+    } catch (error: any) {
+      console.error('Error uploading images to Supabase:', error);
+      
+      // Extract detailed error message
+      const errorMessage = error?.message || 
+                          error?.response?.data?.message || 
+                          error?.response?.data?.error || 
+                          'Failed to upload images to Supabase';
+      
+      toast.error(errorMessage || 'Failed to upload images to Supabase. Please try again.');
     } finally {
       setUploadingImages(prev => ({ ...prev, [fieldId]: false }));
     }
@@ -525,6 +652,11 @@ const VendorForm: React.FC = () => {
 
   // Helper function to convert form data to JSON format
   const createJsonData = (data: VendorSchemaType) => {
+    // Get user name for createdBy/updatedBy
+    const currentUserName = userData?.firstName && userData?.lastName 
+      ? `${userData.firstName} ${userData.lastName}`.trim()
+      : (userData as any)?.firstName || (userData as any)?.lastName || (userData as any)?.name || null;
+    
     const jsonData: any = {
       categoryId: data.serviceCategoryId,
       name: data.name,
@@ -534,50 +666,119 @@ const VendorForm: React.FC = () => {
       enterpriseName: data.enterpriseName || '',
     };
 
+    // Add createdBy when creating, updatedBy when updating
+    if (id) {
+      // Update mode - add updatedBy
+      jsonData.updatedBy = currentUserName;
+    } else {
+      // Create mode - add createdBy
+      jsonData.createdBy = currentUserName;
+    }
+
     // Process dynamic form fields (images are already uploaded)
     if (dynamicForm && dynamicForm.fields) {
-      const processedFields: Record<string, any> = {};
       let firstImageUrl = '';
 
-      dynamicForm.fields.forEach(field => {
+      // Process fields as array with actualValue (same as venue module)
+      const processedFields = dynamicForm.fields.map((field: any) => {
         const fieldValue = dynamicFormData[field.id] || field.metadata?.defaultValue || '';
         
+        // Handle MultiImageUpload fields - extract URLs only (not file names)
         if (field.type === 'MultiImageUpload' && Array.isArray(fieldValue)) {
-          // Images are already uploaded, just extract URLs
-          const imageData = fieldValue.map((img: any) => ({
-            id: img.id || `img_${Date.now()}_${Math.random()}`,
-            name: img.name || `image_${Math.random()}.jpg`,
-            url: img.url || ''
-          }));
+          // Extract only Supabase URLs from uploaded images (filter out images without URLs)
+          const uploadedImages = fieldValue
+            .filter((img: any) => {
+              // Only include images that have been uploaded (have a URL)
+              // Exclude images that only have file objects (not yet uploaded)
+              if (img.file && !img.url && !img.uploaded) {
+                return false; // Skip images that haven't been uploaded yet
+              }
+              
+              // Check if image has URL in any format
+              let hasUrl = false;
+              if (typeof img.url === 'string' && img.url.trim() !== '') {
+                hasUrl = true;
+              } else if (img.url?.imageUrl && typeof img.url.imageUrl === 'string' && img.url.imageUrl.trim() !== '') {
+                hasUrl = true;
+              } else if (img.uploaded && img.preview && typeof img.preview === 'string' && img.preview.startsWith('http')) {
+                // Only use preview if it's a full URL (not a data URL)
+                hasUrl = true;
+              }
+              
+              return hasUrl;
+            })
+            .map((img: any) => {
+              // Extract URL - handle both flat string and nested object formats
+              let imageUrl = '';
+              
+              // Priority: url (string) > url.imageUrl > preview (if it's a full URL)
+              if (typeof img.url === 'string' && img.url.trim() !== '') {
+                imageUrl = img.url.trim();
+              } else if (img.url?.imageUrl && typeof img.url.imageUrl === 'string' && img.url.imageUrl.trim() !== '') {
+                imageUrl = img.url.imageUrl.trim();
+              } else if (img.uploaded && img.preview && typeof img.preview === 'string' && img.preview.startsWith('http')) {
+                // Only use preview if it's a full URL (not a data URL from FileReader)
+                imageUrl = img.preview;
+              }
+              
+              // Ensure we have a valid Supabase URL (not a file name or local data URL)
+              // Only accept URLs that start with http/https (Supabase URLs) or absolute paths
+              if (!imageUrl || 
+                  imageUrl.startsWith('data:') || // Reject local data URLs
+                  (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/'))) {
+                console.warn('Skipping image without valid Supabase URL:', img);
+                return null;
+              }
+              
+              // Return in the format expected by backend: nested url.imageUrl structure
+              // Set name to the URL instead of file name
+              return {
+                id: img.id || `img_${Date.now()}_${Math.random()}`,
+                name: imageUrl, // Use URL as name instead of file name
+                url: {
+                  imageUrl: imageUrl
+                }
+              };
+            })
+            .filter((img: any) => img !== null); // Remove any null entries
           
-          processedFields[field.name || field.label] = imageData;
-          
-          // Set first image as main image
-          if (!firstImageUrl && imageData.length > 0 && imageData[0].url) {
-            firstImageUrl = imageData[0].url;
+          // Set first image as main image (only if it has a valid Supabase URL)
+          if (!firstImageUrl && uploadedImages.length > 0 && uploadedImages[0]?.url?.imageUrl) {
+            firstImageUrl = uploadedImages[0].url.imageUrl;
           }
-        } else {
-          // Handle other field types
-          processedFields[field.name || field.label] = fieldValue;
+          
+          return {
+            ...field,
+            actualValue: uploadedImages
+          };
         }
+        
+        // Handle other field types
+        return {
+          ...field,
+          actualValue: fieldValue
+        };
       });
 
-      // Create the formData object in the expected format
+      // Create the formData object in the expected format (same as venue module)
       jsonData.formData = {
-        _id: dynamicForm.id,
+        _id: dynamicForm.id || dynamicForm._id,
         name: dynamicForm.name,
         description: dynamicForm.description || '',
         categoryId: data.serviceCategoryId,
         type: 'vendor-service',
-        fields: processedFields,
+        fields: processedFields, // Array format with actualValue (same as venue)
         key: dynamicForm.key || '',
         isActive: true,
         isDeleted: false,
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: id ? (dynamicForm.createdBy || currentUserName) : currentUserName, // Use existing createdBy in edit mode, or current user in create mode
+        updatedBy: id ? currentUserName : (dynamicForm.updatedBy || currentUserName), // Use current user in edit mode
         createdAt: dynamicForm.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+      
+      // Add formId to main payload (same as venue module)
+      jsonData.formId = dynamicForm.id || dynamicForm._id || dynamicForm.formId || '';
 
       // Add imageUrl if we have uploaded images
       if (firstImageUrl) {
@@ -598,6 +799,10 @@ const VendorForm: React.FC = () => {
 
       // Create JSON data (images are already uploaded)
       const jsonData = createJsonData(data);
+      
+      // Debug: Log the payload to verify images are included
+      console.log('Vendor form submission payload:', JSON.stringify(jsonData, null, 2));
+      console.log('FormData fields with images:', jsonData.formData?.fields?.filter((f: any) => f.type === 'MultiImageUpload'));
 
       if (id) {
         await updateVendor(id, jsonData);
@@ -765,11 +970,11 @@ const VendorForm: React.FC = () => {
 
               {/* Show enterprise info for Enterprise users */}
               {isEnterpriseUser && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-4 p-4 bg-sky-50 rounded-md">
+                  <p className="text-sm text-sky-800">
                     <strong>Enterprise:</strong> {userData.organizationName}
                   </p>
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-sky-600 mt-1">
                     This vendor will be associated with your enterprise account.
                   </p>
                 </div>

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import type { FormField } from '../../types/form';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
@@ -60,7 +59,7 @@ export const FormPreview = ({ fields, title = "Preview Form", description }: For
       
       case 'select':
         return (
-          <SelectGroup label={''} options={[]} value={[]} onChange={function (value: OptionType[]): void {
+          <SelectGroup label={''} options={[]} value={[]} onChange={function (_value: OptionType[]): void {
             throw new Error('Function not implemented.');
           } }>
             

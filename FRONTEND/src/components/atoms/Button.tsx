@@ -13,10 +13,10 @@ const variantMap: Record<
   'primary' | 'default' | 'secondary' | 'accent' | 'muted' | 'danger' | 'disabled',
   string
 > = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700',
-  default: 'bg-white text-blue-600 hover:bg-gray-100 border border-blue-600',
-  secondary: 'bg-blue-200 border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white',
-  accent: 'bg-white text-blue-600 hover:bg-blue-600 hover:text-white',
+  primary: 'bg-sky-600 text-white hover:bg-sky-700',
+  default: 'bg-white text-sky-600 hover:bg-gray-100 border border-sky-600',
+  secondary: 'bg-sky-200 border border-sky-600 text-sky-600 hover:bg-sky-600 hover:text-white',
+  accent: 'bg-white text-sky-600 hover:bg-sky-600 hover:text-white',
   muted: 'bg-white text-neutral-700 hover:bg-gray-100 border border-neutral-300',
   danger: 'bg-red-600 text-white hover:bg-red-700 border border-red-600',
   disabled: 'bg-gray-300 text-gray-500 cursor-not-allowed',

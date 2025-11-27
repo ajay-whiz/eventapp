@@ -17,7 +17,7 @@ export interface TableColumn<T extends TableRow> {
 }
 
 // Action types for row operations
-export type TableAction = 'edit' | 'delete' | 'reset-password' | 'view' | 'activate' | 'deactivate' | 'block' | 'unblock' | 'location';
+export type TableAction = 'edit' | 'delete' | 'reset-password' | 'view' | 'activate' | 'deactivate' | 'block' | 'unblock' | 'location' | 'add location' | 'quotation'| 'add form inputs';
 
 // Configuration object for table behavior
 export interface TableConfig {
@@ -47,9 +47,10 @@ export interface TableComponentProps<T extends TableRow> {
   columns: TableColumn<T>[];
   data: T[];
   loading?: boolean;
-  
+  className?: string;
   // Actions
   onRowAction?: (action: TableAction, row: T) => void;
+  onRowClick?: (row: T) => void;
   
   // Search
   searchQuery?: string;
@@ -99,4 +100,6 @@ export interface TableComponentProps<T extends TableRow> {
   showResetPasswordOption?: boolean;
   hideDeleteAction?: boolean;
   showLocationOption?: boolean;
+  showQuotationOption?: boolean;
+  showCategoryInputsOption?: boolean;
 }

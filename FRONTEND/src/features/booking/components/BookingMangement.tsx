@@ -57,7 +57,7 @@ interface QuotationData {
   additionalNotes: string;
 }
 
-type TabType = 'all' | 'completed' | 'upcoming' | 'pending' | 'rejected';
+type TabType = 'all' | 'cancelled' | 'pending' | 'rejected';
 
 export const BookingManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -142,8 +142,6 @@ export const BookingManagement: React.FC = () => {
         return 'text-yellow-600 bg-yellow-100';
       case 'cancelled':
         return 'text-red-600 bg-red-100';
-      case 'completed':
-        return 'text-blue-600 bg-blue-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
@@ -207,8 +205,7 @@ export const BookingManagement: React.FC = () => {
 
   const tabs = [
     { id: 'all', label: 'All Bookings', count: stats.totalBookings },
-    { id: 'completed', label: 'Completed', count: stats.confirmedBookings },
-    { id: 'upcoming', label: 'Upcoming', count: stats.upcomingBookings },
+    { id: 'cancelled', label: 'Cancelled', count: stats.cancelledBookings },
     { id: 'pending', label: 'Pending', count: stats.pendingBookings },
     { id: 'rejected', label: 'Rejected', count: stats.cancelledBookings },
   ];
@@ -224,7 +221,7 @@ export const BookingManagement: React.FC = () => {
       <Layout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading dashboard...</p>
           </div>
         </div>
@@ -272,16 +269,15 @@ export const BookingManagement: React.FC = () => {
                     onClick={() => handleTabChange(tab.id as TabType)}
                     className={`flex items-center  cursor-pointer space-x-2 px-4 py-2 rounded-sm transition-colors duration-200 ${
                       activeTab === tab.id
-                        ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
+                        ? 'bg-sky-50 text-sky-600 border-b-2 border-sky-600'
                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${
-                      tab.id === 'completed' ? 'bg-green-600' :
-                      tab.id === 'upcoming' ? 'bg-black' :
+                      tab.id === 'cancelled' ? 'bg-gray-600' :
                       tab.id === 'pending' ? 'bg-gray-500' :
                       tab.id === 'rejected' ? 'bg-red-600' :
-                      'bg-blue-600'
+                      'bg-sky-600'
                     }`}></span>
                     <span className="font-medium">{tab.label}</span>
                     <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
@@ -293,88 +289,107 @@ export const BookingManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-gray-300 mt-4">
-            <table className="w-full">
-              <thead className="min-w-full divide-y divide-gray-200 text-left text-md bg-white">
+          <div className="w-full overflow-x-auto rounded-xl border border-gray-300 mt-4">
+            <div className="max-h-[600px] overflow-y-auto">
+              <table className="min-w-full table-fixed">
+                <thead className="sticky top-0 z-10 divide-y divide-gray-200 text-left text-md bg-white">
                 <tr className='bg-neutral-100 font-norma'>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[150px]">
                     Booking ID
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
-                  Event Type
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[250px]">
+                    Event Type
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
-                  Location
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[200px]">
+                    Location
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[150px]">
                     Date & Time
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
-                  Specific Requirements
+                  <th className="px-4 py-3 cursor-pointer border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[200px]">
+                    Specific Requirements
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[120px]">
                     Status
                   </th>
-                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap  border-b border-neutral-300 text-sm font-semibol uppercase tracking-wider">
-                   Action
+                  <th className="px-4 py-3 cursor-pointer whitespace-nowrap border-b border-neutral-300 text-sm font-semibold uppercase tracking-wider w-[180px]">
+                    Action
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-sky-600">
                       {booking.bookingNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {booking.customerName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {booking.serviceName}
+                    <td className="px-4 py-4 text-sm text-gray-900">
+                      <div className="max-w-[200px] truncate" title={booking.serviceName}>
+                        {booking.serviceName}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(booking.date).toLocaleDateString()} {booking.time}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 text-sm text-gray-900">
+                      <div className="max-w-[200px] truncate" title="Catering, Photography, Venue">
+                        Catering, Photography, Venue
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
                         {booking.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ₹{booking.amount.toLocaleString()}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <Button
+                        variant="muted"
+                        size="sm"
+                        onClick={() => setShowQuotationModal(true)}
+                        className="text-xs px-3 py-2 whitespace-nowrap"
+                      >
+                        Create Event Quotation
+                      </Button>
                     </td>
                   </tr>
                 ))}
-                <tr  className="hover:bg-blue-50 border-b border-gray-100">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                <tr className="hover:bg-sky-50 border-b border-gray-100">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-sky-600">
                      BOKID-2345
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                      Wedding
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                     Mumbai
+                    <td className="px-4 py-4 text-sm text-gray-900">
+                      <div className="max-w-[200px] truncate" title="Mumbai">
+                        Mumbai
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       10:00 AM
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                     Catering, Photography, Venue
+                    <td className="px-4 py-4 text-sm text-gray-900">
+                      <div className="max-w-[200px] truncate" title="Catering, Photography, Venue">
+                        Catering, Photography, Venue
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full text-green-600`}>
                         Complete
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="muted"
                           size="sm"
                           onClick={() => setShowQuotationModal(true)}
-                          className="text-xs px-2 py-1"
+                          className="text-xs px-3 py-2 whitespace-nowrap"
                         >
-                          Quotation
+                          Create Event Quotation
                         </Button>
                         <RowActionMenu />
                       </div>
@@ -382,7 +397,7 @@ export const BookingManagement: React.FC = () => {
                   </tr>
               </tbody>
             </table>
-           
+            </div>
           </div>
 
           
@@ -413,7 +428,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.venue}
                       onChange={(e) => handleQuotationChange('venue', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -424,7 +439,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.catering}
                       onChange={(e) => handleQuotationChange('catering', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -435,7 +450,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.decorations}
                       onChange={(e) => handleQuotationChange('decorations', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -446,7 +461,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.services}
                       onChange={(e) => handleQuotationChange('services', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -457,7 +472,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.discount}
                       onChange={(e) => handleQuotationChange('discount', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -468,7 +483,7 @@ export const BookingManagement: React.FC = () => {
                       type="number"
                       value={quotationData.tax}
                       onChange={(e) => handleQuotationChange('tax', Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       placeholder="0"
                     />
                   </div>
@@ -477,7 +492,7 @@ export const BookingManagement: React.FC = () => {
                   <div className="pt-2 border-t border-gray-200">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-gray-900">Total</span>
-                      <span className="text-lg font-bold text-blue-600">₹{calculateTotal().toLocaleString()}</span>
+                      <span className="text-lg font-bold text-sky-600">₹{calculateTotal().toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -489,7 +504,7 @@ export const BookingManagement: React.FC = () => {
                     value={quotationData.additionalNotes}
                     onChange={(e) => handleQuotationChange('additionalNotes', e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     placeholder="Special requirements, terms, conditions..."
                   />
                 </div>

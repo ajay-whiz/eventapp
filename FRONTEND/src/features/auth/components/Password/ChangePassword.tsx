@@ -18,16 +18,12 @@ const ChangePassword: React.FC = () => {
     const { loading, error } = useAuth();
     const { changePassword } = useAuthActions();
 
-    const onSubmit = async (
-        data: ChangePasswordFormValues,
-        reset: () => void
-    ) => {
+    const onSubmit = async (data: ChangePasswordFormValues) => {
         changePassword(data.currentPassword,data.newPassword,data.confirmPassword);
         if(error){
             toast.error(error);
         }else{
             toast.success('Password reset successfully');
-            reset(); // reset form after creation
         }    
     };
   

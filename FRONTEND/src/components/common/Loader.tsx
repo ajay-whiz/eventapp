@@ -1,10 +1,10 @@
-export function LoaderNoData({ size = 24, variant = 'full' }: { size?: number; variant?: 'full' | 'inline' }) {
+export function LoaderNoData({ variant = 'full' }: { variant?: 'full' | 'inline' }) {
   const containerClass = variant === 'full' ? 'flex items-center justify-center h-screen flex-col' : 'flex items-center justify-center py-8 flex-col';
   
   return (
     <div className={containerClass}>
        <svg
-        className="animate-spin text-blue-600"
+        className="animate-spin text-sky-600"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Calendar, 
@@ -37,6 +37,9 @@ interface BookingRow {
   amount: number;
   createdAt: string;
   assignedStaff?: string;
+  createdByName?: string | null;
+  updatedByName?: string | null;
+  managedBy?: string | null; // Placeholder for column key
 }
 
 export const BookingList: React.FC = () => {
@@ -49,6 +52,7 @@ export const BookingList: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,6 +64,37 @@ export const BookingList: React.FC = () => {
   const bookingState = useBooking();
   const { bookings = [], pagination, loading } = bookingState || {};
   
+  // Helper function to map BookingType to BookingRow
+  const mapBookingToRow = (booking: any): BookingRow => {
+    // Handle empty strings - convert to null for display
+    const createdByName = booking.createdByName && booking.createdByName.trim() !== '' 
+      ? booking.createdByName 
+      : null;
+    const updatedByName = booking.updatedByName && booking.updatedByName.trim() !== '' 
+      ? booking.updatedByName 
+      : null;
+    
+    return {
+      id: booking.id || booking.bookingId || '',
+      bookingNumber: booking.bookingNumber || booking.bookingId || '',
+      customerName: booking.customerName || booking.userName || booking.customer?.name || '',
+      customerEmail: booking.customerEmail || booking.userEmail || booking.customer?.email || '',
+      serviceName: booking.serviceName || booking.title || booking.services?.[0]?.name || '',
+      startDateTime: booking.eventDate || booking.startDateTime || booking.startTime || '',
+      endDateTime: booking.endDate || booking.endDateTime || booking.endTime || '',
+      status: booking.status || booking.bookingStatus || '',
+      amount: booking.amount || booking.price || 0,
+      createdAt: booking.createdAt || '',
+      assignedStaff: booking.assignedStaff || undefined,
+      createdByName: createdByName,
+      updatedByName: updatedByName,
+      managedBy: 'managedBy', // Placeholder value for column key
+    };
+  };
+  
+  // Map bookings to table rows
+  const tableData = bookings.map(mapBookingToRow);
+  
   const { 
     getBookingList, 
     removeBooking, 
@@ -67,7 +102,7 @@ export const BookingList: React.FC = () => {
   } = useBookingActions();
 
   // Load bookings
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     const filters = {
       status: statusFilter || undefined,
       type: typeFilter || undefined,
@@ -76,44 +111,84 @@ export const BookingList: React.FC = () => {
     };
 
     await getBookingList(currentPage, rowsPerPage, searchQuery, filters);
-  };
+  }, [getBookingList, currentPage, rowsPerPage, searchQuery, statusFilter, typeFilter, dateFromFilter, dateToFilter]);
 
-  // Load data on component mount and when filters change
+  // Update URL parameters when filters change
   useEffect(() => {
-    loadBookings();
-  }, [currentPage, rowsPerPage, searchQuery, statusFilter, typeFilter, dateFromFilter, dateToFilter]);
+    if (!isInitialized) return; // Don't update URL on initial load
 
-  // Initialize filters from URL params
+    const params = new URLSearchParams();
+    
+    // Always include page and limit
+    params.set('page', currentPage.toString());
+    params.set('limit', rowsPerPage.toString());
+    
+    if (searchQuery) params.set('search', searchQuery);
+    if (statusFilter) params.set('status', statusFilter);
+    if (typeFilter) params.set('type', typeFilter);
+    if (dateFromFilter) params.set('dateFrom', dateFromFilter);
+    if (dateToFilter) params.set('dateTo', dateToFilter);
+
+    setSearchParams(params, { replace: true });
+  }, [currentPage, rowsPerPage, searchQuery, statusFilter, typeFilter, dateFromFilter, dateToFilter, isInitialized, setSearchParams]);
+
+  // Initialize filters from URL params on mount
   useEffect(() => {
+    const page = searchParams.get('page');
+    const limit = searchParams.get('limit');
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const search = searchParams.get('search');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
     
+    // Set state from URL params
+    if (page) setCurrentPage(parseInt(page, 10));
+    if (limit) setRowsPerPage(parseInt(limit, 10));
     if (status) setStatusFilter(status);
     if (type) setTypeFilter(type);
     if (search) setSearchQuery(search);
-  }, [searchParams]);
+    if (dateFrom) setDateFromFilter(dateFrom);
+    if (dateTo) setDateToFilter(dateTo);
+
+    // If no URL params exist, set defaults
+    if (!page && !limit && !status && !type && !search && !dateFrom && !dateTo) {
+      const defaultParams = new URLSearchParams();
+      defaultParams.set('page', '1');
+      defaultParams.set('limit', '10');
+      setSearchParams(defaultParams, { replace: true });
+    }
+
+    setIsInitialized(true);
+  }, []); // Only run on mount
+
+  // Load data when filters change (after initialization)
+  useEffect(() => {
+    if (isInitialized) {
+      loadBookings();
+    }
+  }, [isInitialized, loadBookings]);
 
   // Table columns
   const columns = [
     {
-      key: 'bookingNumber',
-      title: 'Booking ID',
+      key: 'bookingNumber' as keyof BookingRow,
+      label: 'Booking ID',
       sortable: true,
-      render: (value: string, row: BookingRow) => (
+      render: (value: string | number | undefined, row: BookingRow, index: number) => (
         <button
           onClick={() => navigate(`/booking-management/${row.id}`)}
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className="text-sky-600 hover:text-sky-800 font-medium"
         >
           {value}
         </button>
       ),
     },
     {
-      key: 'customerName',
-      title: 'Customer',
+      key: 'customerName' as keyof BookingRow,
+      label: 'Customer',
       sortable: true,
-      render: (value: string, row: BookingRow) => (
+      render: (value: string | number | undefined, row: BookingRow, index: number) => (
         <div>
           <div className="font-medium text-gray-900">{value}</div>
           <div className="text-sm text-gray-500">{row.customerEmail}</div>
@@ -121,31 +196,31 @@ export const BookingList: React.FC = () => {
       ),
     },
     {
-      key: 'serviceName',
-      title: 'Service',
+      key: 'serviceName' as keyof BookingRow,
+      label: 'Service',
       sortable: true,
     },
     {
-      key: 'startDateTime',
-      title: 'Date & Time',
+      key: 'startDateTime' as keyof BookingRow,
+      label: 'Date & Time',
       sortable: true,
-      render: (value: string, row: BookingRow) => (
+      render: (value: string | number | undefined, row: BookingRow, index: number) => (
         <div>
           <div className="text-sm font-medium text-gray-900">
-            {new Date(value).toLocaleDateString()}
+            {value ? new Date(value).toLocaleDateString() : 'N/A'}
           </div>
           <div className="text-sm text-gray-500">
-            {new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-            {new Date(row.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'} - 
+            {row.endDateTime ? new Date(row.endDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
           </div>
         </div>
       ),
     },
     {
-      key: 'status',
-      title: 'Status',
+      key: 'status' as keyof BookingRow,
+      label: 'Status',
       sortable: true,
-      render: (value: string) => {
+      render: (value: string | number | undefined, row: BookingRow, index: number) => {
         const getStatusConfig = (status: string) => {
           switch (status.toLowerCase()) {
             case 'confirmed':
@@ -155,13 +230,13 @@ export const BookingList: React.FC = () => {
             case 'cancelled':
               return { color: 'text-red-700 bg-red-100', icon: XCircle };
             case 'completed':
-              return { color: 'text-blue-700 bg-blue-100', icon: CheckCircle };
+              return { color: 'text-sky-700 bg-sky-100', icon: CheckCircle };
             default:
               return { color: 'text-gray-700 bg-gray-100', icon: Clock };
           }
         };
 
-        const config = getStatusConfig(value);
+        const config = getStatusConfig(value as string);
         const Icon = config.icon;
 
         return (
@@ -173,17 +248,85 @@ export const BookingList: React.FC = () => {
       },
     },
     {
-      key: 'amount',
-      title: 'Amount',
+      key: 'amount' as keyof BookingRow,
+      label: 'Amount',
       sortable: true,
-      render: (value: number) => (
-        <span className="font-medium text-gray-900">₹{value.toLocaleString()}</span>
+      render: (value: string | number | undefined, row: BookingRow, index: number) => (
+        <span className="font-medium text-gray-900">₹{typeof value === 'number' ? value.toLocaleString() : '0'}</span>
       ),
     },
     {
-      key: 'assignedStaff',
-      title: 'Staff',
-      render: (value: string) => value || '-',
+      key: 'assignedStaff' as keyof BookingRow,
+      label: 'Staff',
+      render: (value: string | number | undefined, row: BookingRow, index: number) => value || '-',
+    },
+    {
+      key: 'managedBy' as keyof BookingRow,
+      label: 'Managed By',
+      sortable: false,
+      width: 200,
+      render: (value: string | number | undefined, row: BookingRow, index: number) => {
+        const createdByName = row.createdByName && row.createdByName.trim() !== '' ? row.createdByName : '---';
+        const updatedByName = row.updatedByName && row.updatedByName.trim() !== '' ? row.updatedByName : '---';
+        
+        return (
+          <div className="text-sm">
+            <div className="text-gray-900">
+              <span className="font-medium">Created:</span> {createdByName}
+            </div>
+            <div className="text-gray-600 mt-1">
+              <span className="font-medium">Updated:</span> {updatedByName}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions' as keyof BookingRow,
+      label: 'Actions',
+      render: (value: string | number | undefined, row: BookingRow, index: number) => {
+        const status = row.status?.toLowerCase() || '';
+        const isPending = status === 'pending';
+        
+        if (isPending) {
+          return (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleRowAction('accept', row)}
+                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Accept
+              </Button>
+              <Button
+                variant="muted"
+                size="sm"
+                onClick={() => handleRowAction('decline', row)}
+                className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                <XCircle className="w-4 h-4" />
+                Decline
+              </Button>
+            </div>
+          );
+        }
+        
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="muted"
+              size="sm"
+              onClick={() => handleRowAction('view', row)}
+              className="flex items-center gap-1"
+            >
+              <Eye className="w-4 h-4" />
+              View
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -206,20 +349,42 @@ export const BookingList: React.FC = () => {
             toast.success('Booking deleted successfully!');
           }
           break;
+        case 'accept':
+          if (window.confirm('Are you sure you want to accept this booking request?')) {
+            await updateBookingStatus(row.id, 'confirmed', () => {
+              // Reload bookings from database after status update
+              loadBookings();
+            });
+          }
+          break;
+        case 'decline':
+          const reason = window.prompt('Please provide a reason for declining this booking:');
+          if (reason) {
+            await updateBookingStatus(row.id, 'rejected', () => {
+              // Reload bookings from database after status update
+              loadBookings();
+            });
+          }
+          break;
         case 'confirm':
-          await updateBookingStatus(row.id, 'confirmed');
-          toast.success('Booking confirmed successfully!');
+          await updateBookingStatus(row.id, 'confirmed', () => {
+            // Reload bookings from database after status update
+            loadBookings();
+          });
           break;
         case 'reject':
-          const reason = window.prompt('Please provide a reason for rejection:');
-          if (reason) {
-            await updateBookingStatus(row.id, 'rejected');
-            toast.success('Booking rejected successfully!');
+          const rejectReason = window.prompt('Please provide a reason for rejection:');
+          if (rejectReason) {
+            await updateBookingStatus(row.id, 'rejected', () => {
+              // Reload bookings from database after status update
+              loadBookings();
+            });
           }
           break;
       }
     } catch (error) {
       console.error('Action failed:', error);
+      toast.error('Failed to perform action. Please try again.');
     }
   };
 
@@ -259,7 +424,11 @@ export const BookingList: React.FC = () => {
     setDateFromFilter('');
     setDateToFilter('');
     setCurrentPage(1);
-    setSearchParams({});
+    // Reset URL to default params
+    const params = new URLSearchParams();
+    params.set('page', '1');
+    params.set('limit', rowsPerPage.toString());
+    setSearchParams(params, { replace: true });
   };
 
   return (
@@ -313,7 +482,6 @@ export const BookingList: React.FC = () => {
                 placeholder="Search bookings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                icon={<Search className="w-4 h-4 text-gray-400" />}
                 name="search"
               />
             </div>
@@ -392,9 +560,9 @@ export const BookingList: React.FC = () => {
 
         {/* Bulk Actions */}
         {selectedBookings.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700">
+              <span className="text-sm text-sky-700">
                 {selectedBookings.length} booking(s) selected
               </span>
               
@@ -429,19 +597,16 @@ export const BookingList: React.FC = () => {
 
         {/* Table */}
         <TableComponent
-          data={bookings}
+          data={tableData}
           columns={columns}
           loading={loading}
-          pagination={pagination}
+          total={pagination?.total || 0}
           currentPage={currentPage}
           rowsPerPage={rowsPerPage}
           onPageChange={setCurrentPage}
           onRowsPerPageChange={setRowsPerPage}
           onRowAction={handleRowAction}
-          featureName="Booking Management"
-          uniqueId="booking_management"
-          showActions={true}
-          showQuotationOption={true}
+          hideDeleteAction={true}
         />
       </div>
     </Layout>

@@ -10,7 +10,7 @@ const LogoutButton: React.FC = () => {
   
   return (
     <div className="relative group">
-      <button onClick={signOut} className='px-0 hover:text-blue-600 transition-colors cursor-pointer'>
+      <button onClick={signOut} className='px-0 hover:text-sky-600 transition-colors cursor-pointer'>
         <LogOut size={20} />
       </button>
       {/* Tooltip */}

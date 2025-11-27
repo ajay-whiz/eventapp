@@ -5,10 +5,8 @@ import {
   BadgeCheck,
   Building2,
   UserCog,
-  FolderTree,
   LayoutGrid,
   Package,
-  ShoppingBag,
   UserLockIcon,
   IdCardLanyard,
   UsersRound,
@@ -94,6 +92,12 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
     icon: <UserLockIcon size={24} />,
     defaultLabel: 'Vendor Service',
   },
+  vendor_category: {
+    uniqueId: 'vendor_category',
+    route: '/vendor-category',
+    icon: <Package size={24} />,
+    defaultLabel: 'Vendor Category',
+  },
   content_policy: {
     uniqueId: 'content_policy',
     route: '/content-policy',
@@ -105,6 +109,24 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
     route: '/booking-management',
     icon: <Calendar size={24} />,
     defaultLabel: 'Booking Management',
+  },
+  booking__management: {
+    uniqueId: 'booking__management',
+    route: '/booking-management',
+    icon: <Calendar size={24} />,
+    defaultLabel: 'Booking Management',
+  },
+  quotation_management: {
+    uniqueId: 'quotation_management',
+    route: '/quotation-management',
+    icon: <FileText size={24} />,
+    defaultLabel: 'Quotation Management',
+  },
+  quatation_management: {
+    uniqueId: 'quatation_management',
+    route: '/quotation-management',
+    icon: <FileText size={24} />,
+    defaultLabel: 'Quotation Management',
   },
 };
 
@@ -150,8 +172,10 @@ export const generateAllMenuItems = (): MenuItemFromFeature[] => {
     'form_builder',
     'venue_management',
     'service_category',
+    'vendor_category',
     'vendor_management',
     'booking_management',
+    'quotation_management',
     'content_policy',
   ];
 
@@ -170,6 +194,39 @@ export const generateAllMenuItems = (): MenuItemFromFeature[] => {
   });
 
   // Always add Profile Setting at the end
+  const profileConfig = getFeatureConfig('profile_setting');
+  if (profileConfig) {
+    menuItems.push({
+      to: profileConfig.route,
+      label: profileConfig.defaultLabel,
+      icon: profileConfig.icon,
+      badge: null,
+      feature: profileConfig.defaultLabel,
+      uniqueId: profileConfig.uniqueId,
+    });
+  }
+
+  return menuItems;
+};
+
+// Generate basic menu items for users with no specific permissions
+export const generateBasicMenuItems = (): MenuItemFromFeature[] => {
+  const menuItems: MenuItemFromFeature[] = [];
+  
+  // Always add Dashboard
+  const dashboardConfig = getFeatureConfig('dashboard');
+  if (dashboardConfig) {
+    menuItems.push({
+      to: dashboardConfig.route,
+      label: dashboardConfig.defaultLabel,
+      icon: dashboardConfig.icon,
+      badge: null,
+      feature: dashboardConfig.defaultLabel,
+      uniqueId: dashboardConfig.uniqueId,
+    });
+  }
+
+  // Always add Profile Setting
   const profileConfig = getFeatureConfig('profile_setting');
   if (profileConfig) {
     menuItems.push({

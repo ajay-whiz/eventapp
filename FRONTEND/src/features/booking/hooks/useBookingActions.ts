@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import api from '../../../axios';
 import { useToast } from '../../../components/atoms/Toast';
 import { API_ROUTES } from '../../../constants/routes';
+import { getUserDataFromStorage } from '../../../utils/permissions';
 import { 
   fetchBookingsStart,
   fetchBookingsSuccess,
@@ -40,17 +41,44 @@ export function useBookingActions() {
 
   // Get booking list with pagination and search
   const getBookingList = useCallback(
-    async (page = 1, limit = 10, searchQuery = '', filters = {}) => {
+    async (pageParam = 1, limitParam = 10, searchQuery = '', filters = {}) => {
       dispatch(fetchBookingsStart());
       try {
         const params: any = {
-          page,
-          limit,
-          search: searchQuery,
-          ...filters,
+          page: pageParam,
+          limit: limitParam,
         };
         
-        const response = await api.get(`${API_ROUTES.BOOKINGS}/admin`, {
+        // Add search query if provided
+        if (searchQuery && searchQuery.trim()) {
+          params.search = searchQuery.trim();
+        }
+        
+        // Add filters (status, dateFrom, dateTo, etc.)
+        if (filters) {
+          if (filters.status) {
+            params.status = filters.status;
+          }
+          if (filters.dateFrom) {
+            params.dateFrom = filters.dateFrom;
+          }
+          if (filters.dateTo) {
+            params.dateTo = filters.dateTo;
+          }
+          // Add any other filters
+          Object.keys(filters).forEach(key => {
+            if (!['status', 'dateFrom', 'dateTo'].includes(key) && filters[key as keyof typeof filters]) {
+              params[key] = filters[key as keyof typeof filters];
+            }
+          });
+        }
+        
+        const apiUrl = `${API_ROUTES.BOOKINGS}/all`;
+        console.log('📞 Calling booking list API:', apiUrl);
+        console.log('📞 API params:', params);
+        console.log('📞 Full URL will be:', `${api.defaults.baseURL}${apiUrl}`);
+        
+        const response = await api.get(apiUrl, {
           params,
           headers: {
             'Content-Type': 'application/json',
@@ -58,19 +86,23 @@ export function useBookingActions() {
           },
         });
 
-        const { bookings, total, page, limit } = response.data;
+        // Handle new API response structure: { status: "OK", data: { bookings, total, page, limit } }
+        const responseData = response.data?.data || response.data;
+        const { bookings, total, page, limit } = responseData;
         
         // Transform backend data to frontend format
         const transformedBookings = (bookings || []).map((booking: any) => ({
           id: booking.id || booking._id || booking.bookingId,
+          bookingId: booking.bookingId || booking.id || booking._id,
           bookingNumber: booking.bookingId || booking.id || booking._id,
           customerName: booking.customerName || booking.userName || 'Unknown Customer',
           customerEmail: booking.customerEmail || booking.userEmail || 'unknown@example.com',
           serviceName: booking.title || booking.serviceName || 'Unknown Service',
           startDateTime: booking.eventDate || booking.startDateTime || new Date().toISOString(),
           endDateTime: booking.endDate || booking.endDateTime || new Date().toISOString(),
-          status: booking.bookingStatus || booking.status || 'pending',
-          amount: booking.price || booking.amount || 0,
+          status: booking.status || booking.bookingStatus || 'pending',
+          bookingStatus: booking.bookingStatus || booking.status || 'pending',
+          amount: booking.amount || booking.price || 0,
           createdAt: booking.createdAt || new Date().toISOString(),
           assignedStaff: booking.assignedStaff || null,
           // Additional fields from backend
@@ -84,6 +116,20 @@ export function useBookingActions() {
           venueId: booking.venueId,
           vendorId: booking.vendorId,
           userId: booking.userId,
+          // Date and time fields
+          eventDate: booking.eventDate,
+          endDate: booking.endDate,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          date: booking.eventDate || booking.startDateTime,
+          // Special requirements
+          specialRequirement: booking.specialRequirement,
+          specialRequests: booking.specialRequirement,
+          // Type field
+          type: booking.bookingType || booking.type,
+          // Created and updated by names
+          createdByName: booking.createdByName || null,
+          updatedByName: booking.updatedByName || null,
         }));
         
         
@@ -199,7 +245,11 @@ export function useBookingActions() {
   }, [dispatch]);
 
   // Update booking status
-  const updateBookingStatus = useCallback(async (bookingId: string, status: string) => {
+  const updateBookingStatus = useCallback(async (
+    bookingId: string, 
+    status: string, 
+    reloadCallback?: () => void
+  ) => {
     dispatch(updateBookingStatusStart());
     try {
       const response = await api.patch(`${API_ROUTES.BOOKINGS}/${bookingId}/status`, 
@@ -212,9 +262,23 @@ export function useBookingActions() {
         }
       );
 
-      dispatch(updateBookingStatusSuccess({ bookingId, status }));
+      // Handle response structure: { status: "OK", data: { booking, ... } } or { booking, ... }
+      const responseData = response.data?.data || response.data;
+      const updatedBooking = responseData?.booking || responseData;
+      
+      // Update status in Redux state using the booking ID from response or the one passed
+      const finalBookingId = updatedBooking?.id || updatedBooking?.bookingId || bookingId;
+      const finalStatus = updatedBooking?.status || updatedBooking?.bookingStatus || status;
+      
+      dispatch(updateBookingStatusSuccess({ bookingId: finalBookingId, status: finalStatus }));
+      
+      // Reload bookings from database via callback to ensure we have the latest data
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
       toast.success(`Booking ${status} successfully!`);
-      return response.data;
+      return updatedBooking || responseData;
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to update booking status';
@@ -224,8 +288,91 @@ export function useBookingActions() {
     }
   }, [dispatch]);
 
+  // Accept booking
+  const acceptBooking = useCallback(async (
+    bookingId: string,
+    notes?: string,
+    reloadCallback?: () => void
+  ) => {
+    dispatch(updateBookingStatusStart());
+    try {
+      const requestBody = notes ? { bookingId, notes } : { bookingId };
+      const response = await api.post(`${API_ROUTES.BOOKINGS}/accept`, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      // Handle response structure
+      const responseData = response.data?.data || response.data;
+      const acceptedBooking = responseData?.booking || responseData;
+      
+      // Update status in Redux store
+      const finalBookingId = acceptedBooking?.id || acceptedBooking?.bookingId || bookingId;
+      dispatch(updateBookingStatusSuccess({ bookingId: finalBookingId, status: 'confirmed' }));
+      
+      // Reload bookings from database via callback to ensure we have the latest data
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
+      toast.success('Booking accepted successfully!');
+      return acceptedBooking || responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to accept booking';
+      dispatch(updateBookingStatusFailure(errorMessage));
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [dispatch, toast]);
+
+  // Reject booking
+  const rejectBooking = useCallback(async (
+    bookingId: string,
+    reason?: string,
+    reloadCallback?: () => void
+  ) => {
+    dispatch(updateBookingStatusStart());
+    try {
+      const requestBody = reason ? { bookingId, reason } : { bookingId };
+      const response = await api.post(`${API_ROUTES.BOOKINGS}/reject`, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      // Handle response structure
+      const responseData = response.data?.data || response.data;
+      const rejectedBooking = responseData?.booking || responseData;
+      
+      // Update status in Redux store
+      const finalBookingId = rejectedBooking?.id || rejectedBooking?.bookingId || bookingId;
+      dispatch(updateBookingStatusSuccess({ bookingId: finalBookingId, status: 'rejected' }));
+      
+      // Reload bookings from database via callback to ensure we have the latest data
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
+      toast.success('Booking rejected successfully!');
+      return rejectedBooking || responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to reject booking';
+      dispatch(updateBookingStatusFailure(errorMessage));
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [dispatch, toast]);
+
   // Cancel booking
-  const cancelBooking = useCallback(async (cancelData: CancelType) => {
+  const cancelBooking = useCallback(async (
+    cancelData: CancelType,
+    reloadCallback?: () => void
+  ) => {
     try {
       const response = await api.post(`${API_ROUTES.BOOKINGS}/${cancelData.bookingId}/cancel`, cancelData, {
         headers: {
@@ -234,10 +381,21 @@ export function useBookingActions() {
         }
       });
 
+      // Handle response structure
+      const responseData = response.data?.data || response.data;
+      const cancelledBooking = responseData?.booking || responseData;
+      
       // Update status in Redux store
-      dispatch(updateBookingStatusSuccess({ bookingId: cancelData.bookingId, status: 'cancelled' }));
+      const finalBookingId = cancelledBooking?.id || cancelledBooking?.bookingId || cancelData.bookingId;
+      dispatch(updateBookingStatusSuccess({ bookingId: finalBookingId, status: 'cancelled' }));
+      
+      // Reload bookings from database via callback to ensure we have the latest data
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
       toast.success('Booking cancelled successfully!');
-      return response.data;
+      return cancelledBooking || responseData;
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to cancel booking';
@@ -331,6 +489,140 @@ export function useBookingActions() {
     }
   }, []);
 
+  // Submit vendor offer for booking
+  const submitVendorOffer = useCallback(async (bookingId: string, offerData: any) => {
+    try {
+      // Get current user ID to add to offer
+      const userData = getUserDataFromStorage();
+      // Try multiple possible field names for user ID
+      const offerAddedBy = userData?.id || userData?._id || userData?.userId || userData?.user_id || (userData as any)?.user?.id || (userData as any)?.user?._id || null;
+
+      // Debug logging
+      console.log('User data from storage:', userData);
+      console.log('Extracted offerAddedBy:', offerAddedBy);
+
+      // Prepare payload with offerAddedBy
+      const payload = {
+        ...offerData,
+        offerAddedBy: offerAddedBy,
+      };
+
+      // Debug logging
+      console.log('Final payload being sent:', payload);
+
+      // Use the correct endpoint: /booking/{bookingId}/vendor-offer
+      const response = await api.post(`${API_ROUTES.BOOKINGS}/${bookingId}/vendor-offer`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const offerResponse = response.data?.data || response.data;
+      toast.success('Offer submitted successfully!');
+      return offerResponse;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to submit offer';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, [toast]);
+
+  // Get booking offers - accessible to all users
+  const getBookingOffers = useCallback(async (bookingId: string) => {
+    try {
+      const response = await api.get(`${API_ROUTES.BOOKINGS}/${bookingId}/offers`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      // Handle both single offer and array of offers
+      const data = response.data?.data || response.data;
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && typeof data === 'object') {
+        // If single offer, return as array
+        return [data];
+      }
+      return [];
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to fetch offers';
+      console.error('Error fetching offers:', errorMessage);
+      // Return empty array on error (endpoint should be accessible to all users)
+      return [];
+    }
+  }, []);
+
+  // Accept vendor offer
+  const acceptVendorOffer = useCallback(async (bookingId: string, offerId: string) => {
+    try {
+      const response = await api.post(`${API_ROUTES.BOOKINGS}/${bookingId}/offers/${offerId}/accept`, {}, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      const responseData = response.data?.data || response.data;
+      toast.success('Offer accepted successfully!');
+      return responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to accept offer';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, [toast]);
+
+  // Update vendor offer
+  const updateVendorOffer = useCallback(async (bookingId: string, offerId: string, offerData: any) => {
+    try {
+      // Get current user ID to add to offer
+      const userData = getUserDataFromStorage();
+      // Try multiple possible field names for user ID
+      const offerAddedBy = userData?.id || userData?._id || userData?.userId || userData?.user_id || (userData as any)?.user?.id || (userData as any)?.user?._id || null;
+
+      // Prepare payload with offerAddedBy
+      const payload = {
+        ...offerData,
+        offerAddedBy: offerAddedBy,
+      };
+
+      // Try vendor-offer endpoint first, fallback to offers
+      let response;
+      try {
+        // Try PUT on vendor-offer endpoint (might be PUT /vendor-offer or PUT /vendor-offer/:id)
+        response = await api.put(`${API_ROUTES.BOOKINGS}/${bookingId}/vendor-offer`, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+      } catch (err: any) {
+        // Fallback to old endpoint
+        response = await api.put(`${API_ROUTES.BOOKINGS}/${bookingId}/offers/${offerId}`, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+      }
+
+      const offerResponse = response.data?.data || response.data;
+      toast.success('Offer updated successfully!');
+      return offerResponse;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to update offer';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, [toast]);
+
   // Get vendor requirements
   const getVendorRequirements = useCallback(async (page = 1, limit = 10, filters = {}) => {
     try {
@@ -380,6 +672,139 @@ export function useBookingActions() {
     }
   }, [toast]);
 
+  // Get quotations list
+  const getQuotationsList = useCallback(async (page = 1, limit = 100, searchQuery = '', filters = {}) => {
+    try {
+      const params: any = {
+        page,
+        limit,
+        search: searchQuery,
+        ...filters,
+      };
+      
+      const response = await api.get(`${API_ROUTES.QUOTATIONS}`, {
+        params,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      return response.data?.data || response.data;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to fetch quotations';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [toast]);
+
+  // Approve quotation (similar to accept booking)
+  const approveQuotation = useCallback(async (
+    quotationId: string,
+    notes?: string,
+    reloadCallback?: () => void
+  ) => {
+    try {
+      const requestBody: any = { quotationId };
+      if (notes) requestBody.notes = notes;
+      
+      const response = await api.put(`${API_ROUTES.QUOTATIONS}/${quotationId}`, {
+        status: 'approved',
+        ...requestBody
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      const responseData = response.data?.data || response.data;
+      
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
+      toast.success('Quotation approved successfully!');
+      return responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to approve quotation';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [toast]);
+
+  // Reject quotation (similar to reject booking)
+  const rejectQuotation = useCallback(async (
+    quotationId: string,
+    reason?: string,
+    reloadCallback?: () => void
+  ) => {
+    try {
+      const requestBody: any = { quotationId };
+      if (reason) requestBody.reason = reason;
+      
+      const response = await api.put(`${API_ROUTES.QUOTATIONS}/${quotationId}`, {
+        status: 'rejected',
+        ...requestBody
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      const responseData = response.data?.data || response.data;
+      
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
+      toast.success('Quotation rejected successfully!');
+      return responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Failed to reject quotation';
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [toast]);
+
+  // Update quotation status
+  const updateQuotationStatus = useCallback(async (
+    quotationId: string,
+    status: string,
+    notes?: string,
+    reloadCallback?: () => void
+  ) => {
+    try {
+      const requestBody: any = { status };
+      if (notes) requestBody.notes = notes;
+      
+      const response = await api.put(`${API_ROUTES.QUOTATIONS}/${quotationId}`, requestBody, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+
+      const responseData = response.data?.data || response.data;
+      
+      if (reloadCallback) {
+        reloadCallback();
+      }
+      
+      toast.success(`Quotation ${status} successfully!`);
+      return responseData;
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message || err.message || `Failed to ${status} quotation`;
+      toast.error(errorMessage);
+      throw err;
+    }
+  }, [toast]);
+
   return {
     getBookingList,
     fetchBookingById,
@@ -387,6 +812,8 @@ export function useBookingActions() {
     updateBooking,
     removeBooking,
     updateBookingStatus,
+    acceptBooking,
+    rejectBooking,
     cancelBooking,
     rescheduleBooking,
     checkAvailability,
@@ -394,5 +821,13 @@ export function useBookingActions() {
     submitVendorQuote,
     getVendorRequirements,
     submitQuotation,
+    getQuotationsList,
+    approveQuotation,
+    rejectQuotation,
+    updateQuotationStatus,
+    submitVendorOffer,
+    getBookingOffers,
+    acceptVendorOffer,
+    updateVendorOffer,
   };
 }

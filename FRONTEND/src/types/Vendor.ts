@@ -4,6 +4,9 @@ export interface Vendor {
     description?: string;
     serviceCategoryId?: string; // Changed from categoryId to serviceCategoryId
     vendorCategoryId?: string;
+    categoryId?: string; // Legacy support
+    enterpriseId?: string;
+    enterpriseName?: string;
     vendorCategory?: {
         id: string;
         name: string;

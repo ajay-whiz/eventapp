@@ -109,7 +109,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
           <Textarea
             id={field.id}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-sky-500 focus:border-sky-500"
             placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
@@ -156,7 +156,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
                       onChange(currentValues.filter((v: string) => v !== option.value));
                     }
                   }}
-                  className="h-4 w-4 text-blue-600 focus:border-blue-500 border-gray-300 rounded-sm"
+                  className="h-4 w-4 text-sky-600 focus:border-sky-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor={`${field.id}_${option.value}`} className="ml-2 block text-sm text-gray-900">
                   {option.label}
@@ -304,6 +304,7 @@ const VendorFormWithLocation: React.FC = () => {
   const [dynamicForm, setDynamicForm] = useState<DynamicForm | null>(null);
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>({});
   const [dynamicFormErrors, setDynamicFormErrors] = useState<Record<string, string>>({});
+  const [uploadingImages, setUploadingImages] = useState<Record<string, boolean>>({});
   const [savedVendorId, setSavedVendorId] = useState<string | null>(null);
   const [enterprises, setEnterprises] = useState<any[]>([]);
 
@@ -363,11 +364,46 @@ const VendorFormWithLocation: React.FC = () => {
         // Pre-populate form data if editing
         if (selectedVendor.formData && selectedVendor.formData.fields) {
           const extractedData: Record<string, any> = {};
-          selectedVendor.formData.fields.forEach((field: any) => {
-            if (field.actualValue !== undefined) {
-              extractedData[field.id] = field.actualValue;
-            }
-          });
+          
+          // Handle array format: [{ id, type, actualValue: [...] }]
+          if (Array.isArray(selectedVendor.formData.fields)) {
+            selectedVendor.formData.fields.forEach((field: any) => {
+              if (field.actualValue !== undefined) {
+                // Handle MultiImageUpload fields with url.imageUrl structure
+                if (field.type === 'MultiImageUpload' && Array.isArray(field.actualValue)) {
+                  const transformedImages = field.actualValue.map((img: any) => {
+                    let imageUrl = '';
+                    
+                    // Handle the format: { id, name, url: { imageUrl: "..." } }
+                    if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
+                      imageUrl = img.url.imageUrl;
+                    } else if (typeof img.url === 'string') {
+                      imageUrl = img.url;
+                    } else if (typeof img === 'string') {
+                      imageUrl = img;
+                    }
+                    
+                    // Return in format expected by MultiImageUpload component
+                    return {
+                      id: img.id || `img_${Date.now()}_${Math.random()}`,
+                      name: img.name || imageUrl || 'image',
+                      url: imageUrl, // Store as flat string for component
+                      uploaded: true
+                    };
+                  });
+                  extractedData[field.id] = transformedImages;
+                } else {
+                  extractedData[field.id] = field.actualValue;
+                }
+              }
+            });
+          } else {
+            // Handle object format (fallback)
+            Object.entries(selectedVendor.formData.fields).forEach(([fieldName, value]) => {
+              extractedData[fieldName] = value;
+            });
+          }
+          
           setDynamicFormData(extractedData);
         }
       }
@@ -395,6 +431,11 @@ const VendorFormWithLocation: React.FC = () => {
   const createFormData = (data: VendorSchemaType) => {
     const formData = new FormData();
 
+    // Get user name for createdBy/updatedBy
+    const currentUserName = userData?.firstName && userData?.lastName 
+      ? `${userData.firstName} ${userData.lastName}`.trim()
+      : (userData as any)?.firstName || (userData as any)?.lastName || (userData as any)?.name || '';
+
     // Add basic vendor data
     formData.append('name', data.name);
     formData.append('description', data.description || '');
@@ -402,6 +443,15 @@ const VendorFormWithLocation: React.FC = () => {
     formData.append('formId', dynamicForm?.formId || '');
     formData.append('enterpriseId', data.enterpriseId || '');
     formData.append('enterpriseName', data.enterpriseName || '');
+    
+    // Add createdBy when creating, updatedBy when updating
+    if (id) {
+      // Update mode - add updatedBy
+      formData.append('updatedBy', currentUserName);
+    } else {
+      // Create mode - add createdBy
+      formData.append('createdBy', currentUserName);
+    }
 
     // Process dynamic form fields and handle images
     if (dynamicForm && dynamicForm.fields) {
@@ -437,8 +487,8 @@ const VendorFormWithLocation: React.FC = () => {
         key: dynamicForm.key || '',
         isActive: true,
         isDeleted: false,
-        createdBy: 'system',
-        updatedBy: 'system',
+        createdBy: id ? (dynamicForm.createdBy || currentUserName) : currentUserName, // Use existing createdBy in edit mode, or current user in create mode
+        updatedBy: id ? currentUserName : (dynamicForm.updatedBy || currentUserName), // Use current user in edit mode
         createdAt: dynamicForm.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -535,13 +585,7 @@ const VendorFormWithLocation: React.FC = () => {
   return (
     <Layout>
       <>
-        <Breadcrumbs
-          items={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Vendor Management', href: '/vendor-management' },
-            { label: isEditMode ? 'Edit Vendor' : 'Create Vendor', href: '#' }
-          ]}
-        />
+        <Breadcrumbs />
         
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -673,11 +717,11 @@ const VendorFormWithLocation: React.FC = () => {
 
                   {/* Show enterprise info for Enterprise users */}
                   {isEnterpriseUser && (
-                    <div className="p-4 bg-blue-50 rounded-md">
-                      <p className="text-sm text-blue-800">
+                    <div className="p-4 bg-sky-50 rounded-md">
+                      <p className="text-sm text-sky-800">
                         <strong>Enterprise:</strong> {userData.organizationName}
                       </p>
-                      <p className="text-xs text-blue-600 mt-1">
+                      <p className="text-xs text-sky-600 mt-1">
                         This vendor will be associated with your enterprise account.
                       </p>
                     </div>
@@ -694,7 +738,7 @@ const VendorFormWithLocation: React.FC = () => {
                         <Textarea
                           id="description"
                           rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-0 focus:ring-sky-500 focus:border-sky-500"
                           placeholder="Enter vendor description"
                           value={field.value}
                           onChange={field.onChange}

@@ -33,12 +33,12 @@ export default function ProfileSetting() {
                   onClick={() => setActiveTab(tab.value)}
                   className={`pb-2 text-sm font-bold  w-[50%]  relative ${
                     activeTab === tab.value
-                      ? 'bg-blue-100 text-blue-600 border-0 hover:bg-blue-200 hover:text-bg-blue-100 '
-                      : 'text-gray-400 hover:text-bg-blue-100 hover:bg-blue-50'
+                      ? 'bg-sky-100 text-sky-600 border-0 hover:bg-sky-200 hover:text-bg-sky-100 '
+                      : 'text-gray-400 hover:text-bg-sky-100 hover:bg-sky-50'
                   }`}
                 >
                   {tab.label}
-                  <span className="text-blue-600 slide"></span>
+                  <span className="text-sky-600 slide"></span>
                 </Button>
               ))}
             </div>

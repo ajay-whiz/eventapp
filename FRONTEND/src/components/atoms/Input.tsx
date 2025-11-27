@@ -29,7 +29,7 @@ export type InputProps = Omit<
 };
 
 
-export const Input: React.FC<InputProps> = ({
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(({
   size = 'md',
   variant = 'outlined',
   className = '',
@@ -37,7 +37,7 @@ export const Input: React.FC<InputProps> = ({
   error,
   type = 'text',
   ...props
-}) => {
+}, ref) => {
   const isError = Boolean(error);
   const errorMessage = typeof error === 'string' ? error : null;
   
@@ -47,14 +47,15 @@ export const Input: React.FC<InputProps> = ({
   return (
     <>
       <input
+        ref={ref}
         {...props}
         type={isPassword ? (showPassword ? 'text' : 'password') : type}
         disabled={disabled}
         aria-invalid={isError}
-        className={`light:disabled:bg-gray-800/20 rounded-md w-full transition focus:outline-none focus:ring-0 focus:border-blue-500 text-sm
+        className={`light:disabled:bg-gray-800/20 rounded-md w-full transition focus:outline-none focus:ring-0 focus:border-sky-500 text-sm
           ${sizeMap[size]} 
           ${variantMap[variant]} 
-          ${isError ? 'border-red-500 focus:border-red-500' : 'focus:ring-blue-500'} 
+          ${isError ? 'border-red-500 focus:border-red-500' : 'focus:ring-sky-500'} 
           ${isPassword ? 'pr-10' : ''} 
           ${className}`}
       />
@@ -74,6 +75,8 @@ export const Input: React.FC<InputProps> = ({
       )}
     </>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 export default Input;

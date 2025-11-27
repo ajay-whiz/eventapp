@@ -136,9 +136,17 @@ const bookingSlice = createSlice({
     },
     updateBookingStatusSuccess: (state, action: { payload: { bookingId: string; status: string } }) => {
       state.loading = false;
-      const index = state.bookings.findIndex(booking => booking.bookingId === action.payload.bookingId);
+      // Find booking by bookingId or id field
+      const index = state.bookings.findIndex(booking => 
+        booking.bookingId === action.payload.bookingId || 
+        (booking as any).id === action.payload.bookingId
+      );
       if (index !== -1) {
-        state.bookings[index] = { ...state.bookings[index], status: action.payload.status as any };
+        state.bookings[index] = { 
+          ...state.bookings[index], 
+          status: action.payload.status as any,
+          bookingStatus: action.payload.status as any
+        };
       }
       state.error = null;
     },

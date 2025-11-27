@@ -60,9 +60,9 @@ const LoginForm: React.FC = () => {
       </Button>
   
       <div className="flex items-center my-4">
-        <div className="flex-1 h-px bg-blue-300" />
+        <div className="flex-1 h-px bg-sky-300" />
         <span className="px-3 text-sm text-gray-800">OR</span>
-        <div className="flex-1 h-px bg-blue-300" />
+        <div className="flex-1 h-px bg-sky-300" />
       </div>
   
       <FormProvider {...methods}>
@@ -104,7 +104,7 @@ const LoginForm: React.FC = () => {
               />
             )}
           />
-          <button type="button" onClick={() => navigate('/forgot-password')} className="text-blue-600 hover:underline cursor-pointer font-semibold">Forget Password</button>
+          <button type="button" onClick={() => navigate('/forgot-password')} className="text-sky-600 hover:underline cursor-pointer font-semibold">Forget Password</button>
           </div>
           <FormError message={error ?? undefined} />
           <Button type="submit" disabled={loading} className="w-auto" size="md">

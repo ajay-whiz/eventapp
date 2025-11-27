@@ -344,11 +344,11 @@ select option{
     box-sizing: border-box;
 }
 .tabs-trigger {
-  @apply flex items-center gap-2 px-3 py-1 rounded-md text-sm text-gray-600 hover:text-blue-600 relative;
+  @apply flex items-center gap-2 px-3 py-1 rounded-md text-sm text-gray-600 hover:text-sky-600 relative;
 }
 
 .tabs-trigger.active{
-  @apply  text-blue-700 font-semibold rounded-b-none;
+  @apply  text-sky-700 font-semibold rounded-b-none;
   
 }
 .tabs-trigger.active:before{
@@ -362,7 +362,7 @@ select option{
 }
 
 select option{
-  @apply bg-blue-50 rounded-md border border-gray-300 shadow mt-2 mb-2;
+  @apply bg-sky-50 rounded-md border border-gray-300 shadow mt-2 mb-2;
 }
 .css-t3ipsp-control{
   box-shadow: none !important;

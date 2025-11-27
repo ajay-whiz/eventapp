@@ -1,4 +1,4 @@
-import { ArrowBigDown, Grip } from "lucide-react";
+import { Grip } from "lucide-react";
 import type { DragItem } from "../../types/form";
 
 interface DraggableComponentProps {
@@ -24,7 +24,7 @@ export const DraggableComponent = ({ item }: DraggableComponentProps) => {
       </div> */}
       
         <h4 className="font-semibold text-gray-700 text-sm text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
-          <span className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center"> <Grip  className="w-4 h-4" /></span>
+          <span className="w-7 h-7 bg-sky-100 rounded-full flex items-center justify-center"> <Grip  className="w-4 h-4" /></span>
         {item.type}
         </h4>
       

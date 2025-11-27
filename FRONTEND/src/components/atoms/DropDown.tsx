@@ -68,7 +68,7 @@ export const DropDown: React.FC<DropDownProps> = ({
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full cursor-pointer text-left rounded-lg transition appearance-none text-neutral-700 text-sm focus:border-blue-500 ${sizeMap[size]} ${variantMap[variant]} ${
+        className={`w-full cursor-pointer text-left rounded-lg transition appearance-none text-neutral-700 text-sm focus:border-sky-500 ${sizeMap[size]} ${variantMap[variant]} ${
           isError
             ? 'border-red-500 focus:ring-0 focus:ring-red-500'
             : 'focus:ring-0 focus:ring-red-500'
@@ -96,8 +96,8 @@ export const DropDown: React.FC<DropDownProps> = ({
                 onChange?.(option.value);
                 setIsOpen(false);
               }}
-              className={`cursor-pointer px-4 py-2 hover:bg-blue-100 truncate text-gray-800 ${
-                option.value === value ? 'bg-blue-100 text-blue-600' : ''
+              className={`cursor-pointer px-4 py-2 hover:bg-sky-100 truncate text-gray-800 ${
+                option.value === value ? 'bg-sky-100 text-sky-600' : ''
               }`}
             >
               <span className="truncate block w-full">{option.label}</span>

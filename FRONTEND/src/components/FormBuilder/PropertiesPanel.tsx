@@ -97,7 +97,7 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
               })
             }
           >
-            <SelectTrigger className="w-full border border-gray-300 bg-white text-black focus:border-blue-500 cursor-pointer">
+            <SelectTrigger className="w-full border border-gray-300 bg-white text-black focus:border-sky-500 cursor-pointer">
               <SelectValue placeholder="Select field type" />
             </SelectTrigger>
 
@@ -245,8 +245,8 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
         <div className="flex items-center space-x-2">
           <CheckboxWithLabel 
             label="Required field" 
-            checked={selectedField.required || false} 
-            onChange={(checked) => onFieldUpdate(selectedField.id, { required: !!checked })} 
+            checked={selectedField.validation?.required?.value || false} 
+            onChange={(checked) => onFieldUpdate(selectedField.id, { validation: { ...selectedField.validation, required: { value: !!checked, message: `${selectedField.label} is required` } } })} 
             id={`required-${selectedField.id}`} 
             name={`required-${selectedField.id}`}
           />
@@ -254,7 +254,7 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
 
 
         {/* Field Info */}
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-8 p-4 bg-sky-50 rounded-lg">
           <h4 className="font-medium text-sm text-gray-900 mb-2">Field Info</h4>
           <div className="space-y-2 text-xs text-gray-600">
             <div className="flex justify-between">

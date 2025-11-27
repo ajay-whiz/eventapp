@@ -46,7 +46,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey:'AIzaSyB5qrAEl1OYv3rGr9rKA5AHewc__M33nYY',
     libraries: ['places'],
   });
 
@@ -84,11 +84,16 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       return;
     }
 
+    if (!isLoaded) {
+      console.warn('Google Maps not loaded yet');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const request: google.maps.places.AutocompletionRequest = {
-        input: input,
+        input: input.trim(),
         componentRestrictions: { country: 'in' }, // Restrict to India
         types: ['establishment', 'geocode'], // Include both places and addresses
       };
@@ -103,6 +108,10 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
             setShowSuggestions(true);
             setSelectedIndex(-1);
           } else {
+            // Log status for debugging
+            if (status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+              console.warn('Places API status:', status);
+            }
             setSuggestions([]);
             setShowSuggestions(false);
           }
@@ -190,7 +199,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       <div className={`space-y-2 ${className}`}>
         {label && <Label>{label}</Label>}
         <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-          Error loading Google Maps. Please check your API key configuration.
+          Error loading Google Maps: {loadError.message || 'Please check your API key configuration.'}
         </div>
       </div>
     );
@@ -220,8 +229,11 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => {
-            if (suggestions.length > 0) {
+            if (value.length >= 2 && suggestions.length > 0) {
               setShowSuggestions(true);
+            } else if (value.length >= 2) {
+              // Trigger search if there's text but no suggestions yet
+              getPlacePredictions(value);
             }
           }}
           placeholder={placeholder}
@@ -256,7 +268,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
           {suggestions.map((suggestion, index) => (
             <button

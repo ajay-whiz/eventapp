@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const venueSchema = z.object({
   name: z.string().min(1, 'Venue Title is required'),
-  description: z.string().optional(),
+  description: z.string().max(500, 'Description must not exceed 500 characters').optional(),
   serviceCategoryId: z.string().min(1, 'Service Category is required'),
   enterpriseId: z.string().optional(),
   enterpriseName: z.string().optional(),

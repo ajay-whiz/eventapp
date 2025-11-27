@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useForm, FormProvider, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
 import { updateProfileSchema, type UpdateProfileSchemaType } from '../../schemas/login.schema';
 import { InputGroup } from '../../../../components/molecules/InputGroup';
 import { Button } from '../../../../components/atoms/Button';
@@ -13,21 +12,17 @@ import { useUser } from '../../../../hooks/useUser';
 import ImageUpload from '../../../../components/atoms/ImageUpload';
 import { IMAGE_BASE_URL } from '../../../../config/api';
 import PhoneWithCountry from '../../../../components/molecules/PhoneWithCountry';
-
 // Import the correct type from PhoneWithCountry component
 import type { PhoneWithCountryValue } from '../../../../components/molecules/PhoneWithCountry';
-
 const UpdateProfile: React.FC = () => {
   const { loading, error, profile } = useAuth();
   const { fetchProfile, updateProfile, updateProfileImage } = useAuthActions();
   const toast = useToast();
   const user = useUser();
-
   const [imageUploading, setImageUploading] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const skipResetRef = useRef(false);
   const [isImageUploadInProgress, setIsImageUploadInProgress] = useState(false);
-
   const methods = useForm<UpdateProfileSchemaType>({
     resolver: zodResolver(updateProfileSchema),
     mode: 'onSubmit',
@@ -42,9 +37,7 @@ const UpdateProfile: React.FC = () => {
       profileImage: '',
     },
   });
-
   const { reset, handleSubmit, control, setValue } = methods;
-
   const formValues = useWatch({ control });
   
   // Phone handling logic
@@ -53,7 +46,6 @@ const UpdateProfile: React.FC = () => {
     phoneNumber: formValues.phoneNumber || '',
     dialCode: formValues.countryCode ? `+${formValues.countryCode}` : '+91',
   };
-
   const handlePhoneChange = (value: PhoneWithCountryValue) => {
     setValue('countryCode', value.countryCode);
     setValue('phoneNumber', value.phoneNumber);
@@ -67,14 +59,12 @@ const UpdateProfile: React.FC = () => {
   useEffect(() => {
     // Form values debugging removed
   }, [formValues, profileImageUrl, profile?.profileImage]);
-
   // Fetch profile on load
   useEffect(() => {
     if (user?.id) {
       fetchProfile(user.id);
     }
   }, [user?.id]);
-
   // Reset only once from profile, but preserve form data after image upload
   useEffect(() => {
     console.log('🔍 Profile effect triggered:', { 
@@ -83,12 +73,11 @@ const UpdateProfile: React.FC = () => {
       isImageUploadInProgress,
       profileId: profile?.id 
     });
-    
     // Only reset form on initial load, not during or after image uploads
     if (profile && !skipResetRef.current && !isImageUploadInProgress) {
       console.log('🔄 Resetting form with profile data:', profile);
       const tempImageUrl = localStorage.getItem('tempProfileImageUrl');
-      const imageUrl = tempImageUrl || profile.profileImage || '';
+      const imageUrl = profile.profileImage || '';
       
       reset({
         firstName: profile.firstName ?? '',
@@ -109,7 +98,6 @@ const UpdateProfile: React.FC = () => {
       console.log('⏭️ Skipping form reset due to skip flag or image upload in progress');
     }
   }, [profile, reset, isImageUploadInProgress]);
-
   // Separate effect to handle profile image updates after upload
   useEffect(() => {
     if (profile && skipResetRef.current) {
@@ -131,7 +119,6 @@ const UpdateProfile: React.FC = () => {
       skipResetRef.current = false;
     }
   }, [profile, setValue]);
-
   const handleFileUpload = async (file: File) => {
     setImageUploading(true);
     setIsImageUploadInProgress(true);
@@ -177,10 +164,8 @@ const UpdateProfile: React.FC = () => {
       }, 1000);
     }
   };
-
   const onSubmit = async (data: UpdateProfileSchemaType) => {
     if (!user) return;
-
     try {
       // Check for temp storage as additional fallback
       const tempImageUrl = localStorage.getItem('tempProfileImageUrl');
@@ -191,7 +176,6 @@ const UpdateProfile: React.FC = () => {
         ...data,
         profileImage: typeof profileImageValue === 'string' ? profileImageValue : String(profileImageValue || ''),
       };
-
       await updateProfile(updatedData, user.id);
       
       // Clear temporary storage after successful submission
@@ -204,12 +188,11 @@ const UpdateProfile: React.FC = () => {
       toast.error(e.message || 'Failed to update profile');
     }
   };
-
   // Function to get the full image URL
   const getFullImageUrl = (imagePath: string | null | undefined) => {
     if (!imagePath || typeof imagePath !== 'string') return '';
     // If it's already a full URL (starts with http), return as is
-    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('http') || imagePath.startsWith('https')) return imagePath;
     // Otherwise, construct the full URL with base URL
     return `${IMAGE_BASE_URL}/${imagePath.replace(/\\/g, '/')}`;
   };
@@ -225,11 +208,9 @@ const UpdateProfile: React.FC = () => {
       </div>
     );
   }
-
   return (
     <div className="flex flex-col pt-6 pb-6 rounded-xl px-8 shadow-lg border gap-8 border-gray-300 bg-white">
       <h2 className="text-2xl font-semibold text-left text-gray-800 gap-4">Update Profile</h2>
-
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)} className='grid grid-flow-col grid-rows-1 gap-4'>
           <div className="flex items-start justify-center space-x-4">
@@ -241,7 +222,6 @@ const UpdateProfile: React.FC = () => {
               
             </div>
           </div>
-
           <div className="col-span-3 flex gap-4 flex-col">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white min-w-full">
           <InputGroup
@@ -325,7 +305,6 @@ const UpdateProfile: React.FC = () => {
                 );
               }}
             />
-
             <FormError message={error ?? undefined} />
             <div className="col-span-2 flex justify-right space-x-4 mt-2">
             <Button type="submit" disabled={loading || imageUploading} className='ml-auto'>
@@ -333,12 +312,10 @@ const UpdateProfile: React.FC = () => {
             </Button>
           </div>
           </div>
-
          
         </form>
       </FormProvider>
     </div>
   );
 };
-
 export default UpdateProfile;

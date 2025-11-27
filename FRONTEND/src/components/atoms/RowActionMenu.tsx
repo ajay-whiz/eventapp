@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText } from "lucide-react";
+import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText,PlusIcon } from "lucide-react";
 import { createPortal } from "react-dom";
-import ModalMap from "./ModalMap";
 
 type RowActionMenuProps = {
   onEdit?: () => void;
@@ -16,6 +15,7 @@ type RowActionMenuProps = {
   onUnblock?: () => void;
   onLocation?: () => void;
   onQuotation?: () => void;
+  onFormInputs?: () => void;
   canActivate?: boolean;
   canDeactivate?: boolean;
   canBlock?: boolean;
@@ -23,6 +23,7 @@ type RowActionMenuProps = {
   isActive?: boolean;
   isBlocked?: boolean;
   showLocationOption?: boolean;
+  showCategoryInputsOption?: boolean;
   showQuotationOption?: boolean;
 };
 
@@ -38,7 +39,7 @@ export const RowActionMenu = ({
   onBlock,
   onUnblock,
   onLocation,
-  onQuotation,
+  onFormInputs,
   canActivate = false,
   canDeactivate = false,
   canBlock = false,
@@ -46,10 +47,10 @@ export const RowActionMenu = ({
   isActive = true,
   isBlocked = false,
   showLocationOption = true,
+  showCategoryInputsOption = false,
   showQuotationOption = false,
 }: RowActionMenuProps) => {
   const [open, setOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<'top' | 'bottom'>('bottom');
   const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -175,6 +176,18 @@ export const RowActionMenu = ({
                 <ListRestart  className="size-4" /> Reset Password
               </li>
             )}
+            {showCategoryInputsOption && (
+              <li
+                onClick={() => {
+                  setOpen(false);
+                  onFormInputs?.();
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer"
+                role="menuitem"
+              >
+                <PlusIcon  className="size-4" /> Dynamic Form
+              </li>
+            )}
             {canActivate && !isActive && (
               <li
                 onClick={() => {
@@ -199,6 +212,7 @@ export const RowActionMenu = ({
                 <PowerOff className="size-4" /> Deactivate
               </li>
             )}
+        
             {canBlock && !isBlocked && (
               <li
                 onClick={() => {
@@ -217,7 +231,7 @@ export const RowActionMenu = ({
                   setOpen(false);
                   onUnblock?.();
                 }}
-                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-blue-700 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sky-700 cursor-pointer"
                 role="menuitem"
               >
                 <Shield className="size-4" /> Unblock
@@ -235,13 +249,14 @@ export const RowActionMenu = ({
                 <MapPinned  className="size-4" /> Add Location
               </li>
             )}
+       
             {showQuotationOption && (
               <li
                 // onClick={() => {
                 //   setOpen(false);
                 //   onQuotation?.();
                 // }}
-                onClick={() => setIsOpen(true)}
+                onClick={() => setOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer"
                 role="menuitem"
               >

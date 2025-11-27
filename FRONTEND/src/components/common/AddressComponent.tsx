@@ -274,12 +274,12 @@ const AddressComponent: React.FC<AddressComponentProps> = ({
 
       {/* Location Coordinates Display */}
       {(value.latitude && value.longitude) && (
-        <div className="p-3 bg-blue-50 rounded-md">
+        <div className="p-3 bg-sky-50 rounded-md">
           <div className="flex items-center gap-2 mb-2">
-            <Navigation className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-800">Location Coordinates</span>
+            <Navigation className="w-4 h-4 text-sky-600" />
+            <span className="text-sm font-medium text-sky-800">Location Coordinates</span>
           </div>
-          <p className="text-sm text-blue-600">
+          <p className="text-sm text-sky-600">
             Lat: {value.latitude.toFixed(6)}, Lng: {value.longitude.toFixed(6)}
           </p>
         </div>

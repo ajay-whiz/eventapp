@@ -115,7 +115,7 @@ const FeatureForm: React.FC<FeatureFormProps> = ({ editingFeature, onFormSubmit,
     }
   };
   
-  const onError = (errors: any) => {
+  const onError = (_errors: any) => {
     // Form validation errors handled by the form
   };
 

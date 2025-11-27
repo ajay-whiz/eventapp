@@ -53,7 +53,7 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                     <textarea
                         id={field.id}
                         rows={4}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:border-transparent ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:border-transparent ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-sky-500'
                             }`}
                         placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
                         value={value || ''}
@@ -65,20 +65,33 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
 
         case 'select':
         case 'dropdown':
+            // Get options from field.options or field.metadata.options
+            const selectOptions = field.options || field.metadata?.options || [];
+            const normalizedSelectOptions = Array.isArray(selectOptions)
+                ? selectOptions.map(opt =>
+                    typeof opt === "string"
+                        ? { label: opt, value: opt }
+                        : opt
+                )
+                : [];
+            
+            // Find the matching option for the current value to get the correct label
+            const selectedOption = value 
+                ? normalizedSelectOptions.find(opt => opt.value === value || opt.label === value)
+                : null;
+            
+            const selectValue = selectedOption 
+                ? [{ label: selectedOption.label, value: selectedOption.value }]
+                : value 
+                    ? [{ label: String(value), value: String(value) }] 
+                    : [];
+            
             return (
                 <div className="col-span-1">
                     <SelectGroup
                         label={displayLabel}
-                        options={
-                            Array.isArray(field.options)
-                                ? field.options.map(opt =>
-                                    typeof opt === "string"
-                                        ? { label: opt, value: opt }
-                                        : opt
-                                )
-                                : []
-                        }
-                        value={value ? [{ label: value, value: value }] : []}
+                        options={normalizedSelectOptions}
+                        value={selectValue}
                         onChange={(selected) => {
                             const selectedValue = Array.isArray(selected) ? selected[0]?.value : '';
                             onChange(selectedValue);
@@ -115,7 +128,7 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                                                     onChange(currentValues.filter((v: string) => v !== option.value));
                                                 }
                                             }}
-                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
+                                            className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded-sm"
                                         />
                                         <label
                                             htmlFor={`${field.id}_${option.value}`}
@@ -175,7 +188,7 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                         id={field.id}
                         type="button"
                         onClick={() => onChange && onChange(field.id)}
-                        className="px-4 py-2 bg-blue-600 text-white font-medium text-sm rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+                        className="px-4 py-2 bg-sky-600 text-white font-medium text-sm rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors duration-200"
                     >
                         {displayLabel}
                     </button>
@@ -227,7 +240,7 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                                 const newValues = [...groupValues, ''];
                                 onChange(newValues);
                             }}
-                            className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded text-sm font-medium"
+                            className="flex items-center gap-1 px-3 py-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded text-sm font-medium"
                         >
                             <span className="text-lg">+</span>
                             Add More

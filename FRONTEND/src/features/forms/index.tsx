@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { FormBuilder } from '../../components/FormBuilder';
@@ -11,11 +11,6 @@ export interface FormElement {
 }
 
 const Forms: React.FC = () => {
-  const [stackedFormElements, setStackedFormElements] = useState<FormElement[]>([]);
-
-  const handleAddElement = (element: FormElement) => {
-    setStackedFormElements((prev) => [...prev, element]);
-  };
 
   return (
     <Layout>

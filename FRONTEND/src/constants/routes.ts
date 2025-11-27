@@ -19,10 +19,13 @@ API_ROUTES = {
     GET_ALL_CATEGORIES: "service-category",
     GET_ALL_FORMS: "forms",
     GET_FORM_BY_CATEGORY: "forms/category",
+    SERVICE_CATEGORY_FORM_INPUTS: "service-category-form-inputs",
     VENDORS: "vendors",
     CONTENT_POLICIES: "content-policies",
     BOOKINGS: "booking",
     QUOTATIONS: "quotations",
+    VENDOR_CATEGORIES: "vendor-category",
+    VENUE_CATEGORIES: "venue-category",
 }
 export const ROUTING = {
     GET_ALL_FIELDS: "fields",
@@ -64,6 +67,12 @@ export const ROUTING = {
     GET_CATEGORY_BY_ID: "service-category/:id",
     UPDATE_CATEGORY: "service-category/:id",
     DELETE_CATEGORY: "service-category/:id",
+
+    ADD_CATEGORY_FORM_INPUTS: "service-category/form-inputs/add/:id",
+    EDIT_CATEGORY_FORM_INPUTS: "service-category/form-inputs/edit/:id",
+    DELETE_CATEGORY_FORM_INPUTS: "service-category/form-inputs/delete/:id",
+    CATEGORY_FORM_INPUTS: "service-category/form-inputs/:id",
+
     VENUE_MANAGEMENT: "/venue-management",
     ADD_VENUE: "/venue-management/new",
     UPDATE_VENUE: "venue-management/:id",
@@ -79,4 +88,8 @@ export const ROUTING = {
     ADD_BOOKING: "booking-management/create",
     UPDATE_BOOKING: "booking-management/:id/edit",
     VIEW_BOOKING: "booking-management/:id",
+    QUOTATION_MANAGEMENT: "quotation-management",
+    ADD_QUOTATION: "quotation-management/create",
+    UPDATE_QUOTATION: "quotation-management/:id/edit",
+    VIEW_QUOTATION: "quotation-management/:id",
 }

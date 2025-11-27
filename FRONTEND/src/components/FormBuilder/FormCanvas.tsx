@@ -1,21 +1,15 @@
 import { useEffect, useState } from 'react';
 import { FormFieldComponent } from './FormFieldComponent';
 import { Button } from '../../components/ui/button';
-import { Trash2, Send, Edit2Icon, SquarePen, Eye } from 'lucide-react';
+import { Trash2, Send, SquarePen } from 'lucide-react';
 import type { FormField } from '../../types/form';
 import { API_ROUTES, ROUTING } from '../../constants/routes';
 import api from '../../axios';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../atoms/Toast';
 import { Textarea } from '../atoms/Textarea';
-import { Select } from '../atoms/Select';
-import { SelectGroup, type OptionType } from '../molecules/SelectGroup';
-import { SideModal } from '../common/SideModal';
-import { PropertiesPanel } from './PropertiesPanel';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Label } from '../atoms/Label';
 import { DropDown } from '../atoms/DropDown';
-import { InputGroup } from '../molecules/InputGroup';
 import Input from '../atoms/Input';
 
 interface FormCanvasProps {
@@ -171,11 +165,6 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
     }
   };
  
-  const updateField = (fieldId: string, updates: Partial<FormField>) => {
-    onFieldsChange(fields.map(field =>
-      field.id === fieldId ? { ...field, ...updates } : field
-    ));
-  };
 
   const handleFieldChange = (fieldId: string, value: any) => {
     setFormData(prev => ({
@@ -212,15 +201,15 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
         return;
       }
 
-      const requiredFields = fields.filter(field => field.required);
-      const missingFields = requiredFields.filter(field => !formData[field.id]);
+      //const requiredFields = fields.filter(field => field.required);
+      //const missingFields = requiredFields.filter(field => !formData[field.id]);
 
-      if (missingFields.length > 0) {
-        alert(`Please fill in all required fields: ${missingFields.map(f => f.label).join(', ')}`);
-        return;
-      }
+      // if (missingFields.length > 0) {
+      //   alert(`Please fill in all required fields: ${missingFields.map(f => f.label).join(', ')}`);
+      //   return;
+      // }
 
-      const updatedFields = fields.map((field, index: number) => ({
+      const updatedFields = fields.map((field) => ({
         ...field,
         key: `${field.type}`,
         name: `${field.label}`,
@@ -364,7 +353,7 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
                 onChange={(e) => setFormDescription(e.target.value)}
                 placeholder="Enter form description (optional)"
                 rows={3}
-                className="w-full px-3 py-2 border  rounded-md focus:outline-none  focus:ring-primary  resize-none   text-gray-900 border-gray-300 focus:ring-blue-500 focus:border-blue-500 light:bg-white dark:text-white light:border-gray-700 light:focus:ring-blue-400"
+                className="w-full px-3 py-2 border  rounded-md focus:outline-none  focus:ring-primary  resize-none   text-gray-900 border-gray-300 focus:ring-sky-500 focus:border-sky-500 light:bg-white dark:text-white light:border-gray-700 light:focus:ring-sky-400"
               />
             </div>
           </div>
@@ -392,7 +381,7 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
               </div>
             ) : (
               <div className="space-y-0 col-start-1 row-start-1 grid grid-cols-2 gap-4">
-                {fields.map((field, index) => (
+                {fields.map((field) => (
                  
                   <div
                     key={field.id}

@@ -85,7 +85,7 @@ export const userSlice = createSlice({
     },
     removeUserSuccess(state, action: PayloadAction<string>) {
       state.formLoading = false; // ✅ Use formLoading
-      state.users = state.users.filter((user: User) => user._id !== action.payload);
+      state.users = state.users.filter((user: User) => user.id !== action.payload);
     },
     removeUserFailure(state, action: PayloadAction<string>) {
       state.formLoading = false; // ✅ Use formLoading
@@ -98,7 +98,7 @@ export const userSlice = createSlice({
     updateUserSuccess(state, action: PayloadAction<User>) {
       state.formLoading = false; // ✅ Use formLoading
       state.users = state.users.map((user: User) =>
-        user._id === action.payload._id ? action.payload : user
+        user.id === action.payload.id ? action.payload : user
       );
     },
     updateUserFailure(state, action: PayloadAction<string>) {

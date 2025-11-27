@@ -1,5 +1,7 @@
 import api, { handleApiError } from './index';
 
+export { api };
+
 /**
  * Global API Helpers for GET, POST, PUT, DELETE requests
  * All errors are handled globally via handleApiError

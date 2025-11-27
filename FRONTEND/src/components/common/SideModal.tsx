@@ -47,7 +47,7 @@ export const SideModal = ({
           <h2 className="text-lg font-semibold">{title || 'Edit Properties'}</h2>
           <Button
             onClick={onClose}
-            className="text-blue-500 hover:text-gray-800 focus:outline-none"
+            className="text-sky-500 hover:text-gray-800 focus:outline-none"
             aria-label="Close modal"
             variant="default"
             size="sm"

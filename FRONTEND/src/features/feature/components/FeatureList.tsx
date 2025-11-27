@@ -6,7 +6,6 @@ import TableComponent from '../../../components/atoms/Table';
 import type { TableColumn, TableAction } from '../../../types/table';
 import { useToast } from '../../../components/atoms/Toast';
 
-import FeatureForm from './FeatureForm';
 import { useNavigate } from 'react-router-dom';
 
 const FeatureList: React.FC = () => {
@@ -52,17 +51,6 @@ const FeatureList: React.FC = () => {
 
 
 
-  const handleFormSuccess = () => {
-    const wasEditing = Boolean(editingFeature);
-    setEditingFeature(null);
-    // No need to refresh the list as Redux actions already update the state
-    toast.success(wasEditing ? 'Feature updated successfully' : 'Feature created successfully');
-  };
-
-  const handleFormCancel = () => {
-    setEditingFeature(null);
-    // Keep form visible since it should always be open
-  };
 
   // Delete functionality removed - features cannot be deleted
 

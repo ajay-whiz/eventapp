@@ -334,7 +334,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       <Layout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading booking data...</p>
           </div>
         </div>
@@ -376,7 +376,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       </label>
                       <select
                         {...methods.register('type')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       >
                         <option value="service">Service</option>
                         <option value="venue">Venue</option>
@@ -392,7 +392,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                         type="text"
                         {...methods.register('location')}
                         placeholder="Enter location"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                     <div>
@@ -402,7 +402,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       <input
                         type="date"
                         {...methods.register('date')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                     <div>
@@ -412,7 +412,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       <input
                         type="time"
                         {...methods.register('startTime')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                   </div>
@@ -431,7 +431,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                         type="text"
                         {...methods.register('customer.name')}
                         placeholder="Enter full name"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                     <div>
@@ -442,7 +442,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                         type="email"
                         {...methods.register('customer.email')}
                         placeholder="Enter email"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                     <div>
@@ -453,7 +453,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                         type="tel"
                         {...methods.register('customer.phoneNumber')}
                         placeholder="Enter phone number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                   </div>
@@ -470,7 +470,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                       </label>
                       <select
                         {...methods.register('payment.method')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       >
                         <option value="credit_card">Credit Card</option>
                         <option value="debit_card">Debit Card</option>
@@ -486,7 +486,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
                         type="number"
                         {...methods.register('payment.amount', { valueAsNumber: true })}
                         placeholder="Enter amount"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                   </div>

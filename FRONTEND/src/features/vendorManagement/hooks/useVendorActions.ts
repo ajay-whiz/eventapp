@@ -168,7 +168,8 @@ export function useVendorActions() {
 
   const getDynamicFormByCategory = useCallback(async (categoryId: string): Promise<DynamicForm | null> => {
     try {
-      const response = await api.get(`${API_ROUTES.SERVICE_CATEGORIES}/user/${categoryId}`, {
+      // Add type=vendor query parameter to differentiate from venue
+      const response = await api.get(`${API_ROUTES.SERVICE_CATEGORIES}/user/${categoryId}?type=vendor`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,

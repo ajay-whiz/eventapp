@@ -37,23 +37,6 @@ export const FormBuilder = () => {
     }
   };
 
-  const exportForm = () => {
-    const formData = {
-      title: 'My Custom Form',
-      description: 'Form created with FormBuilder',
-      fields: fields
-    };
-    
-    const blob = new Blob([JSON.stringify(formData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'form-config.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div>

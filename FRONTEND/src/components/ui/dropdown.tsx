@@ -88,10 +88,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
       
       <div
         className={cn(
-          'relative w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+          'relative w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500',
           disabled && 'bg-gray-50 cursor-not-allowed opacity-50',
           error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
-          isOpen && 'ring-2 ring-blue-500 border-blue-500'
+          isOpen && 'ring-2 ring-sky-500 border-sky-500'
         )}
         onClick={handleToggle}
       >
@@ -124,7 +124,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
@@ -143,7 +143,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   key={option.value}
                   className={cn(
                     'px-3 py-2 text-sm cursor-pointer hover:bg-gray-100',
-                    option.value === value && 'bg-blue-50 text-blue-900'
+                    option.value === value && 'bg-sky-50 text-sky-900'
                   )}
                   onClick={() => handleSelect(option)}
                 >

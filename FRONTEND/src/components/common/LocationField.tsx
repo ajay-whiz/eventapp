@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Label } from '../ui/label';
 import { Input } from '../atoms/Input';
-import { Button } from '../atoms/Button';
-import { Loader2, CheckCircle, AlertCircle, MapPin, Globe } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, MapPin } from 'lucide-react';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
 
 interface LocationFieldProps {
@@ -62,7 +61,7 @@ const LocationField: React.FC<LocationFieldProps> = ({
 
   const getGeocodingIcon = () => {
     if (geocodingStatus === 'loading') {
-      return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+      return <Loader2 className="w-4 h-4 animate-spin text-sky-500" />;
     }
     if (geocodingStatus === 'success') {
       return <CheckCircle className="w-4 h-4 text-green-500" />;

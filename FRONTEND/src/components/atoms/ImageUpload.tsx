@@ -16,8 +16,8 @@ export default function ImageUpload({ onFileSelect, existingImageUrl }: ImageUpl
       if (!path || typeof path !== 'string') return '';
       return path.split(/[/\\]/).pop() || '';
     };
-    const imagePath = existingImageUrl ? getFileName(existingImageUrl) : '';
-    const imageUrl = imagePath ? `${IMAGE_BASE_URL}/${imagePath.replace(/\\/g, '/')}` : '';
+    const imagePath = existingImageUrl ? existingImageUrl : getFileName(existingImageUrl);
+    const imageUrl = imagePath.startsWith('http') || imagePath.startsWith('https') ? imagePath : `${IMAGE_BASE_URL}/${imagePath.replace(/\\/g, '/')}`;
     return preview || imageUrl || null;
   };
 
@@ -55,7 +55,7 @@ export default function ImageUpload({ onFileSelect, existingImageUrl }: ImageUpl
     {/* Camera Icon Trigger */}
     <label
       htmlFor="image-upload"
-      className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full cursor-pointer hover:bg-blue-600"
+      className="absolute bottom-0 right-0 bg-sky-500 p-2 rounded-full cursor-pointer hover:bg-sky-600"
     >
        <input
         id="image-upload"

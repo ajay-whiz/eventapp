@@ -13,6 +13,7 @@ export type SelectGroupProps = {
   error?: string;
   className?: string;
   heightClass?: string;
+  disabled? : boolean;
 };
 
 export const SelectGroup: React.FC<SelectGroupProps> = ({
@@ -22,7 +23,8 @@ export const SelectGroup: React.FC<SelectGroupProps> = ({
   onChange,
   isMulti = false,
   error,
-  heightClass = "min-h-[36px]"
+  heightClass = "min-h-[36px]",
+  disabled = false,
 }) => {
   const controlRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState<number | undefined>(undefined);
@@ -56,6 +58,7 @@ export const SelectGroup: React.FC<SelectGroupProps> = ({
           onChange(Array.isArray(val) ? val : val ? [val] : [])
         }
         isMulti={isMulti}
+        isDisabled={disabled}
         components={{ DropdownIndicator }}
         menuPosition="fixed"
         menuPortalTarget={document.body}

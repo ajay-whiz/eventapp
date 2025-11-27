@@ -57,7 +57,7 @@ export default function TableHeader({
               ]}
               value={[]}
               heightClass="min-h-[43px]"
-              onChange={(selected) => {/* Selection handled */}}
+              onChange={(_selected) => {/* Selection handled */}}
               label=""
             />
           )}

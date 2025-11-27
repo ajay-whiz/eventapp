@@ -162,13 +162,13 @@ const PhoneWithCountry: React.FC<PhoneWithCountryProps> = ({
       </div>
       
       {error && (
-        <FormHelperText error id={`${id}-error`}>
+        <FormHelperText>
           {error}
         </FormHelperText>
       )}
 
       {/* Custom CSS for additional styling */}
-      <style jsx>{`
+      <style>{`
         :global(.phone-input-normal:focus) {
           outline: none !important;
           border-color: #3b82f6 !important;

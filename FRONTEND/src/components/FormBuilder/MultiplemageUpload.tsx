@@ -257,7 +257,7 @@ const UnifiedImageUpload: React.FC<UnifiedImageUploadProps> = ({
       <div
         className={`
           relative border-2 border-dashed rounded-lg transition-colors
-          ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
+          ${dragActive ? 'border-sky-500 bg-sky-50' : 'border-gray-300 hover:border-gray-400'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${hasImages && showPreview && isSingleMode ? 'p-2' : 'p-6 text-center'}
         `}
@@ -320,14 +320,14 @@ const UnifiedImageUpload: React.FC<UnifiedImageUploadProps> = ({
           // Upload Prompt Mode
           <div className="flex flex-col items-center space-y-2">
             {dragActive ? (
-              <Upload className="w-8 h-8 text-blue-500" />
+              <Upload className="w-8 h-8 text-sky-500" />
             ) : (
               <ImageIcon className="w-8 h-8 text-gray-400" />
             )}
             
             <div className="text-sm text-gray-600">
               {dragActive ? (
-                <span className="text-blue-600 font-medium">
+                <span className="text-sky-600 font-medium">
                   Drop {isSingleMode ? 'image' : 'images'} here
                 </span>
               ) : (

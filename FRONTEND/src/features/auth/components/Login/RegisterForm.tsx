@@ -1,14 +1,9 @@
-import React, { useEffect } from 'react';
-import { loginSchema, type LoginSchemaType } from '../../schemas/login.schema';
-import { Form } from '../../../../components/common/Form';
-import { InputGroup } from '../../../../components/molecules/InputGroup';
+import React from 'react';
 import { Button } from '../../../../components/atoms/Button';
-import { FormError } from '../../../../components/atoms/FormError';
-import { useNavigate } from 'react-router-dom';
 
 const RegisterForm: React.FC = () => {
   return (
-    <div className="min-h-screen flex justify-center bg-no-repeat from-blue-500 to-purple-600 font-sans pt-10 pb-10 items-center" style={{ backgroundImage: "url('/assets/images/bg.png')" }}>
+    <div className="min-h-screen flex justify-center bg-no-repeat from-sky-500 to-purple-600 font-sans pt-10 pb-10 items-center" style={{ backgroundImage: "url('/assets/images/bg.png')" }}>
       <div className='w-xl flex flex-col justify-center  px-4 py-2  bg-white shadow-lg w-ful'>
       <div className="flex items-center space-x-2 mb-6 justify-center">
            

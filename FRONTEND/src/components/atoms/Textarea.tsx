@@ -19,7 +19,7 @@ const variantMap = {
 
 export const Textarea: React.FC<TextareaProps> = ({ size = 'md', variant = 'outlined', className, ...props }) => (
   <textarea
-    className={`rounded-md focus:outline-none focus:ring-0 focus:border-blue-500 transition ${sizeMap[size]} ${variantMap[variant]} ${className ?? ''}`}
+    className={`rounded-md focus:outline-none focus:ring-0 focus:border-sky-500 transition ${sizeMap[size]} ${variantMap[variant]} ${className ?? ''}`}
     {...props}
   />
 );

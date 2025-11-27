@@ -86,7 +86,7 @@ const SimpleBarChart: React.FC<{ data: any[]; height?: number }> = ({ data, heig
           <div className="w-16 text-sm text-gray-600">{item.month}</div>
           <div className="flex-1 bg-gray-200 rounded-full h-3">
             <div
-              className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+              className="bg-sky-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${(item.bookings / maxValue) * 100}%` }}
             />
           </div>
@@ -102,8 +102,8 @@ const TopVenuesList: React.FC<{ venues: any[] }> = ({ venues }) => (
     {venues.map((venue, index) => (
       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
+          <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+            <span className="text-sky-600 font-semibold text-sm">{index + 1}</span>
           </div>
           <div>
             <p className="font-medium text-gray-900">{venue.name}</p>
@@ -132,7 +132,7 @@ const RecentActivity: React.FC = () => {
     switch (status) {
       case 'success': return 'text-green-600 bg-green-100';
       case 'warning': return 'text-yellow-600 bg-yellow-100';
-      case 'info': return 'text-blue-600 bg-blue-100';
+      case 'info': return 'text-sky-600 bg-sky-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -209,7 +209,7 @@ const Dashboard: React.FC = () => {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-600"></div>
         </div>
       </Layout>
     );
@@ -268,7 +268,7 @@ const Dashboard: React.FC = () => {
             value={userPagination?.total ?? 0}
             change={mockStats.monthlyGrowth}
             icon="🏢"
-            color="bg-blue-500"
+            color="bg-sky-500"
           />
           <StatCard
             title="Total employee"
