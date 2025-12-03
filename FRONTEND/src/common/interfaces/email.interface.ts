@@ -1,4 +1,0 @@
-
-interface IEmail {
-    'email': string 
-}
