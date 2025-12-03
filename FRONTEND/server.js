@@ -15,7 +15,7 @@ const distDir = join(__dirname, 'dist');
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Backend API configuration - base URL without /api/v1 (we'll add it in the proxy)
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://evenpappbackend-production.up.railway.app';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://apimarketplace.whiz-cloud.com';
 console.log(`Backend API Base URL: ${API_BASE_URL}`);
 
 // Check if dist directory exists

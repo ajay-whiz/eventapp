@@ -7,7 +7,7 @@ async function testProfileImageDebug() {
     // First, let's get a JWT token by logging in
     console.log('\n1. Getting JWT token via login...');
     
-    const loginResponse = await fetch('https://evenpappbackend-production.up.railway.app/api/v1/auth/login', {
+    const loginResponse = await fetch('https://apimarketplace.whiz-cloud.com/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ async function testProfileImageDebug() {
     // Now test the profile image update
     console.log('\n2. Testing profile image update...');
     
-    const response = await fetch('https://evenpappbackend-production.up.railway.app/api/v1/users/update-profile-image', {
+    const response = await fetch('https://apimarketplace.whiz-cloud.com/api/v1/users/update-profile-image', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
