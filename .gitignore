@@ -46,3 +46,8 @@ next-env.d.ts
 *.md
 BACKEND/uploads
 *.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.*.json
+!railway.json
