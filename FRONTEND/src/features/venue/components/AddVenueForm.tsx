@@ -526,10 +526,6 @@ const AddVenueForm: React.FC = () => {
     formData.append('file', file);
     
     try {
-        fileType: file.type,
-        endpoint: '/venues/upload-image'
-      });
-      
       // Upload to Supabase via backend API endpoint
       const response = await api.post('/venues/upload-image', formData, {
         headers: {
