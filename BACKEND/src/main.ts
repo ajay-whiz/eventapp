@@ -40,18 +40,17 @@ async function bootstrap() {
 
 
   var apiPrefix = config.get('server.prefix') || 'api/v1';
-  console.log('🚀 API Prefix configured:', apiPrefix);
-  console.log('🚀 Login endpoint will be available at:', `/${apiPrefix}/auth/login`);
+
+
   app.setGlobalPrefix(apiPrefix);
 
   app.enableCors({
     origin: function (origin, callback) {
       var whitelist = config.get<Array<string>>('cors');
-      console.log('CORS check - Origin:', origin, 'Whitelist:', whitelist);
-      
+
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) {
-        console.log('CORS: Allowing request with no origin');
+
         return callback(null, true);
       }
       
@@ -61,10 +60,10 @@ async function bootstrap() {
       });
       
       if (isAllowed) {
-        console.log('CORS: Allowing origin:', origin);
+
         callback(null, true);
       } else {
-        console.log('CORS: Blocking origin:', origin);
+
         callback(new Error(`Not allowed by CORS ${origin}`));
       }
     },

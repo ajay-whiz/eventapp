@@ -85,7 +85,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
     }
 
     if (!isLoaded) {
-      console.warn('Google Maps not loaded yet');
+
       return;
     }
 
@@ -110,7 +110,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
           } else {
             // Log status for debugging
             if (status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-              console.warn('Places API status:', status);
+
             }
             setSuggestions([]);
             setShowSuggestions(false);
@@ -118,7 +118,7 @@ const GooglePlacesAutocomplete: React.FC<GooglePlacesAutocompleteProps> = ({
         }
       );
     } catch (error) {
-      console.error('Error getting place predictions:', error);
+
       setIsLoading(false);
       setSuggestions([]);
       setShowSuggestions(false);

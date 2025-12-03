@@ -145,44 +145,40 @@ export class ProfileController {
   })
   async uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     try {
-      console.log('Profile upload endpoint called');
-      console.log('File received:', !!file);
+
+
       console.log('Request body keys:', Object.keys(req.body || {}));
-      console.log('Request files:', req.files);
-      
+
       const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
       
       if (!file) {
-        console.log('No file uploaded - throwing error');
+
         throw new BadRequestException('No file uploaded');
       }
 
       if (!allowedMimeTypes.includes(file.mimetype)) {
         throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
       }
-      
-      console.log('Starting file upload process...');
-      
+
       // Upload the file and get the image URL
       const imageUrl = await this.userService.uploadFilesToS3Bucket(file);
-      console.log('File uploaded successfully, URL:', imageUrl);
-      
+
       if (!imageUrl) {
         throw new BadRequestException('File upload failed - no URL returned');
       }
       
       // Update the user's profile image in the database
       const userId = req.user.id;
-      console.log('Updating user profile with image URL for user:', userId);
+
       await this.userService.updateUser(userId, { profileImage: imageUrl });
       
       // Return the complete user profile data
       const updatedProfile = await this.userService.findOneWithRoles(userId);
-      console.log('Profile updated successfully');
+
       return updatedProfile;
       
     } catch (error) {
-      console.error('Profile upload error:', error);
+
       throw error;
     }
   }

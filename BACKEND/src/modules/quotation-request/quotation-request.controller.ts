@@ -34,9 +34,8 @@ export class QuotationRequestController {
   ): Promise<QuotationRequestResponseDto> {
     // Extract user ID from JWT token
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub);
-    console.log('Quotation Request Controller - User ID for create:', userId, 'Type:', typeof userId);
-    console.log('Quotation Request Controller - Incoming referenceImages count:', createQuotationRequestDto.referenceImages?.length || 0);
-    
+
+
     const quotationRequest = await this.quotationRequestService.create(createQuotationRequestDto, userId);
     
     // Log response to ensure referenceImages with uploaded URLs are included
@@ -70,12 +69,11 @@ export class QuotationRequestController {
     if (!Array.isArray(response.referenceImages)) {
       response.referenceImages = serviceReferenceImages;
     }
-    
-    console.log('Quotation Request Controller - Final response referenceImages:', response.referenceImages);
-    console.log('Quotation Request Controller - Final response referenceImages count:', response.referenceImages?.length || 0);
-    console.log('Quotation Request Controller - Final response has referenceImages:', 'referenceImages' in response);
-    console.log('Quotation Request Controller - Final response type:', typeof response);
-    console.log('Quotation Request Controller - Final response referenceImages type:', typeof response.referenceImages);
+
+
+
+
+
     console.log('Quotation Request Controller - Final response referenceImages is array:', Array.isArray(response.referenceImages));
     
     // Return the response directly - ClassSerializerInterceptor will handle serialization based on @Expose() decorators
@@ -106,8 +104,7 @@ export class QuotationRequestController {
   ) {
     // Extract user ID from JWT token - users should only see their own quotation requests
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub);
-    console.log('Quotation Request Controller - User ID for getQuotationRequests:', userId, 'Type:', typeof userId);
-    
+
     // Force filter by logged-in user's ID (ignore any userId query parameter for security)
     const result = await this.quotationRequestService.findAll(page, limit, userId, search);
     

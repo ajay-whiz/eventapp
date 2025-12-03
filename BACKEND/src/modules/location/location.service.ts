@@ -413,7 +413,7 @@ export class LocationService {
         }
       };
     } catch (error) {
-      console.error('Error in findNearby:', error);
+
       throw new Error(`Failed to find nearby locations: ${error.message}`);
     }
   }

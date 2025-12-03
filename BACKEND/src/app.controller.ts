@@ -32,12 +32,10 @@ export class AppController {
   @Get('test-db')
   async testDatabase() {
     try {
-      console.log('Testing database connection...');
-      
+
       // Test database connection by counting users
       const userCount = await this.userRepository.count();
-      console.log(`Database connection successful. User count: ${userCount}`);
-      
+
       // Test finding a specific user
       const testUser = await this.userRepository.findOne({ 
         where: { email: 'shiv@whiz-solutions.com' } 
@@ -51,7 +49,7 @@ export class AppController {
         timestamp: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Database test failed:', error);
+
       return {
         status: 'Database test failed',
         error: error.message,

@@ -99,7 +99,7 @@ export class AwsS3Service {
         };
       } else {
         // If no credentials provided, AWS SDK will use IAM roles or default credential chain
-        console.log('⚠️ No AWS credentials found, using default credential chain');
+
       }
     }
     
@@ -147,7 +147,7 @@ export class AwsS3Service {
       return data;
     } catch (error) {
       this.loggerService.log(`[${AwsS3Service.name}::uploadFilesToS3Bucket] Upload failed: ${error.message}`);
-      console.error('❌ AWS S3 Upload Error:', error);
+
       throw error;
     }
   }

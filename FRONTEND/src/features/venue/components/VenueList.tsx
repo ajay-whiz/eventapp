@@ -198,7 +198,7 @@ const VenueList: React.FC = () => {
                   setShowLocationModal(false);
                   setTimeout(() => setShowLocationModal(true), 100);
                 } catch (error: any) {
-                  console.error('Error deleting location:', error);
+
                   toast.error(error.response?.data?.message || 'Failed to delete location');
                 }
               }}

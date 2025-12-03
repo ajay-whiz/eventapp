@@ -13,10 +13,10 @@ const LocationModalExample: React.FC = () => {
     try {
       const response = await api.post('/location', locationData);
       toast.success('Location saved successfully!');
-      console.log('Saved location:', response.data);
+
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to save location');
-      console.error('Error saving location:', error);
+
     } finally {
       setIsLoading(false);
     }

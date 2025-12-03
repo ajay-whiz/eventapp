@@ -81,7 +81,7 @@ const LocationModalWithAutocomplete: React.FC<LocationModalProps> = ({
       setGeocodingStatus('idle');
       onClose();
     } catch (error) {
-      console.error('Error saving location:', error);
+
     } finally {
       setIsLoading(false);
     }

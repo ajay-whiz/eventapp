@@ -134,7 +134,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
     const result = await geocodeAddress(addressData);
     
     if (result) {
-      console.log('Geocoding result:', result);
+
       setValue('latitude', result.latitude);
       setValue('longitude', result.longitude);
       setCoordinates({ lat: result.latitude, lng: result.longitude });
@@ -160,7 +160,7 @@ const LocationModal: React.FC<LocationModalProps> = ({
       reset();
       onClose();
     } catch (error) {
-      console.error('Error saving location:', error);
+
     } finally {
       setIsLoading(false);
     }

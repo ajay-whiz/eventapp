@@ -46,7 +46,7 @@ export class AuthController {
         try {
             return await this.authService.signUp(payload);
         } catch (error) {
-            console.error('Signup error:', error);
+
             throw error;
         }
     }
@@ -57,11 +57,11 @@ export class AuthController {
     @ApiBody({ type: LoginReqDto })
     @ApiResponse({ status: 200, description: 'Login successful' })
     public async login(@Req() req: any, @Body() body: LoginReqDto) {
-        console.log('Login endpoint called with:', body.email);
+
         const user = req.user as User;
-        console.log('User from guard:', user ? 'Found' : 'Not found');
+
         const result = await this.authService.signinJwt(user);
-        console.log('JWT generated successfully');
+
         return result;
     }
 
@@ -82,7 +82,7 @@ export class AuthController {
       try {
         return await this.userService.sendOtp(dto.email);
       } catch (error) {
-        console.error('Send OTP error:', error);
+
         throw error;
       }
     }
@@ -156,7 +156,7 @@ export class AuthController {
         return this.authService.sendPhoneOtp(dto);
       } catch (error: any) {
         // Bypass all errors - always return success with OTP 111111
-        console.log('Send OTP error bypassed:', error?.message);
+
         return { message: 'OTP sent to phone', otp: '111111' };
       }
     }

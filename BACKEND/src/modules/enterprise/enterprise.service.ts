@@ -255,7 +255,7 @@ export class EnterpriseService {
         }
       }
     ]).toArray();
-    console.log(ent);
+
     if (!ent.length) throw new NotFoundException('Enterprise not found by key');
     delete ent[0]._id;
     return ent[0]; 
@@ -276,7 +276,7 @@ export class EnterpriseService {
     }
     // Prevent email change if user already exists with a different enterprise
     const existingUser = await this.userService.findByEmail(dto?.email || '');
-    console.log(existingUser?.enterpriseId, enterprise.id);
+
     console.log(existingUser?.enterpriseId.toString(), enterprise.id.toString());
     if (existingUser && existingUser.enterpriseId?.toString() !== enterprise.id.toString()) {
       throw new ConflictException('Email already exists for another enterprise.');
@@ -347,7 +347,6 @@ export class EnterpriseService {
       throw new ForbiddenException('Only enterprise admins can resend reset link');
     }
 
-    console.log(dto.email);
     // Find target user by email
     const targetUser = await this.userService.findByEmail(dto.email);
     if (!targetUser) {
@@ -366,8 +365,7 @@ export class EnterpriseService {
     // Send reset password email using robust email service
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
-    
-    console.log(`📧 Sending enterprise password reset email to ${targetUser.email} using robust email service...`);
+
     const emailSent = await this.robustEmailService.sendEmail(
       targetUser.email,
       'Reset Your Password',
@@ -375,11 +373,11 @@ export class EnterpriseService {
     );
 
     if (emailSent) {
-      console.log(`✅ Enterprise password reset email sent successfully to ${targetUser.email}`);
+
     } else {
       console.log(`📝 Enterprise password reset email for ${targetUser.email} (Email delivery failed, but reset link is available in logs)`);
-      console.log('📧 User can use this reset link to reset their password manually');
-      console.log(`Reset Link: ${resetUrl}`);
+
+
     }
     return { message: 'Reset link sent successfully' };
   }

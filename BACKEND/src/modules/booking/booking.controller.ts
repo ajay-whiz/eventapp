@@ -123,10 +123,8 @@ export class BookingController {
         }
       }
     }
-    
-    console.log('Booking Controller - getAllBookings - status parameter:', status);
-    console.log('Booking Controller - getAllBookings - statusFilter:', statusFilter);
-    
+
+
     const data = await this.bookingService.findAllForAdmin(page, limit, search, statusFilter, bookingType, dateFrom, dateTo)
     
     return {
@@ -179,10 +177,8 @@ export class BookingController {
     }
     
     const authenticatedUserId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub);
-    
-    console.log('Booking Controller - findAllForAdmin - status parameter:', status);
-    console.log('Booking Controller - findAllForAdmin - statusFilter:', statusFilter);
-    
+
+
     const data = await this.bookingService.findAllForAdmin(page, limit, search, statusFilter, bookingType, dateFrom, dateTo, authenticatedUserId)
     
     return {
@@ -351,8 +347,8 @@ export class BookingController {
     @Req() req: any,
   ): Promise<BookingDetailResponseDto> {
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub)
-    console.log('findByBookingId Controller - User from JWT:', req?.user);
-    console.log('findByBookingId Controller - Extracted userId:', userId, 'Type:', typeof userId);
+
+
     const data = await this.bookingService.findByBookingId(bookingId, userId)
     
     return plainToInstance(BookingDetailResponseDto, data, { excludeExtraneousValues: true })
@@ -383,9 +379,8 @@ export class BookingController {
     @Req() req: any,
   ): Promise<AcceptBookingResponseDto> {
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub)
-    console.log('Accept Booking Controller - User from JWT:', req?.user);
-    console.log('Accept Booking Controller - Extracted userId:', userId, 'Type:', typeof userId);
-    
+
+
     // Check if booking is a vendor booking - vendors cannot accept bookings directly
     const booking = await this.bookingService.findByBookingId(dto.bookingId, userId);
     if (booking && (booking as any).bookingType === 'vendor') {
@@ -428,9 +423,8 @@ export class BookingController {
     @Req() req: any,
   ): Promise<RejectBookingResponseDto> {
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub)
-    console.log('Reject Booking Controller - User from JWT:', req?.user);
-    console.log('Reject Booking Controller - Extracted userId:', userId, 'Type:', typeof userId);
-    
+
+
     // Check if booking is a vendor booking - vendors cannot reject bookings directly
     const booking = await this.bookingService.findByBookingId(dto.bookingId, userId);
     if (booking && (booking as any).bookingType === 'vendor') {
@@ -477,8 +471,8 @@ export class BookingController {
     @Req() req: any,
   ): Promise<CancelBookingResponseDto> {
     const userId: string = String(req?.user?.id || req?.user?._id || req?.user?.sub)
-    console.log('Cancel Booking Controller - User from JWT:', req?.user);
-    console.log('Cancel Booking Controller - Extracted userId:', userId, 'Type:', typeof userId);
+
+
     const data = await this.bookingService.cancelBooking(bookingId, dto, userId)
     
     return plainToInstance(CancelBookingResponseDto, {
@@ -579,7 +573,7 @@ export class BookingController {
         }
       }
     } catch (error) {
-      console.error('Error fetching vendor name:', error);
+
       // If ObjectId conversion fails, try to get user name
       try {
         const user = await this.bookingService['userService'].findById(data.vendorId);
@@ -587,7 +581,7 @@ export class BookingController {
           vendorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.organizationName || 'Unknown Vendor';
         }
       } catch (userError) {
-        console.error('Error fetching user name:', userError);
+
       }
     }
 

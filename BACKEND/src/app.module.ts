@@ -71,7 +71,7 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
           const sendGridApiKey = configService.get<string>('sendGrid.apiKey');
           
           if (sendGridApiKey && sendGridApiKey.length > 10) {
-            console.log('Using SendGrid for email service');
+
             return {
               transport: {
                 host: 'smtp.sendgrid.net',
@@ -93,7 +93,7 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
               },
             };
           } else {
-            console.log('SendGrid API key not found, using Gmail SMTP fallback');
+
             // Fallback to Gmail SMTP
             return {
               transport: {
@@ -154,33 +154,31 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
           // For Railway production environment
           if (process.env.NODE_ENV === 'production') {
             // Debug config loading
-            console.log('Debugging config service...');
+
             try {
               const mongoConfig = config.get('mongodb');
-              console.log('MongoDB config:', mongoConfig);
+
             } catch (error) {
-              console.log('Error getting MongoDB config:', error.message);
+
             }
             
             // Force use the correct database URL - ignore environment variables for now
             const finalDatabaseUrl = 'mongodb+srv://shiv:Admin@123@eventbooking.4hxsvht.mongodb.net/event_booking?retryWrites=true&w=majority&appName=EventBooking';
-            
-            console.log('Production mode - Database URL configured');
-            console.log('NODE_ENV:', process.env.NODE_ENV);
-            console.log('Using hardcoded database URL for event_booking database');
+
+
+
             console.log('Database URL preview:', finalDatabaseUrl.substring(0, 50) + '...');
             
             // Log the actual database URL being used (masked)
             if (finalDatabaseUrl) {
               const maskedUrl = finalDatabaseUrl.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
-              console.log('Actual database URL being used:', maskedUrl);
+
             }
             
             // Log other important environment variables
-            console.log('PORT:', process.env.PORT || 'Not set');
-            console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
-            console.log('CORS_ORIGINS:', process.env.CORS_ORIGINS ? 'Set' : 'Not set');
-            
+
+
+
             if (!finalDatabaseUrl) {
               throw new Error('Database URL not found in environment variables or config');
             }

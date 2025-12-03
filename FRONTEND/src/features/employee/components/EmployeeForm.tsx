@@ -85,10 +85,7 @@ const EmployeeForm: React.FC = () => {
       if (matchedEnterprise && !selectedEnterpriseName) {
         setSelectedEnterpriseName(matchedEnterprise.enterpriseName);
         setBasicDetailsCompleted(true);
-        console.log('✅ Enterprise ID set from API response:', {
-          enterpriseId: selectedEmployee.enterpriseId,
-          enterpriseName: matchedEnterprise.enterpriseName
-        });
+
       }
     }
   }, [selectedEmployee, isUserSuperAdmin, enterprises, selectedEnterpriseName]);
@@ -96,13 +93,7 @@ const EmployeeForm: React.FC = () => {
   // Debug: Log when selectedEmployee changes
   useEffect(() => {
     if (selectedEmployee) {
-      console.log('📊 Selected Employee Data:', {
-        id: selectedEmployee.id,
-        enterpriseId: selectedEmployee.enterpriseId,
-        enterpriseName: selectedEmployee.enterpriseName,
-        features: selectedEmployee.features,
-        isUserSuperAdmin
-      });
+
     }
   }, [selectedEmployee, isUserSuperAdmin]);
 
@@ -228,11 +219,7 @@ const EmployeeForm: React.FC = () => {
         if (matchedEnterprise) {
           setSelectedEnterpriseName(matchedEnterprise.enterpriseName);
           setBasicDetailsCompleted(true);
-          console.log('✅ Enterprise set for Super Admin:', {
-            enterpriseId: selectedEmployee.enterpriseId,
-            enterpriseName: selectedEmployee.enterpriseName,
-            matchedEnterprise: matchedEnterprise.enterpriseName
-          });
+
         }
       }
     }
@@ -423,7 +410,7 @@ const EmployeeForm: React.FC = () => {
           try {
             await fetchEnterpriseUserById(id);
           } catch (error) {
-            console.error('Failed to fetch enterprise user data:', error);
+
           }
         }
         

@@ -31,7 +31,7 @@ export class QuotationController {
     @Query('limit') limit: number = 100,
     @Query('search') search?: string,
   ) {
-    console.log('Quotation Controller - getAllQuotations called with page:', page, 'limit:', limit, 'search:', search);
+
     const result = await this.quotationRequestService.findAllForAdmin(page, limit, search);
     
     // Ensure referenceImages are included in each quotation response
@@ -69,7 +69,7 @@ export class QuotationController {
     description: 'Quotation request not found',
   })
   async getQuotationById(@Param('id') id: string) {
-    console.log('Quotation Controller - getQuotationById called with id:', id);
+
     const quotation = await this.quotationRequestService.findOne(id);
     
     // Ensure referenceImages are included
@@ -104,7 +104,7 @@ export class QuotationController {
     @Param('id') id: string,
     @Body() updateDto: Partial<CreateQuotationRequestDto>,
   ) {
-    console.log('Quotation Controller - updateQuotation called with id:', id, 'data:', updateDto);
+
     const quotation = await this.quotationRequestService.update(id, updateDto);
     
     // Ensure referenceImages are included

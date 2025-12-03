@@ -11,7 +11,7 @@ export class FeatureGuard implements CanActivate {
   private readonly FEATURE_KEY = 'features';
   canActivate(context: ExecutionContext): boolean {
     // TEMPORARY: Disable FeatureGuard entirely for testing
-    console.log('FeatureGuard: DISABLED for testing - allowing all requests');
+
     return true;
   }
 }

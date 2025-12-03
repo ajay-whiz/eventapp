@@ -383,7 +383,7 @@ export const BookingList: React.FC = () => {
           break;
       }
     } catch (error) {
-      console.error('Action failed:', error);
+
       toast.error('Failed to perform action. Please try again.');
     }
   };
@@ -401,7 +401,7 @@ export const BookingList: React.FC = () => {
       setSelectedBookings([]);
       loadBookings();
     } catch (error) {
-      console.error('Bulk action failed:', error);
+
     }
   };
 
@@ -412,7 +412,7 @@ export const BookingList: React.FC = () => {
       // Export functionality
       // TODO: Implement export functionality with current bookings
     } catch (error) {
-      console.error('Export failed:', error);
+
     }
   };
 

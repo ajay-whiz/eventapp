@@ -130,7 +130,7 @@ export function useVenueActions() {
       });
       return response?.data?.data?.data || [];
     } catch (error) {
-      console.error('Error fetching venue categories:', error);
+
       return [];
     }
   }, []);
@@ -145,9 +145,7 @@ export function useVenueActions() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
-      console.log('Service category API response:', response.data);
-      
+
       // Handle different response structures: form, formData, or vendorCategory.form
       const form = response?.data?.data?.form || 
                    response?.data?.data?.formData || 
@@ -155,8 +153,7 @@ export function useVenueActions() {
                    response?.data?.data?.form;
       
       if (form && form.fields) {
-        console.log('Form data from API:', form);
-        
+
         // Map the form fields to include label and options properties
         const mappedFields = form.fields?.map((field: any) => ({
           ...field,
@@ -174,14 +171,13 @@ export function useVenueActions() {
           ...form,
           fields: mappedFields
         };
-        
-        console.log('Mapped form data:', mappedForm);
+
         return mappedForm;
       }
       
       return null;
     } catch (error) {
-      console.error('Error fetching dynamic form:', error);
+
       return null;
     }
   }, []);

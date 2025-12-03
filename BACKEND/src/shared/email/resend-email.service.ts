@@ -15,8 +15,7 @@ export class ResendEmailService {
 
   async sendEmail(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Resend Email Service - Sending email...');
-      
+
       // Get Resend API key from environment variables
       const resendApiKey = process.env.RESEND_API_KEY || this.configService.get('resend.apiKey');
       const fromEmail = process.env.RESEND_FROM_EMAIL || this.configService.get('resend.fromEmail') || 'noreply@yourdomain.com';
@@ -28,10 +27,10 @@ export class ResendEmailService {
       });
       
       if (!resendApiKey || !this.resendClient) {
-        console.log('⚠️ Resend API key not configured, using fallback logging');
+
         return await this.logEmailFallback(to, subject, text);
       }
-      console.log('📧 Sending email via Resend SDK...');
+
       const { data, error } = await this.resendClient.emails.send({
         from: fromEmail,
         to: [to],
@@ -45,15 +44,14 @@ export class ResendEmailService {
       });
 
       if (error) {
-        console.log('❌ Resend SDK error:', error);
+
         return await this.logEmailFallback(to, subject, text);
       }
 
-      console.log('✅ Resend email sent successfully:', data?.id || 'no-id');
       return true;
       
     } catch (error) {
-      console.error('❌ Resend Email Service failed:', error.message);
+
       return await this.logEmailFallback(to, subject, text);
     }
   }
@@ -75,25 +73,24 @@ export class ResendEmailService {
       console.log('='.repeat(70));
       console.log('📧 RESEND EMAIL FALLBACK (NO API KEY)');
       console.log('='.repeat(70));
-      console.log(`ID: ${emailData.id}`);
-      console.log(`To: ${emailData.to}`);
-      console.log(`Subject: ${emailData.subject}`);
-      console.log(`Content: ${emailData.text}`);
-      console.log(`Timestamp: ${emailData.timestamp}`);
-      console.log(`Status: ${emailData.status}`);
-      console.log(`Service: ${emailData.service}`);
-      console.log(`Priority: ${emailData.priority}`);
-      console.log(`Source: ${emailData.source}`);
+
+
+
+
+
+
+
+
+
       console.log('='.repeat(70));
 
       console.log('📧 RESEND_FALLBACK_EMAIL_JSON:', JSON.stringify(emailData, null, 2));
-      console.log('🔄 Processing Resend fallback email...');
-      console.log('✅ Email logged via Resend fallback service');
-      console.log('📧 To enable real email delivery, configure RESEND_API_KEY');
-      
+
+
+
       return true;
     } catch (error) {
-      console.error('❌ Resend fallback logging failed:', error);
+
       return false;
     }
   }

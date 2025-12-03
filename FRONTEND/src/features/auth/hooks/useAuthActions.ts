@@ -26,9 +26,8 @@ export function useAuthActions() {
       };
       
       // Debug: Log the full URL being constructed
-      console.log('API base URL:', api.defaults.baseURL);
-      console.log('Full URL will be:', `${api.defaults.baseURL}auth/login`);
-      
+
+
       // Make a POST request to your authentication endpoint using axios
       const response = await api.post('auth/login', requestData, {
         headers: {
@@ -48,7 +47,7 @@ export function useAuthActions() {
     } catch (err: any) {
       // Handle errors (network issues, invalid credentials, etc.)
       // Axios error messages can be in err.response?.data?.message
-      console.error('Login error:', err.response?.data || err.message);
+
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
@@ -236,13 +235,7 @@ export function useAuthActions() {
       if (!allowedTypes.includes(file.type)) {
         throw new Error('Invalid file type. Only JPEG, PNG, and GIF files are allowed.');
       }
-      
-      console.log('Uploading file:', {
-        name: file.name,
-        size: file.size,
-        type: file.type
-      });
-      
+
       const formData = new FormData();
       formData.append('file', file);
   
@@ -274,8 +267,7 @@ export function useAuthActions() {
       return imageUrlString;
   
     } catch (err: any) {
-      console.error('Profile image upload error:', err);
-      
+
       let errorMessage = 'Image upload failed';
       
       if (err.response?.status === 500) {

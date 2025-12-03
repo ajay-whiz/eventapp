@@ -3,10 +3,6 @@ import axios from 'axios';
 // --- Enterprise Axios Instance Setup ---
 import { API_BASE_URL } from '../config/api';
 
-// Debug: Log the API base URL
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('VITE_API_BASE_URL env var:', import.meta.env.VITE_API_BASE_URL);
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -28,8 +24,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
-    } else {
-      console.warn('No token found in localStorage');
     }
     return config;
   },
@@ -45,7 +39,7 @@ api.interceptors.response.use(
   (error) => {
     // Handle global errors, e.g., token expiration
     if (error.response && error.response.status === 401) {
-     // console.error('401 Unauthorized - Token may be expired or invalid');
+     // 
       // Clear invalid token
       localStorage.removeItem('token');
       localStorage.removeItem('user');

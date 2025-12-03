@@ -41,14 +41,13 @@ export class VenueService {
   async create(createDto: CreateVenueDto, user?: any): Promise<VenueResponseDto> {
     try {
       // Log received data for debugging
-      console.log('=== CREATE VENUE DEBUG ===');
+
       console.log('Received DTO:', JSON.stringify(createDto, null, 2));
-      console.log('name:', createDto.name);
-      console.log('serviceCategoryId:', createDto.serviceCategoryId);
-      console.log('description:', createDto.description);
-      console.log('formData:', createDto.formData);
-      console.log('========================');
-      
+
+
+
+
+
       // Use actual values from DTO
       // If values are provided (even if empty string), use them
       // Only default if truly undefined
@@ -57,8 +56,7 @@ export class VenueService {
       const title = createDto.title !== undefined && createDto.title !== null ? createDto.title : (name || '');
       const description = createDto.description !== undefined && createDto.description !== null ? createDto.description : null;
       const formData = createDto.formData ?? {};
-      
-      console.log('Processed values:');
+
       console.log('  name:', name, '(from DTO:', createDto.name, ')');
       console.log('  serviceCategoryId:', serviceCategoryId, '(from DTO:', createDto.serviceCategoryId, ')');
       console.log('  title:', title, '(from DTO:', createDto.title, ')');
@@ -117,7 +115,7 @@ export class VenueService {
             categoryName = category.name;
           }
         } catch (error) {
-          console.log('Category lookup failed, using default category name');
+
         }
       }
 
@@ -168,30 +166,26 @@ export class VenueService {
         enterpriseName: enterpriseName,
         ...(createDto.createdBy && { createdBy: createDto.createdBy })
       };
-      
-      console.log('=== SAVING VENUE TO DATABASE ===');
+
       console.log('Venue data to save:', JSON.stringify(venueData, null, 2));
-      console.log('categoryId:', venueData.categoryId);
-      console.log('name:', venueData.name);
-      console.log('title:', venueData.title);
-      console.log('description:', venueData.description);
-      console.log('enterpriseId:', venueData.enterpriseId);
-      console.log('enterpriseName:', venueData.enterpriseName);
-      console.log('================================');
-      
+
+
+
+
+
+
+
       const venue = this.venueRepo.create(venueData);
       const savedVenueResult = await this.venueRepo.save(venue);
       // Handle both single entity and array return types
       const savedVenue = Array.isArray(savedVenueResult) ? savedVenueResult[0] : savedVenueResult;
-      
-      console.log('=== SAVED VENUE ===');
-      console.log('Saved venue ID:', savedVenue.id);
-      console.log('Saved categoryId:', savedVenue.categoryId);
-      console.log('Saved name:', savedVenue.name);
-      console.log('Saved title:', savedVenue.title);
-      console.log('Saved description:', savedVenue.description);
-      console.log('===================');
-      
+
+
+
+
+
+
+
       // Transform the response to map categoryId to serviceCategoryId
       const transformedVenue = {
         ...savedVenue,
@@ -264,7 +258,7 @@ export class VenueService {
               categoryName = category.name;
             }
           } catch (error) {
-            console.log('Category lookup failed, using default category name');
+
           }
         }
 
@@ -354,9 +348,7 @@ export class VenueService {
         // Get category name from category table based on categoryId
         let categoryName = 'General Venue';
         const venueCategoryId = venue.categoryId;
-        
-        console.log('Looking up category for venue:', venue.id, 'categoryId:', venueCategoryId);
-        
+
         if (venueCategoryId && ObjectId.isValid(venueCategoryId)) {
           try {
             // Try multiple query methods to find the category
@@ -378,15 +370,15 @@ export class VenueService {
             
             if (category && !category.isDeleted) {
               categoryName = category.name;
-              console.log('✓ Found category:', categoryName, 'for venue:', venue.id, 'categoryId:', venueCategoryId);
+
             } else {
-              console.log('⚠ Category not found or deleted for venue:', venue.id, 'categoryId:', venueCategoryId);
+
             }
           } catch (error) {
-            console.error('❌ Category lookup failed for venue:', venue.id, 'categoryId:', venueCategoryId, 'error:', error);
+
           }
         } else {
-          console.log('⚠ Invalid categoryId for venue:', venue.id, 'categoryId:', venueCategoryId);
+
         }
         
         // Extract price and imageUrl from formData fields
@@ -540,7 +532,7 @@ export class VenueService {
           categoryName = category.name;
         }
       } catch (error) {
-        console.log('Category lookup failed, using default category name');
+
       }
     }
 
@@ -555,9 +547,7 @@ export class VenueService {
       enterpriseId: venue.enterpriseId,
       enterpriseName: venue.enterpriseName
     };
-    
-    console.log('Venue findOne - enterpriseId:', venue.enterpriseId, 'enterpriseName:', venue.enterpriseName);
-    
+
     return plainToInstance(VenueResponseDto, transformedVenue, { 
       excludeExtraneousValues: true 
     });
@@ -643,7 +633,7 @@ export class VenueService {
           }
         }
       } catch (error) {
-        console.log('Category lookup error:', error);
+
         categoryName = 'Category Lookup Error';
       }
     } else {
@@ -763,8 +753,7 @@ export class VenueService {
       throw new BadRequestException('Invalid venue ID format');
     }
 
-    console.log('=== UPDATE VENUE DEBUG ===');
-    console.log('Venue ID:', id);
+
     console.log('Update DTO:', JSON.stringify(updateDto, null, 2));
     
     // Try multiple query methods to find the venue
@@ -784,10 +773,9 @@ export class VenueService {
       });
     }
 
-    console.log('Existing venue found:', !!existingVenue);
     if (existingVenue) {
-      console.log('Venue isDeleted:', existingVenue.isDeleted);
-      console.log('Venue name:', existingVenue.name);
+
+
     }
 
     if (!existingVenue || existingVenue.isDeleted) {
@@ -820,7 +808,7 @@ export class VenueService {
         try {
           formDataObj = JSON.parse(formDataObj);
         } catch (e) {
-          console.log('Failed to parse formData as JSON:', e);
+
         }
       }
       
@@ -860,9 +848,7 @@ export class VenueService {
           enterpriseName = undefined;
         }
       }
-      
-      console.log('Enterprise logic - DTO enterpriseId:', updateDto.enterpriseId, 'DTO enterpriseName:', updateDto.enterpriseName);
-      console.log('Enterprise logic - Final enterpriseId:', enterpriseId, 'Final enterpriseName:', enterpriseName);
+
 
       // Prepare update data, excluding undefined values
       const updateData: any = {
@@ -889,46 +875,43 @@ export class VenueService {
       if (enterpriseId !== undefined || updateDto.enterpriseId !== undefined) {
         const finalEnterpriseId = enterpriseId !== undefined ? enterpriseId : updateDto.enterpriseId;
         updateData.enterpriseId = finalEnterpriseId === '' ? null : finalEnterpriseId;
-        console.log('Setting enterpriseId in updateData:', updateData.enterpriseId);
+
       }
       if (enterpriseName !== undefined || updateDto.enterpriseName !== undefined) {
         const finalEnterpriseName = enterpriseName !== undefined ? enterpriseName : updateDto.enterpriseName;
         updateData.enterpriseName = finalEnterpriseName === '' ? null : finalEnterpriseName;
-        console.log('Setting enterpriseName in updateData:', updateData.enterpriseName);
+
       }
       
       // Set updatedBy from DTO if provided
       if (updateDto.updatedBy) {
         updateData.updatedBy = updateDto.updatedBy;
       }
-      
-      console.log('=== UPDATE DATA PREPARATION ===');
-      console.log('DTO enterpriseId:', updateDto.enterpriseId, 'type:', typeof updateDto.enterpriseId);
-      console.log('DTO enterpriseName:', updateDto.enterpriseName, 'type:', typeof updateDto.enterpriseName);
-      console.log('Final enterpriseId:', enterpriseId, 'type:', typeof enterpriseId);
-      console.log('Final enterpriseName:', enterpriseName, 'type:', typeof enterpriseName);
-      console.log('UpdateData enterpriseId:', updateData.enterpriseId);
-      console.log('UpdateData enterpriseName:', updateData.enterpriseName);
+
+
+
+
+
+
+
       console.log('Update data to save:', JSON.stringify(updateData, null, 2));
       console.log('Update data keys:', Object.keys(updateData));
-      console.log('Updating venue with ID:', id);
+
       console.log('Update filter:', { _id: new ObjectId(id) });
-      console.log('================================');
 
       // Ensure we're only updating the specific record by ID
       const updateResult = await this.venueRepo.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
-      console.log('Update result - matchedCount:', updateResult.matchedCount, 'modifiedCount:', updateResult.modifiedCount);
-      
+
       if (updateResult.matchedCount === 0) {
         throw new NotFoundException('Venue not found for update');
       }
       
       if (updateResult.matchedCount > 1) {
-        console.error('WARNING: Multiple venues matched the update filter! This should not happen.');
+
       }
       return this.findOne(id);
     } catch (error) {
-      console.error('Error updating venue:', error);
+
       throw new BadRequestException(`Failed to update venue: ${error.message}`);
     }
   }
@@ -1042,7 +1025,7 @@ export class VenueService {
         }
       );
     } catch (error) {
-      console.error('Failed to update venue rating:', error);
+
     }
   }
 
@@ -1053,8 +1036,7 @@ export class VenueService {
    */
   async uploadImageToSupabase(file: Express.Multer.File): Promise<string> {
     try {
-      console.log('Venue image upload method called, NODE_ENV:', process.env.NODE_ENV);
-      
+
       // Validate file object
       if (!file) {
         throw new BadRequestException('File is required');
@@ -1081,23 +1063,16 @@ export class VenueService {
       
       // Check if Supabase is available
       const isSupabaseAvailable = this.supabaseService?.isAvailable?.() || false;
-      
-      console.log('Upload configuration:', {
-        isSupabaseAvailable,
-        fileName,
-        fileSize: file.buffer.length,
-        mimetype: file.mimetype
-      });
-      
+
       // Try Supabase first (if available)
       if (isSupabaseAvailable) {
         try {
-          console.log('☁️ Trying Supabase upload for venue image');
+
           const supabaseBuckets = ['profiles', 'uploads', 'venues'];
           
           for (const bucket of supabaseBuckets) {
             try {
-              console.log(`☁️ Trying Supabase bucket: ${bucket}`);
+
               const uploadResult = await this.supabaseService.upload({
                 filePath: `venue/${fileName}`,
                 file: file.buffer,
@@ -1111,12 +1086,12 @@ export class VenueService {
                 return uploadResult.publicUrl;
               }
             } catch (supabaseError: any) {
-              console.error(`⚠️ Supabase bucket ${bucket} failed:`, supabaseError?.message);
+
               continue;
             }
           }
         } catch (supabaseError: any) {
-          console.error('⚠️ Supabase upload failed:', supabaseError?.message);
+
         }
       }
       
@@ -1126,12 +1101,7 @@ export class VenueService {
       );
       
     } catch (error: any) {
-      console.error('Venue image upload error:', {
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name
-      });
-      
+
       // If it's already a BadRequestException, re-throw it
       if (error instanceof BadRequestException) {
         throw error;

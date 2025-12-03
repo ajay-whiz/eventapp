@@ -16,20 +16,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Backend API configuration - base URL without /api/v1 (we'll add it in the proxy)
 const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://apimarketplace.whiz-cloud.com';
-console.log(`Backend API Base URL: ${API_BASE_URL}`);
 
 // Check if dist directory exists
 const distExists = existsSync(distDir);
 if (!distExists) {
   if (isProduction) {
-    console.error(`Error: dist directory not found at ${distDir}`);
-    console.error('Please run "npm run build" first');
     process.exit(1);
-  } else {
-    console.warn(`⚠️  Warning: dist directory not found at ${distDir}`);
-    console.warn('📝 For local development with live reload, use: npm run dev');
-    console.warn('📦 To build for production, use: npm run build');
-    console.warn('🔧 This server will only proxy API requests. Frontend files will not be served.\n');
   }
 }
 
@@ -59,7 +51,7 @@ function getMimeType(filePath) {
 function proxyRequest(req, res, requestId) {
   try {
     // Ensure API_BASE_URL is defined
-    const backendApiUrl = API_BASE_URL || process.env.VITE_API_BASE_URL || 'https://evenpappbackend-production.up.railway.app';
+    const backendApiUrl = API_BASE_URL || process.env.VITE_API_BASE_URL || 'https://apimarketplace.whiz-cloud.com';
     const backendUrl = new URL(backendApiUrl);
     const isHttps = backendUrl.protocol === 'https:';
     const requestModule = isHttps ? httpsRequest : httpRequest;
@@ -70,8 +62,6 @@ function proxyRequest(req, res, requestId) {
     // So we use the request path as-is since it already includes /api/v1
     const targetPath = req.url; // e.g., /api/v1/auth/login
     const targetUrl = `${backendUrl.origin}${targetPath}`;
-    
-    console.log(`[${requestId}] Proxying ${req.method} ${req.url} to: ${targetUrl}`);
     
     // Copy headers but update host
     const headers = { ...req.headers };
@@ -88,21 +78,14 @@ function proxyRequest(req, res, requestId) {
     };
 
     const proxyReq = requestModule(options, (proxyRes) => {
-      console.log(`[${requestId}] Backend responded with status: ${proxyRes.statusCode}`);
-      
       // Copy response headers
       res.writeHead(proxyRes.statusCode, proxyRes.headers);
       
       // Pipe the response
       proxyRes.pipe(res);
-      
-      proxyRes.on('end', () => {
-        console.log(`[${requestId}] ✓ API request completed`);
-      });
     });
 
     proxyReq.on('error', (error) => {
-      console.error(`[${requestId}] Proxy error:`, error.message);
       if (!res.headersSent) {
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
@@ -117,7 +100,6 @@ function proxyRequest(req, res, requestId) {
     req.pipe(proxyReq);
     
   } catch (error) {
-    console.error(`[${requestId}] Proxy setup error:`, error);
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ 
@@ -132,7 +114,6 @@ function proxyRequest(req, res, requestId) {
 function serveFile(filePath, res, requestId = '') {
   try {
     if (!existsSync(filePath)) {
-      console.error(`[${requestId}] File not found: ${filePath}`);
       if (!res.headersSent) {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('File not found');
@@ -142,7 +123,6 @@ function serveFile(filePath, res, requestId = '') {
 
     const stats = statSync(filePath);
     if (!stats.isFile()) {
-      console.error(`[${requestId}] Path is not a file: ${filePath}`);
       if (!res.headersSent) {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not a file');
@@ -160,12 +140,8 @@ function serveFile(filePath, res, requestId = '') {
         'Connection': 'keep-alive'
       });
       res.end(content);
-      console.log(`[${requestId}] ✓ Served ${filePath} (${content.length} bytes, ${mimeType})`);
-    } else {
-      console.error(`[${requestId}] Headers already sent, cannot serve file`);
     }
   } catch (error) {
-    console.error(`[${requestId}] Error serving file:`, error);
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Internal server error');
@@ -174,13 +150,10 @@ function serveFile(filePath, res, requestId = '') {
 }
 
 const server = createServer((req, res) => {
-  // Log incoming requests immediately - this should always fire if requests reach the server
   const requestId = Date.now();
-  console.log(`[${requestId}] [${new Date().toISOString()}] ${req.method} ${req.url}`);
   
   // Set timeout to prevent hanging connections
   req.setTimeout(30000, () => {
-    console.log(`[${requestId}] Request timeout`);
     if (!res.headersSent) {
       res.writeHead(408, { 'Content-Type': 'text/plain' });
       res.end('Request timeout');
@@ -190,7 +163,6 @@ const server = createServer((req, res) => {
   try {
     // Health check endpoint - Railway might be checking this
     if (req.url === '/health' || req.url === '/healthz') {
-      console.log(`[${requestId}] Serving health check`);
       res.writeHead(200, { 
         'Content-Type': 'application/json',
         'Connection': 'keep-alive'
@@ -200,13 +172,11 @@ const server = createServer((req, res) => {
         timestamp: new Date().toISOString(),
         port: PORT
       }));
-      console.log(`[${requestId}] ✓ Health check responded`);
       return;
     }
 
     // Proxy API requests to backend (any path starting with /api)
     if (req.url.startsWith('/api')) {
-      console.log(`[${requestId}] Proxying API request: ${req.url}`);
       proxyRequest(req, res, requestId);
       return;
     }
@@ -224,7 +194,6 @@ const server = createServer((req, res) => {
     }
 
     let filePath = req.url === '/' ? '/index.html' : req.url;
-    console.log(`[${requestId}] Resolved file path: ${filePath}`);
     
     // Remove query string
     filePath = filePath.split('?')[0];
@@ -237,18 +206,14 @@ const server = createServer((req, res) => {
     }
 
     const fullPath = join(distDir, filePath);
-    console.log(`[${requestId}] Full path: ${fullPath}`);
-    console.log(`[${requestId}] File exists: ${existsSync(fullPath)}`);
 
     // If file doesn't exist and it's not an API route, serve index.html (for SPA routing)
     if (!existsSync(fullPath) && !filePath.startsWith('/api')) {
-      console.log(`[${requestId}] File not found, serving index.html for SPA routing`);
       const indexPath = join(distDir, 'index.html');
       if (existsSync(indexPath)) {
         serveFile(indexPath, res, requestId);
         return;
       } else {
-        console.error(`[${requestId}] index.html not found!`);
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('index.html not found');
         return;
@@ -257,7 +222,6 @@ const server = createServer((req, res) => {
 
     serveFile(fullPath, res, requestId);
   } catch (error) {
-    console.error('Unhandled error in request handler:', error);
     if (!res.headersSent) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Internal server error');
@@ -266,60 +230,20 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  console.log(`PORT environment variable: ${process.env.PORT || 'default (5173)'}`);
-  
-  // Verify server is actually listening
-  const address = server.address();
-  console.log(`Server listening on:`, address);
-  
-  if (distExists) {
-    console.log(`Serving files from: ${distDir}`);
-    // Verify index.html exists
-    const indexPath = join(distDir, 'index.html');
-    if (existsSync(indexPath)) {
-      console.log('✓ index.html found');
-      const stats = statSync(indexPath);
-      console.log(`  File size: ${stats.size} bytes`);
-      
-      // Test that we can actually read the file
-      try {
-        const testContent = readFileSync(indexPath, 'utf8');
-        console.log(`✓ Successfully read index.html (${testContent.length} chars)`);
-      } catch (error) {
-        console.error('✗ Error reading index.html:', error);
-      }
-    } else {
-      console.error('✗ index.html NOT found in dist directory!');
-    }
-    console.log(`Main site available at: http://0.0.0.0:${PORT}/`);
-  } else {
-    console.log('⚠️  Running in API proxy mode only (dist directory not found)');
-    console.log('📝 Use "npm run dev" for full development server');
-  }
-  
-  // Log that server is ready to accept connections
-  console.log('✓ Server is ready to accept connections');
-  console.log('Waiting for incoming requests...');
-  console.log(`Health check available at: http://0.0.0.0:${PORT}/health`);
-  console.log(`API proxy available at: http://0.0.0.0:${PORT}/api`);
+  // Server is ready
 });
 
 server.on('error', (error) => {
-  console.error('Server error:', error);
-  console.error('Error details:', error.message, error.code);
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
   // Don't exit, let the server continue running
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit, let the server continue running
 });
 

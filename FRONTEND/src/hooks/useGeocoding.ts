@@ -103,7 +103,7 @@ export const useGeocoding = (): UseGeocodingReturn => {
     } catch (err: any) {
       const errorMessage = err.message || 'Geocoding failed';
       setError(errorMessage);
-      console.error('Geocoding error:', err);
+
       return null;
     } finally {
       setIsLoading(false);

@@ -95,14 +95,13 @@ export function useServiceCategoryActions() {
   ) => {
     dispatch(addCategoryStart());
     const requestData = { name, description, formId };
-    console.log('=== ADD CATEGORY DEBUG ===');
-    console.log('Request data:', requestData);
-    console.log('formId value:', formId);
-    console.log('formId type:', typeof formId);
-    console.log('formId in requestData:', requestData.formId);
+
+
+
+
+
     console.log('JSON.stringify(requestData):', JSON.stringify(requestData));
-    console.log('================================');
-    
+
     try {
       const response = await api.post(
         API_ROUTES.GET_ALL_CATEGORIES,
@@ -114,7 +113,7 @@ export function useServiceCategoryActions() {
           },
         }
       );
-      console.log('Add category response:', response.data);
+
       dispatch(addCategorySuccess(response.data.data || response.data));
     } catch (err: any) {
       const errorMessage =
@@ -135,7 +134,7 @@ export function useServiceCategoryActions() {
   ) => {
     dispatch(updateCategoryStart());
     const requestData = { name, description, formId };
-    console.log('Updating category with data:', requestData); // Debug log
+     // Debug log
     try {
       const response = await api.put(
         `${API_ROUTES.GET_ALL_CATEGORIES}/${id}`,
@@ -147,7 +146,7 @@ export function useServiceCategoryActions() {
         },
         }
       );
-      console.log('Update category response:', response.data); // Debug log
+       // Debug log
       dispatch(updateCategorySuccess(response.data.data || response.data));
     } catch (err: any) {
       const errorMessage =
@@ -212,10 +211,10 @@ export function useServiceCategoryActions() {
         },
       });
       
-      console.log('Forms API response:', response.data); // Debug log
+       // Debug log
       return response.data?.data?.data || [];
     } catch (err: any) {
-      console.error('Failed to fetch forms:', err);
+
       return [];
     }
   }, []);

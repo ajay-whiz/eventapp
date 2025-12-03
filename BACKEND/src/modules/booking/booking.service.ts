@@ -75,7 +75,7 @@ export class BookingService {
       }
       return '';
     } catch (error) {
-      console.error('Error fetching user name for userId:', userId, error);
+
       return '';
     }
   }
@@ -110,8 +110,7 @@ export class BookingService {
         if (statusArray.length > 0) {
           // Normalize all statuses to lowercase and map to enum values
           const normalizedStatuses = statusArray.map(s => s.toLowerCase().trim());
-          console.log(`Booking findAllForAdmin - Normalized statuses:`, normalizedStatuses);
-          
+
           // Build status filter - support multiple statuses
           const statusConditions: any[] = [];
           
@@ -175,7 +174,7 @@ export class BookingService {
       }
 
       console.log('Booking findAllForAdmin - Initial where clause:', JSON.stringify(where, null, 2));
-      console.log('Booking findAllForAdmin - Number of andConditions:', andConditions.length);
+
       console.log('Booking findAllForAdmin - andConditions:', JSON.stringify(andConditions, null, 2));
 
       let filteredVenueIds: string[] | undefined;
@@ -255,7 +254,7 @@ export class BookingService {
           });
           
           const uniqueStatuses = [...new Set(allBookings.map((b: any) => b.bookingStatus))];
-          console.log('Booking findAllForAdmin - All unique statuses found in DB:', uniqueStatuses);
+
           console.log('Booking findAllForAdmin - Sample booking statuses from DB:', 
             allBookings.slice(0, 10).map((b: any) => ({ 
               bookingId: b.bookingId, 
@@ -271,8 +270,7 @@ export class BookingService {
             const stat = b.bookingStatus || 'null/undefined';
             statusCounts[stat] = (statusCounts[stat] || 0) + 1;
           });
-          console.log('Booking findAllForAdmin - Status counts:', statusCounts);
-          
+
           // Test query with COMPLETED status directly
           const completedTest = await this.bookingRepo.find({
             where: { 
@@ -281,8 +279,7 @@ export class BookingService {
             } as any,
             take: 5
           });
-          console.log(`Booking findAllForAdmin - Direct COMPLETED query found ${completedTest.length} bookings`);
-          
+
           // Test query with case-insensitive
           const completedTestLower = await this.bookingRepo.find({
             where: { 
@@ -293,7 +290,7 @@ export class BookingService {
           });
           console.log(`Booking findAllForAdmin - Direct 'completed' (lowercase) query found ${completedTestLower.length} bookings`);
         } catch (debugError) {
-          console.error('Booking findAllForAdmin - Error checking sample bookings:', debugError);
+
         }
       }
 
@@ -301,8 +298,7 @@ export class BookingService {
       try {
         // First, let's test the count separately to debug
         const testCount = await this.bookingRepo.count({ where } as any);
-        console.log(`Booking findAllForAdmin - Test count query result: ${testCount}`);
-        
+
         bookings = await this.bookingRepo.findAndCount({
           where,
           skip: (page - 1) * limit,
@@ -312,14 +308,14 @@ export class BookingService {
         console.log(`Booking findAllForAdmin - Query executed successfully. Found ${bookings[1]} bookings (findAndCount)`);
         console.log(`Booking findAllForAdmin - Counts match: ${testCount === bookings[1] ? 'YES' : 'NO'} (test: ${testCount}, findAndCount: ${bookings[1]})`);
       } catch (error) {
-        console.error('Booking findAllForAdmin - Query error:', error);
+
         console.error('Booking findAllForAdmin - Error details:', JSON.stringify(error, null, 2));
         throw error;
       }
 
       // Debug: Log booking statuses to see what's in the database
       if (status) {
-        console.log(`Booking findAllForAdmin - Found ${bookings[1]} bookings with status filter: ${status}`);
+
         if (bookings[0]?.length > 0) {
           console.log('Booking findAllForAdmin - Sample booking status:', (bookings[0][0] as any)?.bookingStatus);
           console.log('Booking findAllForAdmin - Sample booking data:', JSON.stringify((bookings[0][0] as any), null, 2));
@@ -334,7 +330,7 @@ export class BookingService {
             console.log('Booking findAllForAdmin - Sample booking statuses in DB:', allBookings.map((b: any) => b.bookingStatus));
             console.log('Booking findAllForAdmin - Total bookings in DB:', await this.bookingRepo.count({ where: { isDeleted: false } }));
           } catch (countError) {
-            console.error('Booking findAllForAdmin - Error checking DB statuses:', countError);
+
           }
         }
       }
@@ -352,7 +348,7 @@ export class BookingService {
                 : (booking as any).userId;
               user = await this.userService.findById((booking as any).userId);
             } catch (userError) {
-              console.error('Error fetching user details:', userError);
+
             }
           }
           
@@ -380,7 +376,7 @@ export class BookingService {
                       (venueOrVendor as any).categoryName = category.name;
                     }
                   } catch (error) {
-                    console.log('Error fetching vendor category:', error);
+
                   }
                 }
                 
@@ -412,7 +408,7 @@ export class BookingService {
                   (await this.vendorRepo.findOne({ where: { _id: venueId, isDeleted: false } as any } as any));
               }
             } catch (venueError) {
-              console.error('Error fetching venue or vendor details:', venueError);
+
             }
           }
 
@@ -465,7 +461,7 @@ export class BookingService {
                 userOfferStatus = (userOffer as any).status || 'pending';
               }
             } catch (error) {
-              console.error('Error checking if user has submitted offer:', error);
+
             }
           }
 
@@ -496,20 +492,20 @@ export class BookingService {
             
             // Log for debugging
             if (actualBookingId === 'BK-3B13AEE7') {
-              console.log(`[DEBUG] Booking ${actualBookingId} - Unified: ${unifiedOfferCount}, Vendor: ${vendorOfferCount}, Admin: ${adminOfferCount}, hasOffers: ${hasOffers}`);
+
             }
             
             // Update the stored flag if it's different (async, don't wait)
             const storedHasOffers = (booking as any).hasOffers ?? false;
             if (storedHasOffers !== hasOffers) {
-              console.log(`Updating hasOffers flag for booking ${actualBookingId}: ${storedHasOffers} -> ${hasOffers}`);
+
               // Update asynchronously without blocking the response
               this.updateBookingHasOffersFlag(actualBookingId).catch(err => {
-                console.error('Error updating hasOffers flag:', err);
+
               });
             }
           } catch (error) {
-            console.error(`Error checking offers count for booking ${actualBookingId}:`, error);
+
             // Fallback to stored value if query fails
             hasOffers = (booking as any).hasOffers ?? false;
           }
@@ -563,8 +559,7 @@ export class BookingService {
       );
       
       const finalTotal = bookings[1] || 0;
-      console.log(`Booking findAllForAdmin - Final return: total=${finalTotal}, bookings.length=${bookingsWithVenues.length}, page=${page}, limit=${limit}`);
-      
+
       return {
         bookings: bookingsWithVenues,
         total: finalTotal,
@@ -572,7 +567,7 @@ export class BookingService {
         limit,
       };
     } catch (error) {
-      console.error('Error in findAllForAdmin:', error);
+
       throw new BadRequestException('Failed to fetch bookings');
     }
   }
@@ -585,8 +580,7 @@ export class BookingService {
     bookingType?: 'venue' | 'vendor',
   ): Promise<{ bookings: any[]; total: number; page: number; limit: number }> {
     try {
-      console.log('findAllForUser - Filtering bookings for userId:', userId, 'Type:', typeof userId);
-      
+
       // Filter bookings by userId - users should only see their own bookings
       const where: any = { 
         isDeleted: false,
@@ -640,13 +634,11 @@ export class BookingService {
         order: { createdAt: 'DESC' },
       });
 
-      console.log('findAllForUser - Total bookings found:', allBookings.length);
-
       // Helper function to extract price from formData (for vendors, matches vendor service logic)
       // Priority: formData.fields (field name is "price") > vendor.price > formData.price > other formData locations
       const extractPriceFromFormData = (venueOrVendor: any): number => {
         if (!venueOrVendor) {
-          console.log('extractPriceFromFormData: venueOrVendor is null/undefined');
+
           return 0;
         }
         
@@ -707,7 +699,7 @@ export class BookingService {
           if (venueOrVendor.formData.fields.Price) {
             const fieldsPrice = parseFloat(venueOrVendor.formData.fields.Price);
             if (!isNaN(fieldsPrice) && fieldsPrice >= 0) {
-              console.log('extractPriceFromFormData: Using formData.fields.Price:', fieldsPrice);
+
               return fieldsPrice;
             }
           }
@@ -715,19 +707,19 @@ export class BookingService {
         
         // PRIORITY 2: Check vendor.price (direct field)
         if (venueOrVendor.price !== undefined && venueOrVendor.price !== null && venueOrVendor.price >= 0) {
-          console.log('extractPriceFromFormData: Using vendor.price:', venueOrVendor.price);
+
           return venueOrVendor.price;
         }
         
         // PRIORITY 3: Check formData.price (direct field in formData)
         if (venueOrVendor.formData?.price !== undefined && venueOrVendor.formData?.price !== null && venueOrVendor.formData.price >= 0) {
-          console.log('extractPriceFromFormData: Using formData.price:', venueOrVendor.formData.price);
+
           return venueOrVendor.formData.price;
         }
         
         // PRIORITY 4: Check formData.pricing.starting
         if (venueOrVendor.formData?.pricing?.starting && typeof venueOrVendor.formData.pricing.starting === 'number' && venueOrVendor.formData.pricing.starting >= 0) {
-          console.log('extractPriceFromFormData: Using formData.pricing.starting:', venueOrVendor.formData.pricing.starting);
+
           return venueOrVendor.formData.pricing.starting;
         }
         
@@ -739,7 +731,7 @@ export class BookingService {
         
         // Fallback to calculatePriceFromPricing method
         const calculatedPrice = this.calculatePriceFromPricing(venueOrVendor);
-        console.log('extractPriceFromFormData: Using calculatePriceFromPricing fallback:', calculatedPrice);
+
         return calculatedPrice;
       };
 
@@ -756,7 +748,7 @@ export class BookingService {
                 : (booking as any).userId;
               user = await this.userService.findById((booking as any).userId);
             } catch (userError) {
-              console.error('Error fetching user details:', userError);
+
             }
           }
           
@@ -798,7 +790,7 @@ export class BookingService {
                         categoryName = category.name;
                       }
                     } catch (error) {
-                      console.log('Category lookup failed, using default category name');
+
                     }
                   }
 
@@ -857,18 +849,10 @@ export class BookingService {
                   (venueOrVendor as any).imageUrl = imageUrlFromFormData;
                   
                   // Debug logging for image extraction
-                  console.log('Venue image extraction for booking:', {
-                    venueId: venueOrVendor.id,
-                    venueName: venueOrVendor.name,
-                    extractedImageUrl: imageUrlFromFormData,
-                    hasFormDataFields: !!venueOrVendor.formData?.fields,
-                    formDataImageUrl: venueOrVendor.formData?.imageUrl,
-                    formDataImages: venueOrVendor.formData?.images,
-                    venueImageUrl: venueOrVendor.imageUrl
-                  });
+
                 }
               } else if ((booking as any).bookingType === 'vendor') {
-                console.log('Querying vendor with venueId:', venueId);
+
                 // Try multiple query methods to find the vendor (consistent approach)
                 // Ensure formData is explicitly included in the query
                 let vendor = await this.vendorRepo.findOne({
@@ -941,7 +925,7 @@ export class BookingService {
                 });
                 
                 if (!venueOrVendor) {
-                  console.log('Vendor not found in database for venueId:', venueId);
+
                 }
                 
                 // Fetch category information for vendor pricing
@@ -950,10 +934,10 @@ export class BookingService {
                     const category = await this.categoryRepo.findOneBy({ _id: new ObjectId(venueOrVendor.categoryId) });
                     if (category && !category.isDeleted) {
                       (venueOrVendor as any).categoryName = category.name;
-                      console.log('Vendor category:', category.name);
+
                     }
                   } catch (error) {
-                    console.log('Error fetching vendor category:', error);
+
                   }
                 }
                 
@@ -1015,7 +999,7 @@ export class BookingService {
                   (await this.vendorRepo.findOne({ where: { _id: venueId, isDeleted: false } as any } as any));
               }
             } catch (venueError) {
-              console.error('Error fetching venue or vender details:', venueError);
+
             }
           }
 
@@ -1110,7 +1094,7 @@ export class BookingService {
         limit,
       };
     } catch (error) {
-      console.error('Error in findAllForUser:', error);
+
       throw new BadRequestException('Failed to fetch bookings');
     }
   }
@@ -1125,7 +1109,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId in findByBookingId:', error);
+
       }
     }
     
@@ -1134,9 +1118,9 @@ export class BookingService {
     }
     
     // Debug logging to understand the issue
-    console.log('findByBookingId - User ID from token:', userId);
+
     console.log('findByBookingId - Booking user ID:', (booking as any).userId);
-    console.log('findByBookingId - User ID type:', typeof userId);
+
     console.log('findByBookingId - Booking user ID type:', typeof (booking as any).userId);
     console.log('findByBookingId - Raw booking referenceImages:', (booking as any).referenceImages);
     console.log('findByBookingId - Raw booking referenceImages type:', typeof (booking as any).referenceImages);
@@ -1203,13 +1187,13 @@ export class BookingService {
         photographyType = await this.photoTypeRepo.findOne({ where: { _id: photoId, isDeleted: false } as any } as any);
       }
     } catch (err) {
-      console.error('Error fetching venue for bookingId:', bookingId, err);
+
     }
 
     // Process referenceImages - filter out placeholder URLs and ensure proper format
     let referenceImages = (booking as any).referenceImages || [];
-    console.log('findByBookingId - Original referenceImages from DB:', referenceImages);
-    console.log('findByBookingId - Original referenceImages type:', typeof referenceImages);
+
+
     console.log('findByBookingId - Original referenceImages is array:', Array.isArray(referenceImages));
     
     if (Array.isArray(referenceImages)) {
@@ -1217,27 +1201,25 @@ export class BookingService {
       const beforeFilter = referenceImages.length;
       referenceImages = referenceImages.filter((url: string) => {
         if (!url || typeof url !== 'string') {
-          console.log('findByBookingId - Filtering out invalid URL:', url);
+
           return false;
         }
         // Keep only actual image URLs, not placeholder URLs
         const isPlaceholder = url.includes('via.placeholder.com') || url.includes('placeholder');
         if (isPlaceholder) {
-          console.log('findByBookingId - Filtering out placeholder URL:', url);
+
         }
         return !isPlaceholder;
       });
-      
-      console.log('findByBookingId - Filtered referenceImages:', referenceImages);
-      console.log('findByBookingId - Before filter:', beforeFilter, 'After filter:', referenceImages.length);
-      
+
+
       // If all images were placeholders and filtered out, set to empty array
       if (referenceImages.length === 0 && beforeFilter > 0) {
-        console.log('⚠️ All reference images were placeholders, returning empty array');
+
       }
     } else {
       // If referenceImages is not an array, convert to array or set to empty
-      console.log('⚠️ referenceImages is not an array, converting to empty array');
+
       referenceImages = [];
     }
 
@@ -1265,20 +1247,20 @@ export class BookingService {
       
       // Log for debugging
       if (actualBookingId === 'BK-3B13AEE7') {
-        console.log(`[DEBUG findByBookingId] Booking ${actualBookingId} - Unified: ${unifiedOfferCount}, Vendor: ${vendorOfferCount}, Admin: ${adminOfferCount}, hasOffers: ${hasOffers}`);
+
       }
       
       // Update the stored flag if it's different (async, don't wait)
       const storedHasOffers = (booking as any).hasOffers ?? false;
       if (storedHasOffers !== hasOffers) {
-        console.log(`Updating hasOffers flag for booking ${actualBookingId}: ${storedHasOffers} -> ${hasOffers}`);
+
         // Update asynchronously without blocking the response
         this.updateBookingHasOffersFlag(actualBookingId).catch(err => {
-          console.error('Error updating hasOffers flag:', err);
+
         });
       }
     } catch (error) {
-      console.error('Error checking offers count:', error);
+
       // Fallback to stored value if query fails
       hasOffers = (booking as any).hasOffers ?? false;
     }
@@ -1318,7 +1300,7 @@ export class BookingService {
         
         userHasSubmittedOffer = !!(userUnifiedOffer || userVendorOffer || userAdminOffer);
       } catch (error) {
-        console.error('Error checking if user has submitted offer:', error);
+
         userHasSubmittedOffer = false;
       }
     }
@@ -1354,10 +1336,8 @@ export class BookingService {
       updatedByName: updatedByName
     };
 
-    console.log('findByBookingId - Final bookingData referenceImages:', bookingData.referenceImages);
-    console.log('findByBookingId - Reference images count:', referenceImages.length);
-    console.log('findByBookingId - Reference images:', referenceImages);
-    console.log('findByBookingId - Has offers:', hasOffers);
+
+
 
     return bookingData;
   }
@@ -1372,19 +1352,19 @@ export class BookingService {
       const userIdString = String(userId);
       let uploadedImageUrls: string[] = [];
       if (dto.referenceImages?.length) {
-        console.log(`📸 Processing ${dto.referenceImages.length} reference images for booking...`);
+
         try {
           uploadedImageUrls = await this.uploadBase64Images(dto.referenceImages);
-          console.log(`✅ Successfully uploaded ${uploadedImageUrls.length} reference images:`, uploadedImageUrls);
+
         } catch (uploadError: any) {
-          console.error('❌ Error during image upload process:', uploadError.message);
-          console.error('❌ Upload error stack:', uploadError.stack);
+
+
           // Continue with empty array if upload fails - don't block booking creation
           uploadedImageUrls = [];
-          console.log('⚠️ Continuing with booking creation without images due to upload error');
+
         }
       } else {
-        console.log('📸 No reference images provided in booking request');
+
       }
 
     const entity = this.bookingRepo.create({
@@ -1396,8 +1376,7 @@ export class BookingService {
       timeSlot: (dto as any).timeSlot ?? null,
       bookingStatus: BookingStatus.PENDING // Explicitly set to pending by default
     });
-    
-    console.log('Booking Service - Created entity userId:', entity.userId, 'Type:', typeof entity.userId);
+
     console.log('Booking Service - Created entity referenceImages:', (entity as any).referenceImages);
     console.log('Booking Service - Created entity referenceImages count:', (entity as any).referenceImages?.length || 0);
     
@@ -1412,9 +1391,8 @@ export class BookingService {
                                  (savedEntity as any).referenceimages || 
                                  uploadedImageUrls || 
                                  [];
-    
-    console.log('Booking Service - Resolved referenceImages:', savedReferenceImages);
-    console.log('Booking Service - Resolved referenceImages type:', typeof savedReferenceImages);
+
+
     console.log('Booking Service - Resolved referenceImages is array:', Array.isArray(savedReferenceImages));
     
     // Ensure referenceImages are explicitly included in the response
@@ -1430,14 +1408,13 @@ export class BookingService {
     response.referenceImages = Array.isArray(savedReferenceImages) ? savedReferenceImages : uploadedImageUrls || [];
     
       console.log('Booking Service - Response referenceImages (uploaded URLs):', response.referenceImages);
-      console.log('Booking Service - Response referenceImages count:', response.referenceImages?.length || 0);
+
       console.log('Booking Service - Response keys:', Object.keys(response));
-      console.log('Booking Service - Response has referenceImages:', 'referenceImages' in response);
-      
+
       return response;
     } catch (error: any) {
-      console.error('❌ Error in createRequestBooking:', error.message);
-      console.error('❌ Error stack:', error.stack);
+
+
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
       throw new BadRequestException(`Failed to create booking: ${error.message}`);
     }
@@ -1455,25 +1432,24 @@ export class BookingService {
     
     console.log('updateBooking - Token user ID (string):', tokenUserId);
     console.log('updateBooking - Booking user ID (string):', bookingUserId);
-    console.log('updateBooking - User ID type from token:', typeof userId);
+
     console.log('updateBooking - User ID type from booking:', typeof (booking as any).userId);
-    console.log('updateBooking - IDs match:', tokenUserId === bookingUserId);
-    
+
     if (tokenUserId !== bookingUserId) {
       throw new BadRequestException('You can only update your own bookings');
     }
     let uploadedImageUrls: string[] = [];
     if (dto.referenceImages?.length) {
       try {
-        console.log(`📸 Processing ${dto.referenceImages.length} reference images for booking update...`);
+
         uploadedImageUrls = await this.uploadBase64Images(dto.referenceImages);
-        console.log(`✅ Successfully uploaded ${uploadedImageUrls.length} reference images for update:`, uploadedImageUrls);
+
       } catch (uploadError: any) {
-        console.error('❌ Error during image upload process in update:', uploadError.message);
-        console.error('❌ Upload error stack:', uploadError.stack);
+
+
         // Continue with empty array if upload fails - don't block booking update
         uploadedImageUrls = [];
-        console.log('⚠️ Continuing with booking update without images due to upload error');
+
       }
     }
 
@@ -1512,7 +1488,7 @@ export class BookingService {
 
   private async uploadBase64Images(base64Images: string[]): Promise<string[]> {
     try {
-      console.log(`📸 Uploading ${base64Images.length} reference images for booking request...`);
+
       const uploadedUrls: string[] = [];
       const awsConfig = this.configService.get('aws');
       const hasAwsConfig = awsConfig && awsConfig.bucketName && awsConfig.bucketFolderName;
@@ -1522,14 +1498,14 @@ export class BookingService {
         const imageIndex = i + 1;
         
         if (!base64Image) {
-          console.log(`⚠️ Skipping image ${imageIndex}/${base64Images.length}: empty base64 data`);
+
           continue;
         }
         
         try {
           const matches = base64Image.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
           if (!matches) {
-            console.error(`❌ Image ${imageIndex}/${base64Images.length}: Invalid base64 image format`);
+
             continue; // Skip invalid images instead of throwing
           }
         
@@ -1542,8 +1518,6 @@ export class BookingService {
           .toString(36)
           .substring(7)}.${ext}`;
 
-          console.log(`📁 Processing image ${imageIndex}/${base64Images.length}:`, { ext, mimetype, fileName, size: buffer.length });
-
           let imageUrl = '';
           let uploadSuccess = false;
           
@@ -1553,7 +1527,7 @@ export class BookingService {
             const supabaseBuckets = ['profiles', 'uploads'];
             for (const bucket of supabaseBuckets) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying Supabase bucket: ${bucket}`);
+
                 const { publicUrl } = await this.uploadWithTimeout(
                   this.supabaseService.upload({
                     filePath: `booking/${fileName}`,
@@ -1571,7 +1545,7 @@ export class BookingService {
                   break;
                 }
               } catch (supabaseError: any) {
-                console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Supabase bucket ${bucket} failed:`, supabaseError.message);
+
                 continue;
               }
             }
@@ -1583,7 +1557,7 @@ export class BookingService {
             const supabaseBuckets = ['profiles', 'uploads'];
             for (const bucket of supabaseBuckets) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying Supabase bucket: ${bucket}`);
+
                 const { publicUrl } = await this.uploadWithTimeout(
                   this.supabaseService.upload({
                     filePath: `booking/${fileName}`,
@@ -1601,7 +1575,7 @@ export class BookingService {
                   break;
                 }
               } catch (supabaseError: any) {
-                console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Supabase bucket ${bucket} failed:`, supabaseError.message);
+
                 continue;
               }
             }
@@ -1609,7 +1583,7 @@ export class BookingService {
             // If Supabase failed, try AWS S3 as fallback (only if configured)
             if (!uploadSuccess && hasAwsConfig) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying AWS S3 as fallback`);
+
                 const awsUploadReqDto = {
                   Bucket: awsConfig.bucketName,
                   Key: awsConfig.bucketFolderName + '/' + 'booking' + '/' + fileName,
@@ -1620,18 +1594,18 @@ export class BookingService {
                 const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
                 imageUrl = (response as any)?.Location || '';
                 if (imageUrl) {
-                  console.log(`✅ Image ${imageIndex}/${base64Images.length}: AWS S3 upload successful:`, imageUrl);
+
                   uploadSuccess = true;
                 }
               } catch (s3Error: any) {
-                console.error(`❌ Image ${imageIndex}/${base64Images.length}: AWS S3 upload also failed:`, s3Error.message);
+
               }
             }
             
             // If all uploads failed
             if (!uploadSuccess) {
-              console.error(`❌ Image ${imageIndex}/${base64Images.length}: All upload methods failed - Supabase buckets unavailable and AWS config missing or failed`);
-              console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Image upload failed completely, skipping this image`);
+
+
               imageUrl = '';
             }
           }
@@ -1639,9 +1613,9 @@ export class BookingService {
           // Only add non-empty URLs (skip failed uploads)
           if (imageUrl && imageUrl.trim() !== '') {
             uploadedUrls.push(imageUrl);
-            console.log(`✅ Image ${imageIndex}/${base64Images.length}: Successfully added to upload list`);
+
           } else {
-            console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Skipping image due to upload failure`);
+
           }
           
           // Add a delay between uploads to avoid rate limiting (except for the last image)
@@ -1651,8 +1625,8 @@ export class BookingService {
           }
         } catch (imageError: any) {
           // Catch any error during image processing and continue with next image
-          console.error(`❌ Image ${imageIndex}/${base64Images.length}: Error processing image:`, imageError.message);
-          console.error(`❌ Image ${imageIndex}/${base64Images.length}: Error stack:`, imageError.stack);
+
+
           // Continue processing other images
           // Still add delay even on error to avoid rate limiting
           if (imageIndex < base64Images.length) {
@@ -1660,16 +1634,15 @@ export class BookingService {
           }
         }
       }
-      
-      console.log('✅ All reference images processed:', uploadedUrls.length);
-      console.log('✅ Uploaded URLs:', uploadedUrls);
+
+
       // Filter out any empty strings just to be safe
       const filteredUrls = uploadedUrls.filter(url => url && url.trim() !== '');
-      console.log('✅ Filtered URLs to return:', filteredUrls);
+
       return filteredUrls;
       
     } catch (error) {
-      console.error('❌ Error uploading reference images:', error);
+
       throw error;
     }
   }
@@ -1679,8 +1652,7 @@ export class BookingService {
     if (!booking) {
       throw new NotFoundException('Booking not found');
     }
-    
-    console.log('Cancel Booking - User ID from token:', userId, 'Type:', typeof userId);
+
     console.log('Cancel Booking - Booking user ID:', (booking as any).userId, 'Type:', typeof (booking as any).userId);
     
     // Convert both to strings for comparison
@@ -1689,8 +1661,7 @@ export class BookingService {
     
     console.log('Cancel Booking - Token user ID (string):', tokenUserId);
     console.log('Cancel Booking - Booking user ID (string):', bookingUserId);
-    console.log('Cancel Booking - IDs match:', tokenUserId === bookingUserId);
-    
+
     if (tokenUserId !== bookingUserId) {
       throw new BadRequestException('You can only cancel your own bookings');
     }
@@ -1734,7 +1705,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
     
@@ -1773,13 +1744,10 @@ export class BookingService {
 
     // Use the actual bookingId from the found booking, or the provided one
     const actualBookingId = (booking as any).bookingId || bookingId;
-    console.log('Accept Booking - actualBookingId:', actualBookingId);
-    
+
     // Update the booking using Object.assign and save (more reliable)
     Object.assign(booking, updateData);
     const updatedBooking = await this.bookingRepo.save(booking);
-    
-    console.log('Accept Booking - Updated booking:', updatedBooking);
 
     // Return updated booking using the actual bookingId
     return await this.findByBookingId(actualBookingId, userId);
@@ -1796,7 +1764,7 @@ export class BookingService {
           const objectId = new ObjectId(bookingId);
           booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
         } catch (error) {
-          console.log('Error searching by ObjectId:', error);
+
         }
       }
       
@@ -1840,21 +1808,17 @@ export class BookingService {
 
       // Use the actual bookingId from the found booking, or the provided one
       const actualBookingId = (booking as any).bookingId || bookingId;
-      console.log('Reject Booking - actualBookingId:', actualBookingId);
-      console.log('Reject Booking - Updating with:', updateData);
-      
+
+
       // Update the booking using Object.assign and save (more reliable)
       Object.assign(booking, updateData);
       const updatedBooking = await this.bookingRepo.save(booking);
-      
-      console.log('Reject Booking - Updated booking:', updatedBooking);
 
       // Return updated booking using the actual bookingId
       return await this.findByBookingId(actualBookingId, userId);
     } catch (error) {
-      console.error('Reject Booking Error:', error);
-      console.error('Reject Booking Error Stack:', error.stack);
-      
+
+
       // Re-throw known exceptions
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
@@ -1876,25 +1840,15 @@ export class BookingService {
 
   private calculatePriceFromPricing(venueOrVendor: any): number {
     // Debug logging
-    console.log('calculatePriceFromPricing - venueOrVendor:', {
-      id: venueOrVendor?.id,
-      title: venueOrVendor?.title,
-      name: venueOrVendor?.name,
-      price: venueOrVendor?.price,
-      priceType: typeof venueOrVendor?.price,
-      formDataPrice: venueOrVendor?.formData?.price,
-      categoryId: venueOrVendor?.categoryId,
-      categoryName: venueOrVendor?.categoryName
-    });
 
     // First try to get price from direct fields (check for any positive number, not just > 0)
     if (venueOrVendor?.price !== undefined && venueOrVendor?.price !== null && venueOrVendor.price >= 0) {
-      console.log('Using direct price:', venueOrVendor.price);
+
       return venueOrVendor.price;
     }
     
     if (venueOrVendor?.formData?.price !== undefined && venueOrVendor?.formData?.price !== null && venueOrVendor.formData.price >= 0) {
-      console.log('Using formData price:', venueOrVendor.formData.price);
+
       return venueOrVendor.formData.price;
     }
 
@@ -1902,7 +1856,7 @@ export class BookingService {
     if (venueOrVendor?.formData?.fields?.Price) {
       const fieldsPrice = parseInt(venueOrVendor.formData.fields.Price);
       if (!isNaN(fieldsPrice) && fieldsPrice > 0) {
-        console.log('Using formData.fields.Price:', fieldsPrice);
+
         return fieldsPrice;
       }
     }
@@ -1923,32 +1877,32 @@ export class BookingService {
       try {
         // Generate category-specific pricing using the helper
         const categoryName = venueOrVendor?.categoryName || 'PhotoGrapher';
-        console.log('Using category-based pricing for:', categoryName);
+
         const categoryPricing = CategoryPricingHelper.generateCategoryPricing(categoryName);
         if (categoryPricing.length > 0) {
           // Return the first pricing item's price as the base price
-          console.log('Category pricing result:', categoryPricing[0].price);
+
           return categoryPricing[0].price || 0;
         }
       } catch (error) {
-        console.log('Error calculating price from category:', error);
+
       }
     }
 
     // Default fallback based on entity type
     if (venueOrVendor?.title?.toLowerCase().includes('venue') || venueOrVendor?.name?.toLowerCase().includes('venue')) {
-      console.log('Using default venue price: 50000');
+
       return 50000; // Default venue price
     } else if (venueOrVendor?.title?.toLowerCase().includes('photographer') || venueOrVendor?.name?.toLowerCase().includes('photographer')) {
-      console.log('Using default photographer price: 15000');
+
       return 15000; // Default photographer price
     } else if (venueOrVendor?.title?.toLowerCase().includes('catering') || venueOrVendor?.name?.toLowerCase().includes('catering')) {
-      console.log('Using default catering price: 5000');
+
       return 5000; // Default catering price
     }
 
     // Final fallback
-    console.log('Using final fallback price: 15000');
+
     return 15000;
   }
 
@@ -1958,8 +1912,7 @@ export class BookingService {
    */
   async migrateBookingStatus(): Promise<{ updated: number; message: string }> {
     try {
-      console.log('Starting booking status migration...');
-      
+
       // Find all bookings that don't have bookingStatus or have null/undefined bookingStatus
       const bookingsWithoutStatus = await this.bookingRepo.find({
         where: {
@@ -1970,8 +1923,6 @@ export class BookingService {
           ]
         } as any
       });
-
-      console.log(`Found ${bookingsWithoutStatus.length} bookings without bookingStatus`);
 
       // Update all bookings without status to PENDING
       let updatedCount = 0;
@@ -1994,8 +1945,6 @@ export class BookingService {
           bookingStatus: ''
         } as any
       });
-
-      console.log(`Found ${bookingsWithEmptyStatus.length} bookings with empty bookingStatus`);
 
       for (const booking of bookingsWithEmptyStatus) {
         try {
@@ -2022,8 +1971,6 @@ export class BookingService {
           } as any
         });
 
-        console.log(`Found ${bookingsWithUpperStatus.length} bookings with status '${upperStatus}'`);
-
         for (const booking of bookingsWithUpperStatus) {
           try {
             await this.bookingRepo.update(
@@ -2037,15 +1984,13 @@ export class BookingService {
         }
       }
 
-      console.log(`Converted ${convertedCount} bookings from uppercase to lowercase status.`);
-      console.log(`Migration completed. Updated ${updatedCount} bookings, converted ${convertedCount} statuses.`);
-      
+
       return {
         updated: updatedCount + convertedCount,
         message: `Successfully updated ${updatedCount} bookings to pending status and converted ${convertedCount} uppercase statuses to lowercase`
       };
     } catch (error) {
-      console.error('Error in migrateBookingStatus:', error);
+
       throw new BadRequestException(`Failed to migrate booking status: ${error.message}`);
     }
   }
@@ -2061,7 +2006,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -2129,7 +2074,7 @@ export class BookingService {
         }
       } catch (error) {
         // If ObjectId conversion fails or vendor lookup fails, use userId as vendorId
-        console.log('Vendor lookup failed, using userId as vendorId:', error);
+
         vendorId = userId;
       }
     } else if (vendorId !== userId) {
@@ -2152,8 +2097,7 @@ export class BookingService {
 
     // Create vendor offer
     const offerAddedByValue = dto.offerAddedBy || userId;
-    console.log('Creating vendor offer with offerAddedBy:', offerAddedByValue, 'from DTO:', dto.offerAddedBy, 'userId:', userId);
-    
+
     // Create new VendorOffer instance and assign all properties
     const offer = new VendorOffer();
     offer.bookingId = (booking as any).bookingId || bookingId;
@@ -2165,7 +2109,7 @@ export class BookingService {
     offer.offerAddedBy = offerAddedByValue; // Explicitly set the field
 
     console.log('Vendor offer before save:', JSON.stringify(offer, null, 2));
-    console.log('offerAddedBy property:', offer.offerAddedBy);
+
     console.log('offer object keys:', Object.keys(offer));
     
     const savedOffer = await this.vendorOfferRepo.save(offer);
@@ -2207,7 +2151,7 @@ export class BookingService {
         }
       }
     } catch (error) {
-      console.error('Error sending notification for offer submission:', error);
+
     }
 
     return savedOffer;
@@ -2224,7 +2168,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -2278,7 +2222,7 @@ export class BookingService {
             vendorName = vendor.name || vendor.title || 'Unknown Vendor';
           }
         } catch (error) {
-          console.error('Error fetching vendor name:', error);
+
         }
         return {
           ...offer,
@@ -2302,7 +2246,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -2340,17 +2284,15 @@ export class BookingService {
       const unifiedOffers = await this.offerRepo.find({ where: { bookingId: actualBookingId } as any } as any);
       const vendorOffers = await this.vendorOfferRepo.find({ where: { bookingId: actualBookingId } as any } as any);
       const adminOffers = await this.adminOfferRepo.find({ where: { bookingId: actualBookingId } as any } as any);
-      
-      console.log(`[DEBUG] Searching for offer ${offerId} in booking ${actualBookingId}`);
-      console.log(`[DEBUG] Found ${unifiedOffers?.length || 0} unified offers, ${vendorOffers?.length || 0} vendor offers, ${adminOffers?.length || 0} admin offers`);
-      
+
+
       // Search in unified offers
       if (unifiedOffers && unifiedOffers.length > 0) {
         offer = unifiedOffers.find((o: any) => matchesOfferId(o, offerId));
         if (offer) {
           offerType = 'unified';
           offerRepo = this.offerRepo;
-          console.log(`[DEBUG] Found offer ${offerId} in unified offers collection`);
+
         }
       }
       
@@ -2360,7 +2302,7 @@ export class BookingService {
         if (offer) {
           offerType = 'vendor';
           offerRepo = this.vendorOfferRepo;
-          console.log(`[DEBUG] Found offer ${offerId} in vendor offers collection`);
+
         }
       }
       
@@ -2370,13 +2312,13 @@ export class BookingService {
         if (offer) {
           offerType = 'admin';
           offerRepo = this.adminOfferRepo;
-          console.log(`[DEBUG] Found offer ${offerId} in admin offers collection`);
+
         }
       }
       
       // If still not found, log all available offer IDs for debugging
       if (!offer) {
-        console.error(`[ERROR] Offer ${offerId} not found in any collection for booking ${actualBookingId}`);
+
         if (unifiedOffers?.length > 0) {
           console.log(`[DEBUG] Unified offer IDs:`, unifiedOffers.map((o: any) => ({
             _id: (o._id || o.id)?.toString(),
@@ -2404,7 +2346,7 @@ export class BookingService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error(`Error searching for offers for booking ${actualBookingId}:`, error);
+
       throw new NotFoundException(`Error searching for offer ${offerId} for booking ${actualBookingId}`);
     }
 
@@ -2491,14 +2433,14 @@ export class BookingService {
           verifyOffer = await offerRepo.findOne({ where: { _id: offerId } as any } as any);
         }
       } catch (verifyError) {
-        console.error(`[ERROR] Failed to verify offer:`, verifyError);
+
       }
       
       if (verifyOffer) {
         const verifyStatus = verifyOffer.status || (verifyOffer as any).status;
-        console.log(`[INFO] Offer ${offerId} verified from database. Status: ${verifyStatus}`);
+
         if (verifyStatus !== rejectedStatus) {
-          console.error(`[ERROR] Offer status not updated in database! Expected: ${rejectedStatus}, Got: ${verifyStatus}`);
+
           // Try to update again with explicit update() method
           try {
             await offerRepo.update({ _id: new ObjectId(offerId) } as any, { status: rejectedStatus } as any);
@@ -2513,10 +2455,10 @@ export class BookingService {
             console.error(`[ERROR] Failed to update offer using update() method:`, updateError);
           }
         } else {
-          console.log(`[SUCCESS] Offer ${offerId} status successfully updated to REJECTED in database`);
+
         }
       } else {
-        console.error(`[ERROR] Could not verify offer ${offerId} from database after save`);
+
       }
       
       // Use the verified offer if available, otherwise use saved result
@@ -2555,7 +2497,7 @@ export class BookingService {
       } else if (!hasPendingOffers && allOffers.length > 0) {
         // All offers are rejected, no pending offers
         newBookingStatus = BookingStatus.REJECTED;
-        console.log(`[INFO] All offers rejected for booking ${actualBookingId}, updating booking status to REJECTED`);
+
       } else {
         // Still has pending offers, keep as pending
         newBookingStatus = BookingStatus.PENDING;
@@ -2568,7 +2510,7 @@ export class BookingService {
           const objectId = new ObjectId(actualBookingId);
           refreshedBooking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
         } catch (error) {
-          console.log('Error searching by ObjectId:', error);
+
         }
       }
 
@@ -2582,7 +2524,7 @@ export class BookingService {
         const finalBookingStatus = (savedBooking as any)?.bookingStatus || (Array.isArray(savedBooking) ? (savedBooking[0] as any)?.bookingStatus : newBookingStatus);
         console.log(`[INFO] Booking ${actualBookingId} updated after offer rejection. Status: ${finalBookingStatus} (was: ${(booking as any).bookingStatus})`);
       } else {
-        console.error(`[ERROR] Could not find booking ${actualBookingId} to update after offer rejection`);
+
       }
 
       // Send notification
@@ -2600,7 +2542,7 @@ export class BookingService {
           }
         }
       } catch (error) {
-        console.error('Error sending rejection notification:', error);
+
       }
 
       // Get the final booking status from the saved booking
@@ -2770,7 +2712,7 @@ export class BookingService {
         }
       }
     } catch (error) {
-      console.error('Error creating/activating chat session:', error);
+
       // Don't fail the offer acceptance if chat creation fails
     }
 
@@ -2836,7 +2778,7 @@ export class BookingService {
         });
       }
     } catch (error) {
-      console.error('Error sending notifications for offer acceptance:', error);
+
     }
 
     return {
@@ -2857,7 +2799,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -2917,7 +2859,7 @@ export class BookingService {
         });
       }
     } catch (error) {
-      console.error('Error sending notification for admin offer submission:', error);
+
     }
 
     return savedOffer;
@@ -2934,7 +2876,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -2993,7 +2935,7 @@ export class BookingService {
         userName = `${offerUser.firstName || ''} ${offerUser.lastName || ''}`.trim() || offerUser.organizationName || 'Unknown User';
       }
     } catch (error) {
-      console.error('Error fetching user name:', error);
+
     }
 
     // Send notification to booking user
@@ -3009,7 +2951,7 @@ export class BookingService {
         });
       }
     } catch (error) {
-      console.error('Error sending notification for offer submission:', error);
+
     }
 
     return {
@@ -3031,7 +2973,7 @@ export class BookingService {
         const objectId = new ObjectId(bookingId);
         booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
       } catch (error) {
-        console.log('Error searching by ObjectId:', error);
+
       }
     }
 
@@ -3162,7 +3104,7 @@ export class BookingService {
             }
           }
         } catch (error) {
-          console.error('Error fetching user name:', error);
+
         }
         return {
           ...offer,
@@ -3186,13 +3128,13 @@ export class BookingService {
           const objectId = new ObjectId(bookingId);
           booking = await this.bookingRepo.findOne({ where: { _id: objectId } as any } as any);
         } catch (error) {
-          console.log('Error searching by ObjectId in updateBookingHasOffersFlag:', error);
+
           return;
         }
       }
 
       if (!booking) {
-        console.log('Booking not found for hasOffers update:', bookingId);
+
         return;
       }
 
@@ -3226,13 +3168,12 @@ export class BookingService {
       const savedHasOffers = (savedBooking as any)?.hasOffers ?? (Array.isArray(savedBooking) ? (savedBooking[0] as any)?.hasOffers : null);
       
       console.log(`Updated hasOffers flag for booking ${actualBookingId}: ${previousHasOffers} -> ${hasOffers} (verified: ${savedHasOffers})`);
-      console.log(`Offer counts - unified: ${unifiedOfferCount}, vendor: ${vendorOfferCount}, admin: ${adminOfferCount}`);
-      
+
       if (savedHasOffers !== hasOffers) {
-        console.warn(`⚠️ Warning: hasOffers flag update may have failed. Expected: ${hasOffers}, Got: ${savedHasOffers}`);
+
       }
     } catch (error) {
-      console.error('Error updating hasOffers flag for booking:', bookingId, error);
+
       console.error('Error details:', JSON.stringify(error, null, 2));
     }
   }

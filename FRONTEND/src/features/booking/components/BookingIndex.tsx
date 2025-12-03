@@ -96,7 +96,7 @@ export const BookingIndex: React.FC = () => {
   
   // Load basic stats on component mount
   useEffect(() => {
-    console.log('📋 BookingIndex: Component mounted, loading bookings...');
+
     // Load all bookings to get proper counts using booking/all API
     getBookingList(1, 100, '', {});
   }, []);
@@ -239,7 +239,7 @@ export const BookingIndex: React.FC = () => {
             await loadAllBookingOffers();
           }
         } catch (error) {
-          console.error('Failed to reload offers:', error);
+
         }
       }
     }
@@ -376,7 +376,7 @@ export const BookingIndex: React.FC = () => {
       // Make API call to fetch filtered bookings
       await getBookingList(1, 100, '', filters);
     } catch (error) {
-      console.error('Error fetching filtered bookings:', error);
+
       toast.error('Failed to fetch filtered bookings');
     }
   };
@@ -470,7 +470,7 @@ export const BookingIndex: React.FC = () => {
       // Reload bookings list using booking/all API
       await getBookingList(1, 100, '', {});
     } catch (error) {
-      console.error('Error saving quotation:', error);
+
       // Error handling is done in the submitQuotation function
     }
   };

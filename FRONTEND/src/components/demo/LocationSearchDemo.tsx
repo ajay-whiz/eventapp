@@ -10,11 +10,11 @@ const LocationSearchDemo: React.FC = () => {
 
   const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
     setSelectedPlace(place);
-    console.log('Selected place:', place);
+
   };
 
   const handleSaveLocation = async (locationData: any) => {
-    console.log('Saving location:', locationData);
+
     // Here you would typically save to your backend
     alert('Location saved successfully!');
   };

@@ -74,10 +74,9 @@ export function useBookingActions() {
         }
         
         const apiUrl = `${API_ROUTES.BOOKINGS}/all`;
-        console.log('📞 Calling booking list API:', apiUrl);
-        console.log('📞 API params:', params);
-        console.log('📞 Full URL will be:', `${api.defaults.baseURL}${apiUrl}`);
-        
+
+
+
         const response = await api.get(apiUrl, {
           params,
           headers: {
@@ -498,8 +497,7 @@ export function useBookingActions() {
       const offerAddedBy = userData?.id || userData?._id || userData?.userId || userData?.user_id || (userData as any)?.user?.id || (userData as any)?.user?._id || null;
 
       // Debug logging
-      console.log('User data from storage:', userData);
-      console.log('Extracted offerAddedBy:', offerAddedBy);
+
 
       // Prepare payload with offerAddedBy
       const payload = {
@@ -508,7 +506,6 @@ export function useBookingActions() {
       };
 
       // Debug logging
-      console.log('Final payload being sent:', payload);
 
       // Use the correct endpoint: /booking/{bookingId}/vendor-offer
       const response = await api.post(`${API_ROUTES.BOOKINGS}/${bookingId}/vendor-offer`, payload, {
@@ -551,7 +548,7 @@ export function useBookingActions() {
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to fetch offers';
-      console.error('Error fetching offers:', errorMessage);
+
       // Return empty array on error (endpoint should be accessible to all users)
       return [];
     }

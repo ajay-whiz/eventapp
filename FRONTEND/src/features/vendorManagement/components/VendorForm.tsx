@@ -405,8 +405,8 @@ const VendorForm: React.FC = () => {
                     if (imageUrl && imageUrl.startsWith('/uploads/')) {
                       const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
                         (import.meta.env.VITE_API_BASE_URL 
-                          ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
-                          : 'http://localhost:10030');
+                          ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
+                          : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
                       imageUrl = `${imageBaseUrl}${imageUrl}`;
                     }
                     
@@ -454,8 +454,8 @@ const VendorForm: React.FC = () => {
                       if (imageUrl && imageUrl.startsWith('/uploads/')) {
                         const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
                           (import.meta.env.VITE_API_BASE_URL 
-                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
-                            : 'http://localhost:10030');
+                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
+                            : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
                         imageUrl = `${imageBaseUrl}${imageUrl}`;
                       }
                       
@@ -533,12 +533,7 @@ const VendorForm: React.FC = () => {
     formData.append('file', file);
     
     try {
-      console.log('Uploading image to Supabase:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type
-      });
-      
+
       // Upload to Supabase via venues/upload-image endpoint (same as venue module)
       const response = await api.post('/venues/upload-image', formData, {
         headers: {
@@ -546,9 +541,7 @@ const VendorForm: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
-      console.log('Upload response:', response.data);
-      
+
       // Handle response structure - same as venue section
       // Venues/upload-image returns: { status: "OK", data: { imageUrl: "..." } }
       const imageUrl = response.data?.data?.imageUrl || 
@@ -559,7 +552,7 @@ const VendorForm: React.FC = () => {
       
       // Ensure we got a valid Supabase URL
       if (!imageUrl) {
-        console.error('Invalid response structure:', response.data);
+
         throw new Error('Invalid response: No image URL returned from server');
       }
       
@@ -569,12 +562,10 @@ const VendorForm: React.FC = () => {
       if (imageUrlString.startsWith('data:')) {
         throw new Error('Invalid response: Received data URL instead of Supabase URL');
       }
-      
-      console.log('Image uploaded successfully to Supabase:', imageUrlString);
+
       return imageUrlString; // Return the Supabase URL
     } catch (error: any) {
-      console.error('Error uploading image to Supabase:', error);
-      
+
       // Extract detailed error message (same pattern as profile section)
       let errorMessage = 'Image upload failed';
       
@@ -591,15 +582,7 @@ const VendorForm: React.FC = () => {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
-      console.error('Upload error details:', {
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
-        message: errorMessage,
-        endpoint: '/venues/upload-image'
-      });
-      
+
       throw new Error(errorMessage);
     }
   };
@@ -636,8 +619,7 @@ const VendorForm: React.FC = () => {
       }));
       
     } catch (error: any) {
-      console.error('Error uploading images to Supabase:', error);
-      
+
       // Extract detailed error message
       const errorMessage = error?.message || 
                           error?.response?.data?.message || 
@@ -726,7 +708,7 @@ const VendorForm: React.FC = () => {
               if (!imageUrl || 
                   imageUrl.startsWith('data:') || // Reject local data URLs
                   (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/'))) {
-                console.warn('Skipping image without valid Supabase URL:', img);
+
                 return null;
               }
               

@@ -57,7 +57,7 @@ const ListingLocationManager: React.FC<ListingLocationManagerProps> = ({
       const locationsData = response.data?.data?.data || [];
       setLocations(locationsData);
     } catch (error: any) {
-      console.error('Error fetching locations:', error);
+
       toast.error('Failed to fetch locations');
     }
   };
@@ -92,7 +92,7 @@ const ListingLocationManager: React.FC<ListingLocationManagerProps> = ({
 
       setShowAddForm(false); // Hide the add form and show the listing
     } catch (error: any) {
-      console.error('Error saving location:', error);
+
       toast.error(error.response?.data?.message || 'Failed to save location');
     } finally {
       setIsLoading(false);

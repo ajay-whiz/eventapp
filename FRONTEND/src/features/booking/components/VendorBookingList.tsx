@@ -264,7 +264,7 @@ export const VendorBookingList: React.FC = () => {
           break;
       }
     } catch (error) {
-      console.error('Action failed:', error);
+
       toast.error('Action failed. Please try again.');
     }
   };
@@ -278,21 +278,21 @@ export const VendorBookingList: React.FC = () => {
 
     try {
       // Implement bulk actions here
-      console.log(`Bulk ${action} for bookings:`, selectedBookings);
+
       setSelectedBookings([]);
       loadVendorBookings();
     } catch (error) {
-      console.error('Bulk action failed:', error);
+
     }
   };
 
   // Handle export
   const handleExport = async (format: 'csv' | 'pdf' | 'excel') => {
     try {
-      console.log(`Exporting vendor bookings in ${format} format`);
+
       // TODO: Implement export functionality
     } catch (error) {
-      console.error('Export failed:', error);
+
     }
   };
 

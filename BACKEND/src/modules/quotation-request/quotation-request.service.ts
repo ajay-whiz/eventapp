@@ -32,21 +32,20 @@ export class QuotationRequestService {
 
   async create(dto: CreateQuotationRequestDto, userId: string): Promise<QuotationRequest> {
     try {
-      console.log('📝 Creating quotation request...');
-      console.log('📝 Quotation Request - User ID:', userId, 'Type:', typeof userId);
-      
+
+
       // Ensure userId is a string
       const userIdString = String(userId);
       
       let uploadedImageUrls: string[] = [];
     
       if (dto.referenceImages && dto.referenceImages.length > 0) {
-        console.log(`📸 Processing ${dto.referenceImages.length} reference images...`);
+
         try {
           uploadedImageUrls = await this.uploadBase64Images(dto.referenceImages);
-          console.log(`✅ Successfully processed ${uploadedImageUrls.length} reference images`);
+
         } catch (uploadError) {
-          console.error('❌ Error uploading reference images:', uploadError);
+
           // Continue with empty array if image upload fails - don't block quotation creation
           uploadedImageUrls = [];
         }
@@ -62,7 +61,6 @@ export class QuotationRequestService {
         isDeleted: false,
       });
 
-      console.log('💾 Saving quotation request to database...');
       console.log('💾 Quotation Request - Entity userId:', (entity as any).userId, 'Type:', typeof (entity as any).userId);
       console.log('💾 Quotation Request - Entity referenceImages (uploaded URLs):', (entity as any).referenceImages);
       console.log('💾 Quotation Request - Entity referenceImages count:', (entity as any).referenceImages?.length || 0);
@@ -79,9 +77,7 @@ export class QuotationRequestService {
                                    (savedEntity as any).referenceimages || 
                                    uploadedImageUrls || 
                                    [];
-      
-      console.log('✅ Quotation Request - Resolved referenceImages:', savedReferenceImages);
-      
+
       // Ensure referenceImages are explicitly included in the response with uploaded URLs
       // Build response explicitly to ensure all fields are included
       const response: any = {
@@ -117,21 +113,19 @@ export class QuotationRequestService {
       response.referenceImages = savedReferenceImages;
       
       console.log('✅ Quotation Request - Response referenceImages (uploaded URLs):', response.referenceImages);
-      console.log('✅ Quotation Request - Response referenceImages count:', response.referenceImages?.length || 0);
+
       console.log('✅ Quotation Request - Response keys:', Object.keys(response));
-      console.log('✅ Quotation Request - Response has referenceImages:', 'referenceImages' in response);
-      
+
       return response;
     } catch (error) {
-      console.error('❌ Error creating quotation request:', error);
+
       throw new Error(`Failed to create quotation request: ${error.message}`);
     }
   }
 
   async findAllForAdmin(page = 1, limit = 10, search?: string): Promise<{ data: QuotationRequest[]; total: number; page: number; limit: number }> {
     try {
-      console.log('Quotation Request Service - findAllForAdmin called');
-      
+
       const where: any = { 
         isDeleted: false,
       };
@@ -153,8 +147,6 @@ export class QuotationRequestService {
         order: { createdAt: 'DESC' as any },
       });
 
-      console.log('Quotation Request Service - Admin found', total, 'quotation requests');
-      
       // Process referenceImages for each quotation
       const processedData = data.map((quotation: any) => {
         let referenceImages = quotation.referenceImages || 
@@ -186,15 +178,14 @@ export class QuotationRequestService {
         limit,
       };
     } catch (error) {
-      console.error('❌ Error in findAllForAdmin:', error);
+
       throw new Error(`Failed to fetch quotation requests: ${error.message}`);
     }
   }
 
   async findAll(page = 1, limit = 10, userId?: string, search?: string): Promise<{ data: QuotationRequest[]; total: number; page: number; limit: number }> {
     try {
-      console.log('Quotation Request Service - findAll called with userId:', userId, 'Type:', typeof userId);
-      
+
       // Always filter by userId for security - users should only see their own quotation requests
       const where: any = { 
         isDeleted: false,
@@ -204,10 +195,10 @@ export class QuotationRequestService {
         // Filter by logged-in user's ID - handle both string and ObjectId formats
         const userIdString = String(userId);
         where.userId = userIdString;
-        console.log('Quotation Request Service - Filtering by userId:', userIdString);
-        console.log('Quotation Request Service - userId type:', typeof userIdString);
+
+
       } else {
-        console.log('⚠️ Quotation Request Service - No userId provided, this should not happen for protected endpoints');
+
         // For security, if no userId provided, return empty result
         return { data: [], total: 0, page, limit };
       }
@@ -229,8 +220,6 @@ export class QuotationRequestService {
         order: { createdAt: 'DESC' as any },
       });
 
-      console.log('Quotation Request Service - Found', total, 'quotation requests for userId:', userId);
-      
       // Log raw data from database to see what's being retrieved
       if (data && data.length > 0) {
         console.log('Quotation Request Service - Sample raw data from DB:', data.slice(0, 2).map((q: any) => ({
@@ -269,18 +258,10 @@ export class QuotationRequestService {
             // Keep only actual image URLs, not placeholder URLs
             return !url.includes('via.placeholder.com') && !url.includes('placeholder');
           });
-          console.log('Quotation Request Service - Filtered referenceImages:', {
-            id: quotation._id || quotation.id,
-            before: beforeFilter,
-            after: referenceImages.length,
-            urls: referenceImages
-          });
+
         } else {
           // If referenceImages is not an array, convert to array or set to empty
-          console.log('Quotation Request Service - referenceImages is not an array, converting to empty array:', {
-            id: quotation._id || quotation.id,
-            value: referenceImages
-          });
+
           referenceImages = [];
         }
         
@@ -294,21 +275,14 @@ export class QuotationRequestService {
         if (!('referenceImages' in processedQuotation)) {
           processedQuotation.referenceImages = referenceImages;
         }
-        
-        console.log('Quotation Request Service - Processed quotation:', {
-          id: processedQuotation._id || processedQuotation.id,
-          hasReferenceImages: 'referenceImages' in processedQuotation,
-          referenceImages: processedQuotation.referenceImages,
-          referenceImagesCount: processedQuotation.referenceImages?.length || 0
-        });
-        
+
         return processedQuotation;
       });
       
       // Log summary of referenceImages processing
       if (processedData.length > 0) {
         const withImages = processedData.filter((q: any) => q.referenceImages && q.referenceImages.length > 0).length;
-        console.log(`Quotation Request Service - Processed ${processedData.length} quotations, ${withImages} have reference images`);
+
       }
       
       // Debug: Log userIds from found quotations to see format
@@ -320,7 +294,7 @@ export class QuotationRequestService {
           referenceImagesCount: q.referenceImages?.length || 0
         })));
       } else {
-        console.log('⚠️ Quotation Request Service - No quotations found. Checking if quotations exist without userId...');
+
         // Debug query to see if any quotations exist at all
         const allQuotations = await this.repo.find({ where: { isDeleted: false }, take: 5 });
         console.log('Quotation Request Service - Sample quotations (first 5, any userId):', allQuotations.map((q: any) => ({
@@ -334,7 +308,7 @@ export class QuotationRequestService {
       
       return { data: processedData, total, page, limit };
     } catch (error) {
-      console.error('Quotation Request Service - Error in findAll:', error);
+
       throw new Error(`Failed to fetch quotation requests: ${error.message}`);
     }
   }
@@ -375,7 +349,7 @@ export class QuotationRequestService {
             const newUploadedUrls = await this.uploadBase64Images(base64Images);
             uploadedImageUrls = [...existingUrls, ...newUploadedUrls];
           } catch (uploadError) {
-            console.error('❌ Error uploading reference images during update:', uploadError);
+
             // Keep existing images if upload fails
             uploadedImageUrls = existingUrls.length > 0 ? existingUrls : entity.referenceImages || [];
           }
@@ -615,7 +589,7 @@ export class QuotationRequestService {
 
   private async uploadBase64Images(base64Images: string[]): Promise<string[]> {
     try {
-      console.log(`📸 Uploading ${base64Images.length} reference images for quotation request...`);
+
       const uploadedUrls: string[] = [];
       const awsConfig = this.configService.get('aws');
       const hasAwsConfig = awsConfig && awsConfig.bucketName && awsConfig.bucketFolderName;
@@ -625,14 +599,14 @@ export class QuotationRequestService {
         const imageIndex = i + 1;
         
         if (!base64Image) {
-          console.log(`⚠️ Skipping image ${imageIndex}/${base64Images.length}: empty base64 data`);
+
           continue;
         }
         
         try {
           const matches = base64Image.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
           if (!matches) {
-            console.error(`❌ Image ${imageIndex}/${base64Images.length}: Invalid base64 image format`);
+
             continue; // Skip invalid images instead of throwing
           }
         
@@ -645,8 +619,6 @@ export class QuotationRequestService {
           .toString(36)
           .substring(7)}.${ext}`;
 
-          console.log(`📁 Processing image ${imageIndex}/${base64Images.length}:`, { ext, mimetype, fileName, size: buffer.length });
-
           let imageUrl = '';
           let uploadSuccess = false;
           
@@ -656,7 +628,7 @@ export class QuotationRequestService {
             const supabaseBuckets = ['profiles', 'uploads'];
             for (const bucket of supabaseBuckets) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying Supabase bucket: ${bucket}`);
+
                 const { publicUrl } = await this.uploadWithTimeout(
                   this.supabaseService.upload({
                     filePath: `quotation/${fileName}`,
@@ -674,7 +646,7 @@ export class QuotationRequestService {
                   break;
                 }
               } catch (supabaseError: any) {
-                console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Supabase bucket ${bucket} failed:`, supabaseError.message);
+
                 continue;
               }
             }
@@ -686,7 +658,7 @@ export class QuotationRequestService {
             const supabaseBuckets = ['profiles', 'uploads'];
             for (const bucket of supabaseBuckets) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying Supabase bucket: ${bucket}`);
+
                 const { publicUrl } = await this.uploadWithTimeout(
                   this.supabaseService.upload({
                     filePath: `quotation/${fileName}`,
@@ -704,7 +676,7 @@ export class QuotationRequestService {
                   break;
                 }
               } catch (supabaseError: any) {
-                console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Supabase bucket ${bucket} failed:`, supabaseError.message);
+
                 continue;
               }
             }
@@ -712,7 +684,7 @@ export class QuotationRequestService {
             // If Supabase failed, try AWS S3 as fallback (only if configured)
             if (!uploadSuccess && hasAwsConfig) {
               try {
-                console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Trying AWS S3 as fallback`);
+
                 const awsUploadReqDto = {
                   Bucket: awsConfig.bucketName,
                   Key: awsConfig.bucketFolderName + '/' + 'quotation' + '/' + fileName,
@@ -723,18 +695,18 @@ export class QuotationRequestService {
                 const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
                 imageUrl = (response as any)?.Location || '';
                 if (imageUrl) {
-                  console.log(`✅ Image ${imageIndex}/${base64Images.length}: AWS S3 upload successful:`, imageUrl);
+
                   uploadSuccess = true;
                 }
               } catch (s3Error: any) {
-                console.error(`❌ Image ${imageIndex}/${base64Images.length}: AWS S3 upload also failed:`, s3Error.message);
+
               }
             }
             
             // If all uploads failed
             if (!uploadSuccess) {
-              console.error(`❌ Image ${imageIndex}/${base64Images.length}: All upload methods failed - Supabase buckets unavailable and AWS config missing or failed`);
-              console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Image upload failed completely, skipping this image`);
+
+
               imageUrl = '';
             }
           }
@@ -742,9 +714,9 @@ export class QuotationRequestService {
           // Only add non-empty URLs (skip failed uploads)
           if (imageUrl && imageUrl.trim() !== '') {
             uploadedUrls.push(imageUrl);
-            console.log(`✅ Image ${imageIndex}/${base64Images.length}: Successfully added to upload list`);
+
           } else {
-            console.log(`⚠️ Image ${imageIndex}/${base64Images.length}: Skipping image due to upload failure`);
+
           }
           
           // Add a delay between uploads to avoid rate limiting (except for the last image)
@@ -754,8 +726,8 @@ export class QuotationRequestService {
           }
         } catch (imageError: any) {
           // Catch any error during image processing and continue with next image
-          console.error(`❌ Image ${imageIndex}/${base64Images.length}: Error processing image:`, imageError.message);
-          console.error(`❌ Image ${imageIndex}/${base64Images.length}: Error stack:`, imageError.stack);
+
+
           // Continue processing other images
           // Still add delay even on error to avoid rate limiting
           if (imageIndex < base64Images.length) {
@@ -763,16 +735,15 @@ export class QuotationRequestService {
           }
         }
       }
-      
-      console.log('✅ All reference images processed:', uploadedUrls.length);
-      console.log('✅ Uploaded URLs:', uploadedUrls);
+
+
       // Filter out any empty strings just to be safe
       const filteredUrls = uploadedUrls.filter(url => url && url.trim() !== '');
-      console.log('✅ Filtered URLs to return:', filteredUrls);
+
       return filteredUrls;
       
     } catch (error) {
-      console.error('❌ Error uploading reference images:', error);
+
       throw error;
     }
   }

@@ -7,13 +7,12 @@ export class HttpEmailService {
 
   async sendEmailViaHttp(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying HTTP-based email service...');
-      
+
       // Skip SendGrid API, go directly to structured logging
       return await this.logEmailStructured(to, subject, text);
       
     } catch (error) {
-      console.error('❌ HTTP email service failed:', error);
+
       return false;
     }
   }
@@ -57,29 +56,28 @@ export class HttpEmailService {
       });
 
       if (response.ok) {
-        console.log('✅ SendGrid API email sent successfully');
+
         return true;
       } else {
         const errorText = await response.text();
-        console.log(`❌ SendGrid API failed: ${response.status} - ${errorText}`);
-        
+
         // Handle specific error cases
         if (response.status === 401) {
-          console.log('🔧 SendGrid API Key Issue:');
-          console.log('   - API key may be invalid, expired, or revoked');
-          console.log('   - Check SendGrid dashboard for key status');
-          console.log('   - Generate a new API key if needed');
+
+
+
+
         } else if (response.status === 403) {
-          console.log('🔧 SendGrid API Permission Issue:');
-          console.log('   - API key may not have mail send permissions');
-          console.log('   - Check SendGrid account verification status');
+
+
+
         }
         
         throw new Error(`SendGrid API failed: ${response.status} - ${errorText}`);
       }
       
     } catch (error) {
-      console.log(`❌ SendGrid API failed: ${error.message}`);
+
       return false;
     }
   }
@@ -99,13 +97,13 @@ export class HttpEmailService {
       console.log('='.repeat(60));
       console.log('📧 HTTP EMAIL SERVICE (FALLBACK)');
       console.log('='.repeat(60));
-      console.log(`ID: ${emailData.id}`);
-      console.log(`To: ${emailData.to}`);
-      console.log(`Subject: ${emailData.subject}`);
-      console.log(`Content: ${emailData.text}`);
-      console.log(`Timestamp: ${emailData.timestamp}`);
-      console.log(`Status: ${emailData.status}`);
-      console.log(`Service: ${emailData.service}`);
+
+
+
+
+
+
+
       console.log('='.repeat(60));
 
       // Log to a structured format that could be processed by external services
@@ -114,7 +112,7 @@ export class HttpEmailService {
       
       return true;
     } catch (error) {
-      console.error('❌ Email logging failed:', error);
+
       return false;
     }
   }

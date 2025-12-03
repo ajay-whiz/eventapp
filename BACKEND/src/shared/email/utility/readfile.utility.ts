@@ -19,7 +19,7 @@ export function readFilesRecursively<T extends IFileData>(
 ): T[] {
   // Check if directory exists before trying to read it
   if (!fs.existsSync(dirPath)) {
-    console.warn(`Warning: Directory does not exist: ${dirPath}`);
+
     return [];
   }
   

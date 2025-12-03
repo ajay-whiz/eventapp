@@ -56,10 +56,9 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   
   // Watch form values in real-time for debugging
   const watchedValues = watch();
-  console.log('=== WATCHED FORM VALUES ===');
-  console.log('All watched values:', watchedValues);
-  console.log('formId watched value:', watchedValues.formId);
-  console.log('================================');
+
+
+
 
   useEffect(() => {
     const load = async () => {
@@ -67,7 +66,7 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
         await fetchCategoryById(id);
       }
       const formsList = await getFormsList();
-      console.log('Fetched forms:', formsList);
+
       setForms(formsList);
     };
     load();
@@ -88,13 +87,12 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   
   useEffect(() => {
     if (isEditMode && serviceCategoryToEdit) {
-      console.log('=== EDITING CATEGORY DEBUG ===');
-      console.log('Editing category data:', serviceCategoryToEdit);
-      console.log('formId from API:', serviceCategoryToEdit.formId);
-      console.log('formId type:', typeof serviceCategoryToEdit.formId);
-      console.log('formId length:', serviceCategoryToEdit.formId?.length);
-      console.log('================================');
-      
+
+
+
+
+
+
       reset({
         name: serviceCategoryToEdit.name,
         description: serviceCategoryToEdit.description,
@@ -112,20 +110,19 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   
 
   const onSubmit = async (data: ServiceCategorySchemaType) => {
-    console.log('=== FORM SUBMISSION DEBUG ===');
-    console.log('Form submission data:', data);
-    console.log('Form ID value:', data.formId);
-    console.log('Form ID type:', typeof data.formId);
-    console.log('Form ID length:', data.formId?.length);
-    console.log('Is formId empty string?', data.formId === '');
-    console.log('Is formId null?', data.formId === null);
-    console.log('Is formId undefined?', data.formId === undefined);
-    console.log('================================');
-    
+
+
+
+
+
+
+
+
+
     try {
       if (isEditMode && (id || currentServiceCategory)) {
         const categoryId = id || currentServiceCategory?.id;
-        console.log('Updating category with formId:', data.formId);
+
         await updateCategory(categoryId, data.name, data.description || '', data.formId || '');
         if (!isEmbedded) {
           toast.success('Category updated successfully');
@@ -133,7 +130,7 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
         }
         // Don't navigate - stay on form for further edits
       } else {
-        console.log('Creating category with formId:', data.formId);
+
         await addCategory(data.name, data.description || '', data.formId || '');
         if (!isEmbedded) {
           toast.success('Category created successfully');
@@ -152,7 +149,7 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
       }
       // Remove navigation - let Redux state handle list updates
     } catch (err) {
-      console.error('Form submission error:', err);
+
       // The error is already handled by Redux actions and will be displayed via the FormError component
       // No need to show a toast here as the FormError component will display the specific error
     }

@@ -8,8 +8,7 @@ export class SmtpOnlyEmailService {
 
   async sendEmail(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 SMTP-Only Email Service - Sending email...');
-      
+
       // Get SMTP credentials from environment variables or config
       const smtpUser = process.env.SMTP_USER || this.configService.get('email.SMTP_USER');
       const smtpPass = process.env.SMTP_PASS || this.configService.get('email.SMTP_PASS');
@@ -81,15 +80,13 @@ export class SmtpOnlyEmailService {
 
       for (const config of configs) {
         try {
-          console.log(`📧 Trying ${config.name}...`);
-          
+
           const transporter = nodemailer.createTransport(config);
           
           // Quick connection test
-          console.log('📧 Testing connection...');
+
           await transporter.verify();
-          console.log(`✅ ${config.name} connection verified`);
-          
+
           // Send email
           const mailOptions = {
             from: `"No Reply" <${smtpFrom}>`,
@@ -98,17 +95,15 @@ export class SmtpOnlyEmailService {
             text: text,
           };
 
-          console.log('📧 Sending email...');
           const info = await transporter.sendMail(mailOptions);
-          console.log(`✅ Email sent successfully via ${config.name}:`, info.messageId);
-          
+
           // Close the connection
           transporter.close();
           
           return true;
           
         } catch (configError) {
-          console.log(`❌ ${config.name} failed:`, configError.message);
+
           // Continue to next configuration
         }
       }
@@ -116,20 +111,15 @@ export class SmtpOnlyEmailService {
       throw new Error('All SMTP configurations failed');
       
     } catch (error) {
-      console.error('❌ SMTP-Only Email Service failed:', error.message);
-      console.error('Error details:', {
-        code: error.code,
-        command: error.command,
-        response: error.response
-      });
-      
+
+
       // Log the email content for manual access
       console.log('='.repeat(60));
       console.log('📧 EMAIL CONTENT (SMTP FAILED)');
       console.log('='.repeat(60));
-      console.log(`To: ${to}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`Content: ${text}`);
+
+
+
       console.log(`Timestamp: ${new Date().toISOString()}`);
       console.log('='.repeat(60));
       

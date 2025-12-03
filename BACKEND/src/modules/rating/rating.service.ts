@@ -243,7 +243,7 @@ export class RatingService {
         await this.venueService.updateRating(entityId, averageRating, ratings.length);
       }
     } catch (error) {
-      console.error('Failed to update entity rating:', error);
+
       // Don't throw error as this is not critical for the user feedback submission
     }
   }

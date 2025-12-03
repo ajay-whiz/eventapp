@@ -67,7 +67,7 @@ const ResetPassword: React.FC = () => {
             // The error state will be checked in the useEffect
         } catch (err: any) {
             // Error is already handled by the Redux action and will be shown via error state
-            console.error('Password reset error:', err);
+
             setResetSuccess(false);
             // Error toast will be shown via FormError component
         }

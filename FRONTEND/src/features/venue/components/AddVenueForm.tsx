@@ -185,8 +185,8 @@ const AddVenueForm: React.FC = () => {
                       if (imageUrl && imageUrl.startsWith('/uploads/')) {
                         const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
                           (import.meta.env.VITE_API_BASE_URL 
-                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
-                            : 'http://localhost:10030');
+                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
+                            : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
                         imageUrl = `${imageBaseUrl}${imageUrl}`;
                       }
                       
@@ -206,7 +206,6 @@ const AddVenueForm: React.FC = () => {
                 }
               });
             }
-            console.log('Extracted form data from venue:', extractedData);
             setFormData(extractedData);
           }
         }
@@ -223,9 +222,6 @@ const AddVenueForm: React.FC = () => {
   useEffect(() => {
     const loadDynamicFormInEditMode = async () => {
       if (id && getSelectedForm && getSelectedForm.fields && getSelectedForm.fields.length > 0) {
-        console.log('Loading dynamic form for edit mode, form:', getSelectedForm);
-        console.log('Current formData:', formData);
-        
         // Process venue data after form is loaded - handle MultiImageUpload fields specially
         if (typeof formData === 'object' && !Array.isArray(formData) && Object.keys(formData).length > 0) {
           const processedData: Record<string, any> = { ...formData };
@@ -261,8 +257,8 @@ const AddVenueForm: React.FC = () => {
                     // Use IMAGE_BASE_URL from config, or construct from API base URL
                     const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
                       (import.meta.env.VITE_API_BASE_URL 
-                        ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '') 
-                        : 'http://localhost:10030');
+                        ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
+                        : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
                     imageUrl = `${imageBaseUrl}${imageUrl}`;
                   }
                   
@@ -281,7 +277,6 @@ const AddVenueForm: React.FC = () => {
           
           // Only update if there were changes to prevent infinite loops
           if (hasChanges) {
-            console.log('Setting processed venue form data:', processedData);
             setFormData(processedData);
           }
         }
@@ -295,9 +290,7 @@ const AddVenueForm: React.FC = () => {
   useEffect(() => {
     const loadDynamicForm = async () => {
       if (watchedCategoryId) {
-        console.log('Loading dynamic form for category:', watchedCategoryId);
         const form = await getDynamicFormByCategory(watchedCategoryId);
-        console.log('Dynamic form loaded:', form);
         setSelectedForm(form);
         
         // Only reset dynamic form data when category changes in create mode (not edit mode)
@@ -388,7 +381,6 @@ const AddVenueForm: React.FC = () => {
               if (!imageUrl || 
                   imageUrl.startsWith('data:') || // Reject local data URLs
                   (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://') && !imageUrl.startsWith('/'))) {
-                console.warn('Skipping image without valid Supabase URL:', img);
                 return null;
               }
               
@@ -494,7 +486,6 @@ const AddVenueForm: React.FC = () => {
     try {
       // Create JSON data (no binary files, only URLs)
       const jsonData = createFormData(data);
-      console.log('Submitting venue data:', JSON.stringify(jsonData, null, 2));
 
       if (id) {
         await updateVenue(id, jsonData);
@@ -535,9 +526,6 @@ const AddVenueForm: React.FC = () => {
     formData.append('file', file);
     
     try {
-      console.log('Uploading image to Supabase:', {
-        fileName: file.name,
-        fileSize: file.size,
         fileType: file.type,
         endpoint: '/venues/upload-image'
       });
@@ -550,8 +538,6 @@ const AddVenueForm: React.FC = () => {
         },
       });
       
-      console.log('Upload response:', response.data);
-      
       // Handle different response structures
       // API returns: { status: "OK", data: { imageUrl: "..." } }
       const imageUrl = response.data?.data?.imageUrl || 
@@ -562,12 +548,10 @@ const AddVenueForm: React.FC = () => {
       
       // Ensure we got a valid Supabase URL
       if (!imageUrl) {
-        console.error('Invalid response structure:', response.data);
         throw new Error('Invalid response: No image URL returned from server');
       }
       
       if (typeof imageUrl !== 'string') {
-        console.error('Invalid URL type:', typeof imageUrl, imageUrl);
         throw new Error('Invalid response: Image URL is not a string');
       }
       
@@ -576,24 +560,13 @@ const AddVenueForm: React.FC = () => {
         throw new Error('Invalid response: Received data URL instead of Supabase URL');
       }
       
-      console.log('Image uploaded successfully to Supabase:', imageUrl);
       return imageUrl; // Return the Supabase URL
     } catch (error: any) {
-      console.error('Error uploading image to Supabase:', error);
-      
       // Extract detailed error message
       const errorMessage = error?.response?.data?.message || 
                           error?.response?.data?.error || 
                           error?.message || 
                           'Failed to upload image to Supabase';
-      
-      console.error('Upload error details:', {
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data,
-        message: errorMessage,
-        endpoint: '/venues/upload-image'
-      });
       
       throw new Error(errorMessage);
     }
@@ -631,8 +604,6 @@ const AddVenueForm: React.FC = () => {
       }));
       
     } catch (error: any) {
-      console.error('Error uploading images to Supabase:', error);
-      
       // Extract detailed error message
       const errorMessage = error?.message || 
                           error?.response?.data?.message || 
@@ -841,18 +812,14 @@ const AddVenueForm: React.FC = () => {
                   />
                 </div>
                 {/* Dynamic Form Fields */}
-                {console.log('Rendering dynamic form section. getSelectedForm:', getSelectedForm)}
                 {getSelectedForm && getSelectedForm.fields && getSelectedForm.fields.length > 0 ? (
                     <>
                     <h3 className="text-xl font-semibold text-gray-800 mb-4 mt-6 capitalize">
                       {getSelectedForm?.name} Details
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {console.log('Rendering fields:', getSelectedForm.fields)}
-                      {console.log('Current formData for rendering:', formData)}
                       {(getSelectedForm?.fields || []).map((field: DynamicFormField, index: number) => {
                         const fieldValue = formData[field.id] || '';
-                        console.log(`Field ${field.name} (${field.id}): value =`, fieldValue);
                         return (
                         <div key={index}>
                           <DynamicFieldForm

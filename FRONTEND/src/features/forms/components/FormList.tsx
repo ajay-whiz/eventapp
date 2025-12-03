@@ -41,7 +41,7 @@ const DynamicFormList: React.FC = () => {
 
   // Check pagination data
   useEffect(() => {
-    console.log('FormList: Component mounted, fetching forms...');
+
     const delayDebounce = setTimeout(() => {
       getFormList(currentPage, rowsPerPage, searchQuery, selectedRole);
     }, 300); // debounce API call by 300ms
@@ -51,7 +51,7 @@ const DynamicFormList: React.FC = () => {
 
   // Debug: Log when data changes
   useEffect(() => {
-    console.log('FormList: Data updated', { users, pagination, loading });
+
   }, [users, pagination, loading]);
 
   const handlePageChange = (newPage: number) => {
@@ -183,13 +183,6 @@ const DynamicFormList: React.FC = () => {
       ...u, // Include all form data for modal
     }))
   : [];
-
-  console.log('FormList: Rendering with', { 
-    usersCount: users.length, 
-    sanitizedCount: sanitizedUsers.length,
-    loading,
-    pagination 
-  });
 
   return (
     <Layout>

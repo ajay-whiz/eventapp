@@ -61,7 +61,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // For now, use mock data
       // In production, replace this with actual API call
     } catch (error: any) {
-      console.error('Failed to load messages:', error);
+
     }
   };
 

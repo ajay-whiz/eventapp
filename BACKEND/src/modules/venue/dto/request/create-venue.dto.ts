@@ -96,7 +96,7 @@ export class CreateVenueDto {
       try {
         return JSON.parse(value);
       } catch (e) {
-        console.error('Failed to parse formData JSON string:', e);
+
         return undefined;
       }
     }

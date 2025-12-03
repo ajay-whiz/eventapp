@@ -41,11 +41,11 @@ export class ServiceCategoryController {
     @UseGuards(AuthGuard('jwt'), FeatureGuard)
     @Features(FeatureType.SERVICE_CATEGORY)
     create(@Body() createServiceCategoryDto: CreateServiceCategoryDto): Promise<ServiceCategoryResponseDto> {
-        console.log('=== CREATE SERVICE CATEGORY CONTROLLER ===');
-        console.log('Received DTO:', createServiceCategoryDto);
-        console.log('formId in DTO:', createServiceCategoryDto.formId);
-        console.log('formId type:', typeof createServiceCategoryDto.formId);
-        console.log('========================================');
+
+
+
+
+
         return this.serviceCategoryService.create(createServiceCategoryDto);
     }
 
@@ -73,12 +73,12 @@ export class ServiceCategoryController {
     @UseGuards(AuthGuard('jwt'), FeatureGuard)
     @Features(FeatureType.SERVICE_CATEGORY)
     update(@Param('id') id: string, @Body() updateServiceCategoryDto: UpdateServiceCategoryDto): Promise<ServiceCategoryResponseDto> {
-        console.log('=== UPDATE SERVICE CATEGORY CONTROLLER ===');
-        console.log('Update ID:', id);
-        console.log('Received DTO:', updateServiceCategoryDto);
-        console.log('formId in DTO:', updateServiceCategoryDto.formId);
-        console.log('formId type:', typeof updateServiceCategoryDto.formId);
-        console.log('==========================================');
+
+
+
+
+
+
         return this.serviceCategoryService.update(id, updateServiceCategoryDto);
     }
 

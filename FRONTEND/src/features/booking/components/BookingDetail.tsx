@@ -72,7 +72,7 @@ export const BookingDetail: React.FC = () => {
         setShowChat(true);
       }
     } catch (error: any) {
-      console.error('Failed to load offers:', error);
+
       // Don't show error toast if offers endpoint doesn't exist yet
     } finally {
       setOffersLoading(false);

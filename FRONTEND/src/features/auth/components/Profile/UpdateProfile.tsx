@@ -67,15 +67,10 @@ const UpdateProfile: React.FC = () => {
   }, [user?.id]);
   // Reset only once from profile, but preserve form data after image upload
   useEffect(() => {
-    console.log('🔍 Profile effect triggered:', { 
-      hasProfile: !!profile, 
-      skipReset: skipResetRef.current,
-      isImageUploadInProgress,
-      profileId: profile?.id 
-    });
+
     // Only reset form on initial load, not during or after image uploads
     if (profile && !skipResetRef.current && !isImageUploadInProgress) {
-      console.log('🔄 Resetting form with profile data:', profile);
+
       const tempImageUrl = localStorage.getItem('tempProfileImageUrl');
       const imageUrl = profile.profileImage || '';
       
@@ -95,13 +90,13 @@ const UpdateProfile: React.FC = () => {
         localStorage.removeItem('tempProfileImageUrl');
       }
     } else if (profile && (skipResetRef.current || isImageUploadInProgress)) {
-      console.log('⏭️ Skipping form reset due to skip flag or image upload in progress');
+
     }
   }, [profile, reset, isImageUploadInProgress]);
   // Separate effect to handle profile image updates after upload
   useEffect(() => {
     if (profile && skipResetRef.current) {
-      console.log('🖼️ Updating profile image only, preserving form data');
+
       // After image upload - only update the profileImage field, preserve all other form data
       const tempImageUrl = localStorage.getItem('tempProfileImageUrl');
       const imageUrl = tempImageUrl || profile.profileImage || '';
@@ -125,16 +120,14 @@ const UpdateProfile: React.FC = () => {
     
     // Store current form data before upload
     const currentFormData = methods.getValues();
-    console.log('📝 Current form data before upload:', currentFormData);
-    
+
     try {
-      console.log('📤 Starting image upload...');
+
       const fileUrl = await updateProfileImage(file);
       
       // Ensure fileUrl is a string
       const imageUrlString = typeof fileUrl === 'string' ? fileUrl : String(fileUrl);
-      
-      console.log('✅ Image upload successful, URL:', imageUrlString);
+
       setProfileImageUrl(imageUrlString);
       
       // Update the form field directly
@@ -145,22 +138,20 @@ const UpdateProfile: React.FC = () => {
       
       // Set skip flag to prevent form reset after profile update
       skipResetRef.current = true;
-      console.log('🚫 Skip flag set to prevent form reset');
-      
+
       // Check form data after upload
       const formDataAfterUpload = methods.getValues();
-      console.log('📝 Form data after upload:', formDataAfterUpload);
-      
+
       toast.success('Image uploaded successfully');
     } catch (error) {
-      console.error('❌ Image upload failed:', error);
+
       toast.error('Image upload failed');
     } finally {
       setImageUploading(false);
       // Keep the upload in progress flag for a bit longer to prevent any race conditions
       setTimeout(() => {
         setIsImageUploadInProgress(false);
-        console.log('🏁 Image upload process completed');
+
       }, 1000);
     }
   };

@@ -106,7 +106,7 @@ export class UserService {
     await this.userRepository.save(user);
     
     try {
-      console.log(`Attempting to send OTP email to ${body.email}...`);
+
       const userName = body.firstName || body.organizationName || 'User';
       const emailHtml = generateEmailTemplate({
         userName,
@@ -125,16 +125,12 @@ export class UserService {
         text: emailText,
         html: emailHtml,
       });
-      console.log(`✅ Signup OTP sent successfully to ${body.email}: ${otp}`);
+
     } catch (error) {
-      console.error('❌ Email sending failed during signup:', error.message);
-      console.error('Error details:', {
-        code: error.code,
-        command: error.command,
-        response: error.response
-      });
+
+
       console.log(`📝 Signup OTP for ${body.email}: ${otp} (Email service unavailable)`);
-      console.log('📧 User can use this OTP to verify their account manually');
+
       // Don't throw error, just log it and continue
       // This allows the user to be created even if email fails
     }
@@ -155,8 +151,7 @@ export class UserService {
 
   async validateLogin(payload: LoginReqDto): Promise<User> {
     const { email, password } = payload;
-    console.log(`Login attempt for: ${email}`);
-    
+
     // Normalize email to lowercase for consistent searching
     const normalizedEmail = email.toLowerCase().trim();
     
@@ -176,29 +171,26 @@ export class UserService {
     }
     
     if (!user) {
-      console.log(`User not found for email: ${email}`);
+
       throw new UnauthorizedException('Invalid credentials');
     }
-    
-    console.log(`User found: ${user.email}, isBlocked: ${user.isBlocked}, isActive: ${user.isActive}, isMobileAppUser: ${user.isMobileAppUser}`);
-    
+
     // Check if user is blocked
     if (user.isBlocked) {
-      console.log(`User ${user.email} is blocked`);
+
       throw new UnauthorizedException('Your account has been blocked. Please contact support.');
     }
     
     // Verify password
     if (!user.password) {
-      console.log(`User ${user.email} has no password set`);
+
       throw new UnauthorizedException('Invalid credentials');
     }
     
     const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log(`Password match: ${passwordMatch}`);
-    
+
     if (!passwordMatch) {
-      console.log(`Password mismatch for user: ${user.email}`);
+
       throw new UnauthorizedException('Invalid credentials');
     }
     
@@ -208,11 +200,10 @@ export class UserService {
     const canLogin = user.isMobileAppUser || (user.isActive && !user.isMobileAppUser);
     
     if (!canLogin) {
-      console.log(`User ${user.email} cannot login - isActive: ${user.isActive}, isMobileAppUser: ${user.isMobileAppUser}`);
+
       throw new UnauthorizedException('Your account is not active. Please contact support.');
     }
-    
-    console.log(`Login successful for user: ${user.email}`);
+
     return user;
   }
 
@@ -285,7 +276,7 @@ export class UserService {
     await this.userRepository.save(user);
 
     // Use robust email service with multiple fallback strategies
-    console.log(`📧 Sending OTP email to ${email} using robust email service...`);
+
     const emailSent = await this.robustEmailService.sendEmail(
       email,
       'Your OTP Code',
@@ -293,10 +284,10 @@ export class UserService {
     );
     
     if (emailSent) {
-      console.log(`✅ OTP email sent successfully to ${email}: ${otp}`);
+
     } else {
       console.log(`📝 OTP for ${email}: ${otp} (Email delivery failed, but OTP is available in logs)`);
-      console.log('📧 User can use this OTP to verify their account manually');
+
     }
 
     return { message: 'OTP sent' };
@@ -403,7 +394,7 @@ export class UserService {
       });
       return this.userRepository.save(user);
     } catch (error: any) {
-      console.error('Error in createWithPhone:', error);
+
       throw error;
     }
   }
@@ -494,8 +485,7 @@ export class UserService {
     }
     
     console.log('findAll - Match conditions:', JSON.stringify(matchConditions, null, 2));
-    console.log('findAll - Current user ID:', currentUser.id);
-    
+
     const pipeline: any[] = [
       { $match: matchConditions },
 
@@ -582,13 +572,10 @@ export class UserService {
     console.log('findAll - Pipeline:', JSON.stringify(pipeline, null, 2));
     
     const data = await this.userRepository.aggregate(pipeline).toArray();
-    
-    console.log('findAll - Data found:', data.length);
+
     console.log('findAll - First user (if any):', data[0] ? { id: data[0].id, email: data[0].email, userType: data[0].userType } : 'No data');
 
     const total = await this.userRepository.countDocuments(matchConditions);
-    
-    console.log('findAll - Total count:', total);
 
     return {
       data,
@@ -1200,7 +1187,7 @@ export class UserService {
       : `${this.generalConfig.frontendUrl}/reset-password?token=${token}&email=${email}`;
 
     // 4. Send email using robust email service
-    console.log(`📧 Sending password reset email to ${user.email} using robust email service...`);
+
     const emailSent = await this.robustEmailService.sendEmail(
       user.email,
       'Reset Password',
@@ -1208,11 +1195,11 @@ export class UserService {
     );
 
     if (emailSent) {
-      console.log(`✅ Password reset email sent successfully to ${user.email}`);
+
     } else {
       console.log(`📝 Password reset email for ${user.email} (Email delivery failed, but reset link is available in logs)`);
-      console.log('📧 User can use this reset link to reset their password manually');
-      console.log(`Reset Link: ${resetUrl}`);
+
+
     }
 
     return {
@@ -1440,8 +1427,7 @@ export class UserService {
 
   async updateProfileImageBase64(userId: string, profileImage: string) {
     try {
-      console.log('🖼️ Updating profile image for user:', userId);
-      
+
       if (!profileImage) {
         throw new BadRequestException('Profile image is required');
       }
@@ -1458,11 +1444,9 @@ export class UserService {
       const mimetype = `image/${ext}`;
       const fileName = `${uuidv4()}.${ext}`;
       let imageUrl: any = '';
-      
-      console.log('📁 Processing image:', { ext, mimetype, fileName, size: buffer.length });
-      
+
       if (process.env.NODE_ENV === 'local') {
-        console.log('🏠 Using Supabase for local development');
+
         const { path, publicUrl } = await this.supabaseService.upload({
           filePath: 'profile_' + fileName,
           file: buffer,
@@ -1470,9 +1454,9 @@ export class UserService {
           bucket: 'profiles',
         });
         imageUrl = publicUrl;
-        console.log('✅ Supabase upload successful:', { imageUrl, path });
+
       } else {
-        console.log('☁️ Using AWS S3 for production');
+
         try {
           // For production, upload to S3
           const awsUploadReqDto = {
@@ -1490,9 +1474,9 @@ export class UserService {
           const response =
             await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
           imageUrl = response?.Location;
-          console.log('✅ AWS S3 upload successful:', imageUrl);
+
         } catch (s3Error) {
-          console.error('❌ AWS S3 upload failed, using Supabase fallback:', s3Error.message);
+
           // Fallback to Supabase if AWS S3 fails
           try {
             const { path, publicUrl } = await this.supabaseService.upload({
@@ -1502,36 +1486,34 @@ export class UserService {
               bucket: 'profiles',
             });
             imageUrl = publicUrl;
-            console.log('✅ Supabase fallback upload successful:', imageUrl);
+
           } catch (supabaseError) {
-            console.error('❌ Supabase fallback also failed:', supabaseError.message);
+
             // Final fallback - return a placeholder URL
             imageUrl = `https://via.placeholder.com/150x150/cccccc/666666?text=Profile+Image`;
-            console.log('⚠️ Using placeholder image URL:', imageUrl);
+
           }
         }
       }
       
       // Update in DB
-      console.log('💾 Updating database with image URL:', imageUrl);
+
       const updateResult = await this.userRepository.update(
         { _id: new ObjectId(userId) } as any,
         { profileImage: imageUrl }
       );
-      
-      console.log('✅ Database update result:', updateResult);
+
       return { profileImage: imageUrl };
       
     } catch (error) {
-      console.error('❌ Error updating profile image:', error);
+
       throw error;
     }
   }
 
   async uploadFilesToS3Bucket(file: any): Promise<string> {
     try {
-      console.log('Upload method called, NODE_ENV:', process.env.NODE_ENV);
-      
+
       // Validate file object
       if (!file) {
         throw new BadRequestException('File is required');
@@ -1555,22 +1537,16 @@ export class UserService {
       
       // Check if AWS S3 is configured
       const hasAwsConfig = this.awsConfig && this.awsConfig.bucketName;
-      
-      console.log('Upload configuration:', {
-        isSupabaseAvailable,
-        hasAwsConfig,
-        hasAwsS3Service: !!this.awsS3Service
-      });
-      
+
       // Try Supabase first (if available)
       if (isSupabaseAvailable) {
         try {
-          console.log('☁️ Trying Supabase upload first');
+
           const supabaseBuckets = ['profiles', 'uploads'];
           
           for (const bucket of supabaseBuckets) {
             try {
-              console.log(`☁️ Trying Supabase bucket: ${bucket}`);
+
               const uploadResult = await this.supabaseService.upload({
                 filePath: `profile/${fileName}`,
                 file: file.buffer,
@@ -1584,19 +1560,19 @@ export class UserService {
                 return uploadResult.publicUrl;
               }
             } catch (supabaseError: any) {
-              console.error(`⚠️ Supabase bucket ${bucket} failed:`, supabaseError?.message);
+
               continue;
             }
           }
         } catch (supabaseError: any) {
-          console.error('⚠️ Supabase upload failed:', supabaseError?.message);
+
         }
       }
       
       // Try AWS S3 as fallback (if configured)
       if (hasAwsConfig && this.awsS3Service) {
         try {
-          console.log('☁️ Trying AWS S3 upload');
+
           const awsUploadReqDto = {
             Bucket: this.awsConfig.bucketName,
             Key:
@@ -1610,11 +1586,11 @@ export class UserService {
           };
           const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
           if (response?.Location) {
-            console.log('✅ AWS S3 upload successful:', response.Location);
+
             return response.Location;
           }
         } catch (s3Error: any) {
-          console.error('❌ AWS S3 upload failed:', s3Error?.message);
+
         }
       }
       
@@ -1624,12 +1600,7 @@ export class UserService {
       );
       
     } catch (error: any) {
-      console.error('Upload error:', {
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name
-      });
-      
+
       // If it's already a BadRequestException, re-throw it
       if (error instanceof BadRequestException) {
         throw error;
@@ -1773,29 +1744,25 @@ WhizCloud Events Team
 
     // Send email using SMTP (MailerService)
     try {
-      console.log(`📧 Sending password reset email to ${user.email} via SMTP...`);
+
       await this.mailerService.sendMail({
         to: user.email,
         subject: emailSubject,
         text: emailText,
         html: emailHtml,
       });
-      console.log(`✅ Password reset email sent successfully to ${user.email} via SMTP`);
+
     } catch (error) {
-      console.error('❌ SMTP email sending failed:', error.message);
-      console.error('Error details:', {
-        code: error.code,
-        command: error.command,
-        response: error.response,
-      });
+
+
       // Log the reset link for manual access if email fails
       console.log('='.repeat(60));
       console.log('📧 PASSWORD RESET LINK (SMTP FAILED)');
       console.log('='.repeat(60));
-      console.log(`To: ${user.email}`);
-      console.log(`Reset Link: ${resetUrl}`);
-      console.log(`Token: ${token}`);
-      console.log(`Expires: 15 minutes from now`);
+
+
+
+
       console.log('='.repeat(60));
       throw new InternalServerErrorException('Failed to send password reset email. Please try again later.');
     }
@@ -1831,7 +1798,7 @@ WhizCloud Events Team
       
       // Send confirmation email via SMTP
       try {
-        console.log(`📧 Sending password reset confirmation email to ${user.email} via SMTP...`);
+
         const userName = user.firstName && user.lastName 
           ? `${user.firstName} ${user.lastName}` 
           : user.firstName || user.organizationName || 'User';
@@ -1852,15 +1819,15 @@ WhizCloud Events Team
           text: emailText,
           html: emailHtml,
         });
-        console.log(`✅ Password reset confirmation email sent successfully to ${user.email} via SMTP`);
+
       } catch (emailError) {
-        console.error('❌ Failed to send confirmation email:', emailError.message);
+
         // Don't throw error, password reset is still successful
       }
       
       return { message: 'Password reset successful' };
     } catch (error) {
-      console.error('❌ Error in resetPasswordWithToken:', error);
+
       throw error;
     }
   }
@@ -1870,7 +1837,7 @@ WhizCloud Events Team
       const { email, newPassword } = dto;
       return await this.resetPasswordByEmail(email, newPassword);
     } catch (error) {
-      console.error('❌ Error in resetPasswordMobile:', error);
+
       throw error;
     }
   }
@@ -1915,22 +1882,22 @@ WhizCloud Events Team
       });
       
       try {
-        console.log(`📧 Sending password reset confirmation email to ${user.email} via SMTP...`);
+
         await this.mailerService.sendMail({
           to: user.email,
           subject: 'Password Reset Successful - WhizCloud Events',
           text: emailText,
           html: emailHtml,
         });
-        console.log(`✅ Password reset confirmation email sent successfully to ${user.email} via SMTP`);
+
       } catch (emailError) {
-        console.error('❌ Failed to send confirmation email:', emailError.message);
+
         // Don't throw error, password reset is still successful
       }
       
       return { message: 'Password reset successful' };
     } catch (error) {
-      console.error('❌ Error in resetPasswordByEmail:', error);
+
       throw error;
     }
   }
@@ -1955,7 +1922,7 @@ WhizCloud Events Team
   }
 
   async findByToken(token: string): Promise<User | null> {
-    console.log(token);
+
     return this.userRepository.findOne({ where: { token: token } });
   }
 

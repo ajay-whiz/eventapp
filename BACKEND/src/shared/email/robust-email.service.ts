@@ -43,55 +43,54 @@ export class RobustEmailService {
 
     for (let i = 0; i < strategies.length; i++) {
       try {
-        console.log(`🔄 Trying email strategy ${i + 1}/${strategies.length}...`);
+
         const success = await strategies[i]();
         if (success) {
-          console.log(`✅ Email sent successfully using strategy ${i + 1}`);
+
           return true;
         }
       } catch (error) {
-        console.error(`❌ Strategy ${i + 1} failed:`, error.message);
+
         continue;
       }
     }
 
-    console.error('❌ All email strategies failed');
     return false;
   }
 
   private async tryResend(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying Resend Email Service...');
+
       return await this.resendEmailService.sendEmail(to, subject, text);
     } catch (error) {
-      console.error('❌ Resend Email Service failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryRailwayDirect(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying Railway Direct Service...');
+
       return await this.railwayDirectEmailService.sendEmail(to, subject, text);
     } catch (error) {
-      console.error('❌ Railway Direct Service failed:', error.message);
+
       throw error;
     }
   }
 
   private async trySmtpOnly(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying SMTP-Only Service...');
+
       return await this.smtpOnlyEmailService.sendEmail(to, subject, text);
     } catch (error) {
-      console.error('❌ SMTP-Only Service failed:', error.message);
+
       throw error;
     }
   }
 
   private async trySendGrid(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying SendGrid...');
+
       await this.mailerService.sendMail({
         to,
         subject,
@@ -99,15 +98,14 @@ export class RobustEmailService {
       });
       return true;
     } catch (error) {
-      console.error('❌ SendGrid failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryGmailSMTP(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying Gmail SMTP...');
-      
+
       // Try environment variables first, then config
       const smtpUser = process.env.SMTP_USER || this.configService.get('email.SMTP_USER');
       const smtpPass = process.env.SMTP_PASS || this.configService.get('email.SMTP_PASS');
@@ -179,29 +177,26 @@ export class RobustEmailService {
       
       for (const config of configs) {
         try {
-          console.log(`📧 Trying ${config.name}...`);
-          
+
           const transporter = nodemailer.createTransport(config);
           
           // Quick connection test with shorter timeout
-          console.log('📧 Testing connection...');
+
           await transporter.verify();
-          console.log(`✅ ${config.name} connection verified`);
-          
+
           const mailOptions = {
             from: `"No Reply" <${smtpFrom}>`,
             to: to,
             subject: subject,
             text: text,
           };
-          
-          console.log('📧 Sending email...');
+
           const info = await transporter.sendMail(mailOptions);
-          console.log(`✅ Email sent successfully via ${config.name}:`, info.messageId);
+
           return true;
           
         } catch (configError) {
-          console.log(`❌ ${config.name} failed:`, configError.message);
+
           // Continue to next configuration
         }
       }
@@ -209,63 +204,62 @@ export class RobustEmailService {
       throw new Error('All Gmail SMTP configurations failed');
       
     } catch (error) {
-      console.error('❌ Gmail SMTP completely failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryHttpEmail(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying HTTP email service...');
+
       return await this.httpEmailService.sendEmailViaHttp(to, subject, text);
     } catch (error) {
-      console.error('❌ HTTP email service failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryRailwayEmail(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying Railway Email service...');
+
       return await this.railwayEmailService.sendEmail(to, subject, text);
     } catch (error) {
-      console.error('❌ Railway Email service failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryWebhook(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying Webhook service...');
+
       return await this.webhookEmailService.sendEmailViaWebhook(to, subject, text);
     } catch (error) {
-      console.error('❌ Webhook service failed:', error.message);
+
       throw error;
     }
   }
 
   private async tryConsoleLog(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Using console logging as final fallback...');
+
       console.log('='.repeat(50));
-      console.log('📧 EMAIL NOTIFICATION');
+
       console.log('='.repeat(50));
-      console.log(`To: ${to}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`Content: ${text}`);
+
+
+
       console.log(`Timestamp: ${new Date().toISOString()}`);
       console.log('='.repeat(50));
       return true;
     } catch (error) {
-      console.error('❌ Console logging failed:', error.message);
+
       throw error;
     }
   }
 
   private async trySendGridAPI(to: string, subject: string, text: string): Promise<boolean> {
     try {
-      console.log('📧 Trying SendGrid API...');
-      
+
       const sendGridApiKey = process.env.SENDGRID_API_KEY || this.configService.get('sendGrid.apiKey');
       const fromEmail = process.env.SENDGRID_FROM_EMAIL || this.configService.get('sendGrid.fromEmail');
       
@@ -291,7 +285,6 @@ export class RobustEmailService {
         }]
       };
 
-      console.log('📧 Sending email via SendGrid API...');
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -302,29 +295,28 @@ export class RobustEmailService {
       });
 
       if (response.ok) {
-        console.log('✅ SendGrid API email sent successfully');
+
         return true;
       } else {
         const errorText = await response.text();
-        console.log(`❌ SendGrid API failed: ${response.status} - ${errorText}`);
-        
+
         // Handle specific error cases
         if (response.status === 401) {
-          console.log('🔧 SendGrid API Key Issue:');
-          console.log('   - API key may be invalid, expired, or revoked');
-          console.log('   - Check SendGrid dashboard for key status');
-          console.log('   - Generate a new API key if needed');
+
+
+
+
         } else if (response.status === 403) {
-          console.log('🔧 SendGrid API Permission Issue:');
-          console.log('   - API key may not have mail send permissions');
-          console.log('   - Check SendGrid account verification status');
+
+
+
         }
         
         throw new Error(`SendGrid API failed: ${response.status} - ${errorText}`);
       }
       
     } catch (error) {
-      console.error('❌ SendGrid API failed:', error.message);
+
       throw error;
     }
   }

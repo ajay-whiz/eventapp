@@ -112,7 +112,7 @@ export const BookingManagement: React.FC = () => {
         setRecentBookings(bookings.data || []);
 
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+
       } finally {
         setLoading(false);
       }
@@ -130,7 +130,7 @@ export const BookingManagement: React.FC = () => {
         limit: 1000,
       }, format);
     } catch (error) {
-      console.error('Export failed:', error);
+
     }
   };
 
@@ -167,7 +167,7 @@ export const BookingManagement: React.FC = () => {
   const handleSaveQuotation = () => {
     try {
       // Here you would typically save the quotation to the backend
-      console.log('Saving quotation:', quotationData);
+
       toast.success('Quotation saved successfully');
       setShowQuotationModal(false);
       // Reset form

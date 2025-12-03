@@ -82,7 +82,7 @@ export class VendorService {
             categoryName = category.name;
           }
         } catch (error) {
-          console.log('Category lookup failed, using default category name');
+
         }
       }
 
@@ -315,7 +315,7 @@ export class VendorService {
                 }
               }
             } catch (error) {
-              console.log('Category lookup failed for vendor:', vendor.id, 'categoryId:', vendorCategoryId, 'error:', error);
+
             }
           }
           
@@ -356,14 +356,7 @@ export class VendorService {
               }
               
               // Debug logging
-              console.log('Vendor image extraction:', {
-                vendorId: vendor.id,
-                vendorName: vendor.name,
-                fieldName: imageField.name,
-                fieldType: imageField.type,
-                extractedUrl: imageUrlFromFormData,
-                firstImageStructure: firstImage
-              });
+
             }
           }
           
@@ -446,7 +439,7 @@ export class VendorService {
   
       return { data: finalData, pagination };
     } catch (error) {
-      console.error('Error fetching vendors:', error);
+
       throw new BadRequestException('Failed to fetch vendors');
     }
   }
@@ -520,7 +513,7 @@ export class VendorService {
           }
         }
       } catch (error) {
-        console.log('Category lookup failed, using default category name:', error);
+
       }
     }
 
@@ -898,18 +891,17 @@ export class VendorService {
       }
 
       // Ensure we're only updating the specific record by ID
-      console.log('Updating vendor with ID:', id);
+
       console.log('Update filter:', { _id: new ObjectId(id) });
       
       const updateResult = await this.vendorRepo.updateOne({ _id: new ObjectId(id) }, { $set: updateData });
-      console.log('Update result - matchedCount:', updateResult.matchedCount, 'modifiedCount:', updateResult.modifiedCount);
-      
+
       if (updateResult.matchedCount === 0) {
         throw new NotFoundException('Vendor not found for update');
       }
       
       if (updateResult.matchedCount > 1) {
-        console.error('WARNING: Multiple vendors matched the update filter! This should not happen.');
+
       }
       
       return this.findOne(id);
@@ -1062,7 +1054,7 @@ export class VendorService {
         }
       );
     } catch (error) {
-      console.error('Failed to update vendor rating:', error);
+
     }
   }
 }

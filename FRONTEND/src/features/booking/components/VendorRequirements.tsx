@@ -101,7 +101,7 @@ export const VendorRequirements: React.FC = () => {
 
       setRequirements(mockRequirements);
     } catch (error) {
-      console.error('Failed to load requirements:', error);
+
       toast.error('Failed to load requirements');
     } finally {
       setLoading(false);
@@ -248,7 +248,7 @@ export const VendorRequirements: React.FC = () => {
           break;
       }
     } catch (error) {
-      console.error('Action failed:', error);
+
       toast.error('Action failed. Please try again.');
     }
   };

@@ -42,12 +42,12 @@ import * as hbs from 'handlebars';
             partials.forEach(({ name, content }) => {
               hbs.registerPartial(name, content); // Register with Handlebars
             });
-            console.log(`Email templates loaded from: ${partialsDir}`);
+
           } catch (error) {
-            console.warn(`Warning: Could not load email templates from ${partialsDir}:`, error.message);
+
           }
         } else {
-          console.warn(`Warning: Email templates directory not found at: ${partialsDir}`);
+
         }
 
         return {

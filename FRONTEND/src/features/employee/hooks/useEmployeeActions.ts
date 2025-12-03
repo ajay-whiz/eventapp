@@ -147,9 +147,8 @@ export function useEmployeeActions() {
   }, [dispatch]);
 
   const fetchEnterpriseUserById = useCallback(async (_id: string) => {
-    console.log('🔄 fetchEnterpriseUserById called with ID:', _id);
-    console.log('🔄 API URL:', `${API_ROUTES.GET_ALL_ENTERPRISES}/users/${_id}`);
-    
+
+
     dispatch(fetchEmployeeByIdStart());
   
     try {
@@ -160,10 +159,9 @@ export function useEmployeeActions() {
         },
       });
 
-      console.log('✅ Enterprise user API response:', response.data);
       dispatch(fetchEmployeeByIdSuccess(response.data.data));
     } catch (err: any) {
-      console.error('❌ Enterprise user API error:', err);
+
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to fetch enterprise user';
       dispatch(fetchEmployeeByIdFailure(errorMessage));

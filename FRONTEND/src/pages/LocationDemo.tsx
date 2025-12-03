@@ -17,21 +17,21 @@ const LocationDemo: React.FC = () => {
 
   const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
     setSelectedPlace(place);
-    console.log('Selected place:', place);
+
   };
 
   const handleSaveLocation = async (locationData: any) => {
-    console.log('Saving location:', locationData);
+
     toast.success('Location saved successfully!');
   };
 
   const handleLocationFieldChange = (location: any) => {
     setLocationFieldValue(location);
-    console.log('Location field changed:', location);
+
   };
 
   const handleLocationAdded = (location: any) => {
-    console.log('Location added to listing:', location);
+
     toast.success('Location added to listing successfully!');
   };
 

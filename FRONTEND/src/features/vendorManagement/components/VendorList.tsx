@@ -383,7 +383,7 @@ const VendorList: React.FC = () => {
               setFormFieldsData(fullVendorDetails.dynamicFormData);
             }
           } catch (error) {
-            console.error('Failed to load form structure:', error);
+
           }
         }
       };
@@ -495,7 +495,7 @@ const VendorList: React.FC = () => {
                   setShowLocationModal(false);
                   setTimeout(() => setShowLocationModal(true), 100);
                 } catch (error: any) {
-                  console.error('Error deleting location:', error);
+
                   toast.error(error.response?.data?.message || 'Failed to delete location');
                 }
               }}

@@ -28,7 +28,7 @@ function getResendApiKey(): string | null {
       }
     }
   } catch (error) {
-    console.warn('⚠️ Could not read config file for Resend API key:', error);
+
   }
 
   return null;
@@ -41,13 +41,13 @@ const resendApiKey = getResendApiKey();
 if (resendApiKey && resendApiKey.trim() !== '') {
   try {
     resend = new Resend(resendApiKey);
-    console.log('✅ Resend initialized with API key');
+
   } catch (error) {
-    console.error('❌ Failed to initialize Resend:', error);
+
     resend = null;
   }
 } else {
-  console.warn('⚠️ RESEND_API_KEY not found in environment variables or config file. Resend email service will not work.');
+
 }
 
 // Helper function to get Resend FROM email from multiple sources
@@ -86,7 +86,7 @@ function getResendFromEmail(): string {
 export async function sendEmail(to: string, subject: string, html: string) {
   try {
     if (!resend) {
-      console.warn('⚠️ Resend not initialized - API key missing. Email not sent.');
+
       return { error: 'Resend API key not configured' };
     }
 
@@ -97,10 +97,10 @@ export async function sendEmail(to: string, subject: string, html: string) {
       subject,
       html,
     });
-    console.log('Email sent:', response);
+
     return response;
   } catch (error) {
-    console.error('Error sending email:', error);
+
     throw error;
   }
 }

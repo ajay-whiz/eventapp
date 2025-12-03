@@ -22,10 +22,10 @@ export class ServiceCategoryService {
   ) {}
 
   async create(dto: CreateServiceCategoryDto): Promise<ServiceCategoryResponseDto> {
-    console.log('Creating service category with DTO:', dto); // Debug log
+     // Debug log
     const serviceCategory = this.repo.create(dto);
     const savedServiceCategory = await this.repo.save(serviceCategory);
-    console.log('Saved service category:', savedServiceCategory); // Debug log
+     // Debug log
     
     // Fetch form data if formId exists and is not empty
     let form = null;
@@ -35,7 +35,7 @@ export class ServiceCategoryService {
           form = await this.formRepo.findOneBy({
             _id: new ObjectId(savedServiceCategory.formId)
           });
-          console.log('Found form in create:', form); // Debug log
+           // Debug log
           
           // Add actualValue to each field if it doesn't exist
           if (form && form.fields && Array.isArray(form.fields)) {
@@ -71,11 +71,11 @@ export class ServiceCategoryService {
             });
           }
         } else {
-          console.log('Invalid ObjectId format for formId:', savedServiceCategory.formId);
+
         }
       } catch (error) {
-        console.log('Form not found for formId:', savedServiceCategory.formId);
-        console.log('Error:', error);
+
+
       }
     }
 
@@ -286,7 +286,7 @@ export class ServiceCategoryService {
         pagination,
       };
     } catch (error) {
-      console.error('Error in findAll service-category:', error);
+
       throw new NotFoundException(`Failed to fetch service categories: ${error.message}`);
     }
   }
@@ -502,12 +502,12 @@ export class ServiceCategoryService {
       throw new NotFoundException(`Service category not found with id: ${id}`);
     }
 
-    console.log('Updating service category with DTO:', dto); // Debug log
-    console.log('Current service category:', serviceCategory); // Debug log
+     // Debug log
+     // Debug log
     
     Object.assign(serviceCategory, dto);
     const savedServiceCategory = await this.repo.save(serviceCategory);
-    console.log('Updated service category:', savedServiceCategory); // Debug log
+     // Debug log
     
     // Fetch form data if formId exists and is not empty
     let form = null;
@@ -517,7 +517,7 @@ export class ServiceCategoryService {
           form = await this.formRepo.findOneBy({
             _id: new ObjectId(savedServiceCategory.formId)
           });
-          console.log('Found form in update:', form); // Debug log
+           // Debug log
           
           // Add actualValue to each field if it doesn't exist
           if (form && form.fields && Array.isArray(form.fields)) {
@@ -553,11 +553,11 @@ export class ServiceCategoryService {
             });
           }
         } else {
-          console.log('Invalid ObjectId format for formId:', savedServiceCategory.formId);
+
         }
       } catch (error) {
-        console.log('Form not found for formId:', savedServiceCategory.formId);
-        console.log('Error:', error);
+
+
       }
     }
 

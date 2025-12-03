@@ -16,15 +16,15 @@ export class SupabaseService {
       const key = this.configService.get<string>('supabase.serviceKey') || this.configService.get<string>('supabase.publicAnonKey');
 
       if (!url || !key) {
-        console.warn('⚠️ Supabase configuration missing. Supabase uploads will not be available.');
-        console.warn('⚠️ Please set supabase.url and supabase.serviceKey/publicAnonKey in your configuration.');
+
+
         return;
       }
 
       this.client = createClient(url, key);
-      console.log('✅ Supabase service initialized successfully');
+
     } catch (error) {
-      console.error('❌ Error initializing Supabase service:', error);
+
       this.client = null;
     }
   }
@@ -65,18 +65,14 @@ export class SupabaseService {
 
       const { data, error } = await storage.upload(filePath, file as any, options);
       if (error) {
-        console.error('Supabase upload error:', error);
+
         throw new BadRequestException(`Supabase upload failed: ${error.message}`);
       }
 
       const { data: pub } = storage.getPublicUrl(data.path);
       return { path: data.path, publicUrl: pub.publicUrl };
     } catch (error: any) {
-      console.error('Supabase upload exception:', {
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name
-      });
+
       // Re-throw BadRequestException as-is
       if (error instanceof BadRequestException) {
         throw error;

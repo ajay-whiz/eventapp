@@ -64,7 +64,7 @@ export class RoleService {
       ) {
         throw error;
       }
-      console.error(error);
+
       throw new BadRequestException('Failed to create role');
     }
   }

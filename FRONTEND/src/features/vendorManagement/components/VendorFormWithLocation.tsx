@@ -343,7 +343,7 @@ const VendorFormWithLocation: React.FC = () => {
           const enterpriseList = await getEnterpriseList();
           setEnterprises(enterpriseList);
         } catch (error) {
-          console.error('Failed to load enterprises:', error);
+
         }
       }
     };
@@ -356,9 +356,9 @@ const VendorFormWithLocation: React.FC = () => {
   useEffect(() => {
     const loadDynamicFormInEditMode = async () => {
       if (isEditMode && selectedVendor && selectedVendor.serviceCategoryId && !dynamicForm) {
-        console.log('Loading dynamic form for edit mode, category:', selectedVendor.serviceCategoryId);
+
         const form = await getDynamicFormByCategory(selectedVendor.serviceCategoryId);
-        console.log('Dynamic form loaded in edit mode:', form);
+
         setDynamicForm(form);
         
         // Pre-populate form data if editing
@@ -419,7 +419,7 @@ const VendorFormWithLocation: React.FC = () => {
           const form = await getDynamicFormByCategory(categoryId);
           setDynamicForm(form);
         } catch (error) {
-          console.error('Error loading dynamic form:', error);
+
         }
       }
     };
@@ -578,7 +578,7 @@ const VendorFormWithLocation: React.FC = () => {
   };
 
   const handleLocationAdded = (location: any) => {
-    console.log('Location added:', location);
+
     // You can add additional logic here if needed
   };
 

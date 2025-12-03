@@ -237,14 +237,14 @@ export class VenueController {
     description: 'Unauthorized access',
   })
   create(@Body() createVenueDto: CreateVenueDto, @Req() req: any): Promise<VenueResponseDto> {
-    console.log('=== VENUE CONTROLLER ===');
-    console.log('Content-Type:', req.headers['content-type']);
-    console.log('Request method:', req.method);
-    console.log('Request URL:', req.url);
+
+
+
+
     console.log('Raw request body keys:', Object.keys(req.body || {}));
     console.log('Raw request body:', JSON.stringify(req.body, null, 2));
-    console.log('Request files:', req.files);
-    console.log('Request file:', req.file);
+
+
     console.log('Initial DTO:', JSON.stringify(createVenueDto, null, 2));
     
     // Always extract from raw body first - this ensures we get form-data values
@@ -258,15 +258,15 @@ export class VenueController {
                        contentType.includes('application/x-www-form-urlencoded');
     
     if (isFormData) {
-      console.log('✓ Detected form-data request');
-      console.log('Content-Type:', contentType);
+
+
       // When using AnyFilesInterceptor, check if body has fields
       if (Object.keys(rawBody).length === 0) {
-        console.warn('⚠️ WARNING: Form-data detected but req.body is empty!');
-        console.warn('This might indicate a parsing issue with Multer/AnyFilesInterceptor');
+
+
       }
     } else {
-      console.log('Request is NOT form-data, Content-Type:', contentType);
+
     }
     
     // Parse formData if it's a JSON string
@@ -274,14 +274,14 @@ export class VenueController {
       try {
         const parsedFormData = JSON.parse(rawBody.formData);
         (createVenueDto as any).formData = parsedFormData;
-        console.log('✓ Parsed formData from JSON string');
+
       } catch (e) {
-        console.error('✗ Failed to parse formData JSON string:', e);
+
         console.error('formData value (first 200 chars):', rawBody.formData?.substring(0, 200));
       }
     } else if (rawBody.formData && typeof rawBody.formData === 'object') {
       (createVenueDto as any).formData = rawBody.formData;
-      console.log('✓ formData is already an object');
+
     }
     
     // Extract all fields from raw body - ALWAYS use raw body values
@@ -300,10 +300,10 @@ export class VenueController {
       // Use raw body value if it exists and is not empty string
       if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
         (createVenueDto as any)[field] = rawValue;
-        console.log(`✓ Set ${field} = "${rawValue}" from raw body`);
+
       } else {
         const dtoValue = (createVenueDto as any)[field];
-        console.log(`  ${field}: raw="${rawValue}", dto="${dtoValue}"`);
+
       }
     });
     
@@ -311,21 +311,20 @@ export class VenueController {
     if (rawBody.albums && typeof rawBody.albums === 'string' && rawBody.albums.trim()) {
       try {
         (createVenueDto as any).albums = JSON.parse(rawBody.albums);
-        console.log('✓ Parsed albums from JSON string');
+
       } catch (e) {
-        console.error('✗ Failed to parse albums JSON string:', e);
+
       }
     }
     
     console.log('Final DTO after processing:', JSON.stringify(createVenueDto, null, 2));
-    console.log('Field values:');
+
     console.log('  serviceCategoryId:', createVenueDto?.serviceCategoryId, '(type:', typeof createVenueDto?.serviceCategoryId, ')');
     console.log('  name:', createVenueDto?.name, '(type:', typeof createVenueDto?.name, ')');
     console.log('  title:', createVenueDto?.title, '(type:', typeof createVenueDto?.title, ')');
     console.log('  description:', createVenueDto?.description, '(type:', typeof createVenueDto?.description, ')');
-    console.log('  formData type:', typeof createVenueDto?.formData, 'is object:', typeof createVenueDto?.formData === 'object');
-    console.log('========================');
-    
+
+
     return this.venueService.create(createVenueDto, req.user);
   }
 
@@ -542,9 +541,9 @@ export class VenueController {
     @Body() updateVenueDto: UpdateVenueDto,
     @Req() req: any,
   ): Promise<VenueResponseDto> {
-    console.log('=== VENUE UPDATE CONTROLLER ===');
-    console.log('Venue ID:', id);
-    console.log('Content-Type:', req.headers['content-type']);
+
+
+
     console.log('Raw request body:', JSON.stringify(req.body, null, 2));
     console.log('Received DTO:', JSON.stringify(updateVenueDto, null, 2));
     
@@ -555,8 +554,7 @@ export class VenueController {
                        contentType.includes('application/x-www-form-urlencoded');
     
     if (isFormData) {
-      console.log('✓ Detected form-data request for update');
-      
+
       // Extract enterprise fields from raw body - ALWAYS extract if present
       if (rawBody.enterpriseId !== undefined && rawBody.enterpriseId !== null) {
         (updateVenueDto as any).enterpriseId = rawBody.enterpriseId === '' ? undefined : rawBody.enterpriseId;
@@ -568,13 +566,13 @@ export class VenueController {
       }
     } else {
       // For JSON requests, also check if enterprise fields are in the DTO
-      console.log('Request is JSON, checking DTO for enterprise fields');
+
     }
     
     console.log('Final DTO after processing:', JSON.stringify(updateVenueDto, null, 2));
     console.log('enterpriseId:', (updateVenueDto as any).enterpriseId);
     console.log('enterpriseName:', (updateVenueDto as any).enterpriseName);
-    console.log('================================');
+
     return this.venueService.update(id, updateVenueDto, req.user);
   }
 
@@ -655,9 +653,8 @@ export class VenueController {
   })
   async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ imageUrl: string }> {
     try {
-      console.log('Venue image upload endpoint called');
-      console.log('File received:', !!file);
-      
+
+
       if (!file) {
         throw new BadRequestException('No file uploaded');
       }
@@ -666,13 +663,10 @@ export class VenueController {
       if (!allowedMimeTypes.includes(file.mimetype)) {
         throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
       }
-      
-      console.log('Starting venue image upload to Supabase...');
-      
+
       // Upload the file to Supabase and get the image URL
       const imageUrl = await this.venueService.uploadImageToSupabase(file);
-      console.log('Venue image uploaded successfully, URL:', imageUrl);
-      
+
       if (!imageUrl) {
         throw new BadRequestException('File upload failed - no URL returned');
       }
@@ -680,7 +674,7 @@ export class VenueController {
       return { imageUrl };
       
     } catch (error) {
-      console.error('Venue image upload error:', error);
+
       throw error;
     }
   }

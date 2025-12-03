@@ -69,8 +69,7 @@ export class AuthService {
           const cleanToken = token.trim();
           
           console.log('Google login - Token received:', cleanToken.substring(0, 50) + '...');
-          console.log('Google login - Token length:', cleanToken.length);
-          
+
           // Try to decode token to see the audience
           let tokenAudience: string | null = null;
           try {
@@ -81,21 +80,19 @@ export class AuthService {
               console.log('Google login - Token audience (aud):', tokenAudience);
             }
           } catch (decodeError) {
-            console.log('Google login - Could not decode token to check audience');
+
           }
           
           const googleClientId = this.configService.get<string>('auth.googleClientId');
           if (!googleClientId) {
             throw new BadRequestException('Google Client ID is not configured');
           }
-          
-          console.log('Google login - Using Client ID:', googleClientId);
-          
+
           // If token audience doesn't match, provide helpful error
           if (tokenAudience && tokenAudience !== googleClientId) {
-            console.error('Google login - Client ID mismatch!');
-            console.error('Google login - Token was issued for:', tokenAudience);
-            console.error('Google login - Backend is configured with:', googleClientId);
+
+
+
             throw new BadRequestException(
               `Google Client ID mismatch. Token was issued for a different client ID. ` +
               `Please update the backend configuration to use Client ID: ${tokenAudience} ` +
@@ -113,29 +110,22 @@ export class AuthService {
           if (!payload || !payload.email) {
             throw new BadRequestException('Invalid Google token: Missing email in token payload');
           }
-        
-          console.log('Google login - Token verified successfully for email:', payload.email);
-          
+
           // Find or create user in your DB
           let user = await this.userService.findByEmail(payload.email);
           if (!user) {
-            console.log('Google login - Creating new user for email:', payload.email);
+
             user = await this.userService.createFromGoogle(payload);
           } else {
-            console.log('Google login - Existing user found for email:', payload.email);
+
           }
         
           // Return JWT and user info
           return this.signinJwt(user);
         } catch (error) {
           // Log the error for debugging
-          console.error('Google login error:', error);
-          console.error('Google login error details:', {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          });
-          
+
+
           // Handle specific Google OAuth errors
           if (error.message?.includes('Invalid token signature') || 
               error.message?.includes('Token used too early') ||
@@ -225,7 +215,7 @@ export class AuthService {
               
               await this.userService.save(user);
             } catch (createError: any) {
-              console.error('Error creating user with phone:', createError);
+
               // If user creation fails, try to find user again (might have been created by another request)
               user = await this.userService.findByPhoneNumber(dto.countryCode, dto.phoneNumber);
               if (user) {
@@ -240,7 +230,7 @@ export class AuthService {
           }
           return { message: 'OTP sent to phone', otp: '111111' }; // Return OTP for testing
         } catch (error: any) {
-          console.error('Error in sendPhoneOtp:', error);
+
           // Bypass all errors - always return success
           return { message: 'OTP sent to phone', otp: '111111' };
         }

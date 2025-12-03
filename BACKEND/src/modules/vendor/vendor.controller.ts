@@ -154,7 +154,7 @@ export class VendorController {
       try {
         transformedData = plainToInstance(VendorUserResponseDto, rawData, { excludeExtraneousValues: true });
       } catch (transformError) {
-        console.error('Error transforming vendor data:', transformError);
+
         throw new Error(`Failed to transform vendor data: ${transformError.message}`);
       }
       
@@ -231,7 +231,7 @@ export class VendorController {
           
           return cleanedDto;
         } catch (itemError) {
-          console.error(`Error processing vendor at index ${index}:`, itemError);
+
           // Return a minimal safe object if processing fails
           return {
             id: vendorDto?.id || '',
@@ -265,7 +265,7 @@ export class VendorController {
       
       return { data: finalData, pagination };
     } catch (error) {
-      console.error('Error in findAllForUser:', error);
+
       throw error;
     }
   }
