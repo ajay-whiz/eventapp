@@ -1,5 +1,3 @@
-// Centralized API base URL for your frontend
-// Uses Vite's environment variable if available, otherwise falls back to the correct API URL
 
 // Default API base URL (without /api/v1)
 const DEFAULT_API_BASE = 'https://apimarketplace.whiz-cloud.com';
