@@ -3,33 +3,23 @@
 
 // Default API base URL (without /api/v1)
 const DEFAULT_API_BASE = 'https://apimarketplace.whiz-cloud.com';
-const DEFAULT_API_BASE_WITH_PATH = `${DEFAULT_API_BASE}/api/v1/`;
 
 // For local development and production, use the production API URL
 const getApiBaseUrl = () => {
   // Check if VITE_API_BASE_URL is set
   let envUrl = import.meta.env.VITE_API_BASE_URL;
-  // Validate and fix if wrong URL is set
+  
+  // Validate and fix if wrong URL is set (marketplace -> apimarketplace)
   if (envUrl && envUrl.includes('marketplace.whiz-cloud.com') && !envUrl.includes('apimarketplace.whiz-cloud.com')) {
     envUrl = envUrl.replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com');
   }
   
-  // In production, use relative paths to go through our proxy server
-  if (import.meta.env.PROD) {
-    // Production: Use relative path so requests go through our proxy server
-    // The server.js will proxy to the correct backend URL (defaults to apimarketplace.whiz-cloud.com)
-    const prodUrl = '/api/v1/';
-    return prodUrl;
-  }
-  
-  // In development mode: Use the production API URL directly
-  // If VITE_API_BASE_URL is explicitly set, use it (for direct API calls)
+  // If VITE_API_BASE_URL is explicitly set, use it
   if (envUrl) {
     // Ensure the URL ends with /api/v1/
-    // Remove trailing slash if present
-    envUrl = envUrl.replace(/\/+$/, '');
+    envUrl = envUrl.replace(/\/+$/, ''); // Remove trailing slashes
     
-    // Check if /api/v1 is already in the URL
+    // Add /api/v1 if not present
     if (!envUrl.includes('/api/v1')) {
       envUrl = `${envUrl}/api/v1`;
     }
@@ -42,8 +32,9 @@ const getApiBaseUrl = () => {
     return envUrl;
   }
   
-  // Default in development: Use the production API URL directly
-  return DEFAULT_API_BASE_WITH_PATH;
+  // Default: Always use the production API URL directly
+  // This works in both development (via Vite proxy) and production
+  return `${DEFAULT_API_BASE}/api/v1/`;
 };
 
 export const API_BASE_URL = getApiBaseUrl();

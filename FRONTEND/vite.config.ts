@@ -29,10 +29,10 @@ export default defineConfig({
     open: false,
     proxy: {
       '/api': {
-        // Use local backend by default, can be overridden with VITE_PROXY_TARGET env var
-        target: process.env.VITE_PROXY_TARGET || 'http://localhost:10030',
+        // Use production API by default, can be overridden with VITE_PROXY_TARGET env var
+        target: process.env.VITE_PROXY_TARGET || 'https://apimarketplace.whiz-cloud.com',
         changeOrigin: true,
-        secure: process.env.VITE_PROXY_TARGET?.startsWith('https') || false,
+        secure: true,
         rewrite: (path) => path // Keep the path as-is since it already includes /api/v1
       }
     },
