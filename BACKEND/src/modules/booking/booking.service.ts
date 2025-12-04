@@ -1153,6 +1153,70 @@ export class BookingService {
         if (venueOrVendor) {
           const serviceId = ((venueOrVendor as any)?._id || (venueOrVendor as any)?.id)?.toString?.();
           const storedLocation = serviceId ? await this.locationService.findByServiceId(serviceId) : null;
+          // Extract image URL with comprehensive fallback pattern (same as used in vendor service)
+          // Priority: formData.fields (MultiImageUpload) > formData.imageUrl > formData.images[0] > vendor.imageUrl
+          let imagePath = '';
+          
+          // First, try to extract from formData.fields (for MultiImageUpload fields)
+          if (venueOrVendor.formData?.fields && Array.isArray(venueOrVendor.formData.fields)) {
+            // Find any field with MultiImageUpload type OR field name containing "image" (case insensitive)
+            const imageField = venueOrVendor.formData.fields.find((field: any) => {
+              const isMultiImageUpload = field.type === 'MultiImageUpload';
+              const hasImageInName = field.name && field.name.toLowerCase().includes('image');
+              const hasActualValue = field.actualValue && Array.isArray(field.actualValue) && field.actualValue.length > 0;
+              const hasValue = field.value && Array.isArray(field.value) && field.value.length > 0;
+              return (isMultiImageUpload || hasImageInName) && (hasActualValue || hasValue);
+            });
+            
+            if (imageField) {
+              // Try actualValue first (preferred format)
+              if (imageField.actualValue && Array.isArray(imageField.actualValue) && imageField.actualValue.length > 0) {
+                const firstImage = imageField.actualValue[0];
+                // Check for url.imageUrl structure (most common format)
+                if (firstImage.url && firstImage.url.imageUrl && typeof firstImage.url.imageUrl === 'string') {
+                  imagePath = firstImage.url.imageUrl;
+                } else if (firstImage.url && typeof firstImage.url === 'string') {
+                  // If url is a direct string
+                  imagePath = firstImage.url;
+                } else if (typeof firstImage === 'string') {
+                  // If actualValue item is a direct string URL
+                  imagePath = firstImage;
+                } else if (firstImage.name && typeof firstImage.name === 'string' && firstImage.name.startsWith('http')) {
+                  // If name field contains the URL
+                  imagePath = firstImage.name;
+                }
+              }
+              
+              // If not found in actualValue, try value array
+              if (!imagePath && imageField.value && Array.isArray(imageField.value) && imageField.value.length > 0) {
+                const firstImage = imageField.value[0];
+                if (firstImage.url && firstImage.url.imageUrl && typeof firstImage.url.imageUrl === 'string') {
+                  imagePath = firstImage.url.imageUrl;
+                } else if (firstImage.url && typeof firstImage.url === 'string') {
+                  imagePath = firstImage.url;
+                } else if (typeof firstImage === 'string') {
+                  imagePath = firstImage;
+                } else if (firstImage.name && typeof firstImage.name === 'string' && firstImage.name.startsWith('http')) {
+                  imagePath = firstImage.name;
+                }
+              }
+            }
+          }
+          
+          // If not found in fields, try other formData locations
+          if (!imagePath) {
+            imagePath = venueOrVendor.formData?.imageUrl || 
+                       (Array.isArray(venueOrVendor.formData?.images) && venueOrVendor.formData.images.length > 0 
+                         ? venueOrVendor.formData.images[0] 
+                         : '') || 
+                       '';
+          }
+          
+          // Final fallback to vendor/venue.imageUrl
+          if (!imagePath) {
+            imagePath = venueOrVendor.imageUrl || '';
+          }
+          
           venueOrVenderInfo = {
             title: venueOrVendor.title || venueOrVendor.name || 'Unknown',
             location: {
@@ -1165,7 +1229,7 @@ export class BookingService {
             },
             description: venueOrVendor.description || venueOrVendor.formData?.description || 'No description available',
             price: venueOrVendor.price || 0,
-            imagePath: venueOrVendor.imageUrl || '',
+            imagePath: imagePath,
             rating: venueOrVendor.averageRating || 5,
             reviews: venueOrVendor.totalRatings || 0,
             ratingLabel: this.getRatingLabel(venueOrVendor.averageRating || 4.4)
