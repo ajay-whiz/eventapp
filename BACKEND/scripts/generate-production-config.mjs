@@ -147,6 +147,6 @@ export function generateProductionConfig() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const outputPath = generateProductionConfig();
+  //const outputPath = generateProductionConfig();
   console.log(`Generated production config at ${outputPath}`);
 }

@@ -1,0 +1,76 @@
+{
+  "server": {
+    "prefix": "api/v1",
+    "port": 3000
+  },
+  "cors": [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:4200"
+  ],
+  "jwt": {
+    "secret": "asta-lavista-namonyano",
+    "expireTime": "2d",
+    "jwtIssuer": "http://localhost:3000"
+  },
+  "auth": {
+    "cookieKeyName": "accessToken",
+    "customerCookiesName": "customerDetail",
+    "googleClientId": "672548980935-a0btm94uosor2tt6ltku06m3fk0o5ipq.apps.googleusercontent.com"
+  },
+  "general": {
+    "frontendUrl": "http://localhost:5173"
+  },
+  "email": {
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_SECURE": "false",
+    "SMTP_USER": "",
+    "SMTP_PASS": "",
+    "SMTP_FROM": "",
+    "supportEmail": "noreply@localhost"
+  },
+  "sendGrid": {
+    "apiKey": "",
+    "fromEmail": ""
+  },
+  "resend": {
+    "apiKey": "",
+    "fromEmail": ""
+  },
+  "aws": {
+    "regionName": "us-east-1",
+    "secretname": "local.secret",
+    "bucketName": "",
+    "bucketFolderName": "uploads",
+    "bucketTempFolderName": "temp-documents",
+    "accessKeyId": "",
+    "secretAccessKey": "",
+    "logGroupName": "event-app-local"
+  },
+  "cryptoSecret": {
+    "algorithm": "aes-256-cbc",
+    "key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "iv": "0123456789abcdef0123456789abcdef"
+  },
+  "baseUrl": {
+    "headerImageUrl": "http://localhost:5173",
+    "linkedInLink": "https://www.linkedin.com",
+    "cmsBaseUrl": "http://localhost:5173"
+  },
+  "supabase": {
+    "url": "",
+    "serviceKey": "",
+    "storageBucket": "uploads"
+  },
+  "mule": {
+    "muleBaseUrl": "",
+    "clientId": "",
+    "clientSecret": "",
+    "erpBaseUrl": "",
+    "erpToken": "",
+    "ptBaseUrl": "",
+    "ptClientId": "",
+    "ptClientSecret": ""
+  }
+}

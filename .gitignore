@@ -2,8 +2,7 @@
 
 # dependencies
 dist
-node_modules
-BACKEND/config
+node_modules 
 /.pnp
 .pnp.*
 .yarn/*
@@ -41,11 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.next
-/config/
+.next 
 *.md
-BACKEND/uploads
-*.json
+BACKEND/uploads 
 !package.json
 !package-lock.json
 !tsconfig.json
