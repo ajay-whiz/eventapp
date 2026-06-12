@@ -4,7 +4,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# .npmrc must be present before npm ci (react-quill peer conflict with React 19)
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 COPY . .
@@ -25,9 +26,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
+# server.js only uses Node built-ins; no runtime npm dependencies needed
 COPY server.js ./
 COPY --from=builder /app/dist ./dist
 
