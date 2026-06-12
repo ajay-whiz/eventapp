@@ -9,10 +9,12 @@ export class PdfService implements OnModuleDestroy {
   async generatePDFfromHTML(html: string, options?: puppeteer.PDFOptions) {
     const osPlatform = os.platform();  
     let executablePath;
-    if (/^win/i.test(osPlatform)) {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    } else if (/^win/i.test(osPlatform)) {
         executablePath = '';
     } else if (/^linux/i.test(osPlatform)) {
-        executablePath = '/usr/bin/chromium-browser';
+        executablePath = '/usr/bin/chromium';
     }
     this.browser = await puppeteer.launch({
         headless: true,

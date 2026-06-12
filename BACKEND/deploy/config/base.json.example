@@ -1,0 +1,72 @@
+{
+  "server": {
+    "prefix": "api/v1",
+    "port": 3000
+  },
+  "cors": [],
+  "jwt": {
+    "secret": "change-me",
+    "expireTime": "2d",
+    "jwtIssuer": "https://api.example.com"
+  },
+  "auth": {
+    "cookieKeyName": "accessToken",
+    "customerCookiesName": "customerDetail",
+    "googleClientId": ""
+  },
+  "general": {
+    "frontendUrl": "https://app.example.com"
+  },
+  "email": {
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_SECURE": "false",
+    "SMTP_USER": "",
+    "SMTP_PASS": "",
+    "SMTP_FROM": "",
+    "supportEmail": "noreply@example.com"
+  },
+  "sendGrid": {
+    "apiKey": "",
+    "fromEmail": ""
+  },
+  "resend": {
+    "apiKey": "",
+    "fromEmail": ""
+  },
+  "aws": {
+    "regionName": "us-east-1",
+    "secretname": "local.secret",
+    "bucketName": "",
+    "bucketFolderName": "uploads",
+    "bucketTempFolderName": "temp-documents",
+    "accessKeyId": "",
+    "secretAccessKey": "",
+    "logGroupName": "event-app"
+  },
+  "cryptoSecret": {
+    "algorithm": "aes-256-cbc",
+    "key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "iv": "0123456789abcdef0123456789abcdef"
+  },
+  "baseUrl": {
+    "headerImageUrl": "https://app.example.com",
+    "linkedInLink": "https://www.linkedin.com",
+    "cmsBaseUrl": "https://app.example.com"
+  },
+  "supabase": {
+    "url": "",
+    "serviceKey": "",
+    "storageBucket": "uploads"
+  },
+  "mule": {
+    "muleBaseUrl": "",
+    "clientId": "",
+    "clientSecret": "",
+    "erpBaseUrl": "",
+    "erpToken": "",
+    "ptBaseUrl": "",
+    "ptClientId": "",
+    "ptClientSecret": ""
+  }
+}

@@ -1,0 +1,89 @@
+# Reference compose file for Hostinger Coolify or any Docker host.
+# In Coolify, prefer creating two separate applications (backend + frontend)
+# and attach a persistent volume to the backend uploads directory.
+
+services:
+  backend:
+    build:
+      context: ./BACKEND
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRY: ${JWT_EXPIRY:-2d}
+      JWT_ISSUER: ${JWT_ISSUER}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_BUCKET_NAME: ${AWS_BUCKET_NAME:-}
+      AWS_BUCKET_FOLDER: ${AWS_BUCKET_FOLDER:-uploads}
+      AWS_BUCKET_TEMP_FOLDER: ${AWS_BUCKET_TEMP_FOLDER:-temp-documents}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-uploads}
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const http=require('http');const port=process.env.PORT||3000;http.get('http://127.0.0.1:'+port+'/api/v1/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1));",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  frontend:
+    build:
+      context: ./FRONTEND
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+        VITE_IMAGE_BASE_URL: ${VITE_IMAGE_BASE_URL:-}
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: production
+      PORT: 5173
+      API_BASE_URL: ${API_BASE_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const http=require('http');const port=process.env.PORT||5173;http.get('http://127.0.0.1:'+port+'/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1));",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  backend_uploads:

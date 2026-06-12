@@ -14,8 +14,16 @@ const PORT = process.env.PORT || 5173;
 const distDir = join(__dirname, 'dist');
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Backend API configuration - base URL without /api/v1 (we'll add it in the proxy)
-const API_BASE_URL = 'https://apimarketplace.whiz-cloud.com';
+// Backend API base URL without /api/v1 (proxy adds path as-is)
+function resolveApiBaseUrl() {
+  const raw =
+    process.env.API_BASE_URL ||
+    process.env.VITE_API_BASE_URL ||
+    'https://apimarketplace.whiz-cloud.com';
+  return raw.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Check if dist directory exists
 const distExists = existsSync(distDir);
@@ -51,9 +59,7 @@ function getMimeType(filePath) {
 
 function proxyRequest(req, res, requestId) {
   try {
-    // Ensure API_BASE_URL is defined
-    const backendApiUrl = 'https://apimarketplace.whiz-cloud.com';
-    const backendUrl = new URL(backendApiUrl);
+    const backendUrl = new URL(API_BASE_URL);
     const isHttps = backendUrl.protocol === 'https:';
     const requestModule = isHttps ? httpsRequest : httpRequest;
     

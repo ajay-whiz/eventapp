@@ -17,6 +17,8 @@
     "railway:start": "npm run start:prod",
     "heroku:build": "npm run build",
     "heroku:start": "node dist/main.js",
+    "docker:generate-config": "node scripts/generate-production-config.mjs",
+    "docker:start": "node scripts/docker-entrypoint.mjs",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",

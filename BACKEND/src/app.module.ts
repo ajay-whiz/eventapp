@@ -162,25 +162,13 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
 
             }
             
-            // Force use the correct database URL - ignore environment variables for now
-            const finalDatabaseUrl = 'mongodb+srv://shiv:Admin@123@eventbooking.4hxsvht.mongodb.net/event_booking?retryWrites=true&w=majority&appName=EventBooking';
-
-
-
-            console.log('Database URL preview:', finalDatabaseUrl.substring(0, 50) + '...');
-            
-            // Log the actual database URL being used (masked)
-            if (finalDatabaseUrl) {
-              const maskedUrl = finalDatabaseUrl.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
-
-            }
-            
-            // Log other important environment variables
-
-
+            const finalDatabaseUrl =
+              process.env.DATABASE_URL || config.get<string>('mongodb.url');
 
             if (!finalDatabaseUrl) {
-              throw new Error('Database URL not found in environment variables or config');
+              throw new Error(
+                'DATABASE_URL environment variable or mongodb.url config is required in production',
+              );
             }
             
             return {

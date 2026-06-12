@@ -1,14 +1,12 @@
 node_modules
 dist
-coverage
-uploads
-config
 .git
 .gitignore
 *.md
 .env
 .env.*
-railway.env
-test
+.env.development
+.env.staging
+.env.production
 *.log
 npm-debug.log*

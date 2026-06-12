@@ -1,0 +1,65 @@
+EventApp - Hostinger Coolify Deployment Guide
+=============================================
+
+Deploy as TWO Coolify applications (recommended).
+
+----------------------------------------------------------------------
+1) BACKEND API
+----------------------------------------------------------------------
+Repository: your git repo
+Base Directory: BACKEND
+Build Pack: Dockerfile
+Port: 3000
+Health Check Path: /api/v1/health
+Domain example: https://api.yourdomain.com
+
+Environment variables:
+  Copy from deploy/coolify/backend.env.example
+
+Persistent storage (recommended):
+  Mount volume -> /app/uploads
+  (profile images and quotation files)
+
+----------------------------------------------------------------------
+2) FRONTEND
+----------------------------------------------------------------------
+Repository: your git repo
+Base Directory: FRONTEND
+Build Pack: Dockerfile
+Port: 5173
+Health Check Path: /health
+Domain example: https://app.yourdomain.com
+
+Runtime environment variables:
+  API_BASE_URL=https://api.yourdomain.com
+  PORT=5173
+  NODE_ENV=production
+
+Build arguments (required for Vite):
+  VITE_API_BASE_URL=https://api.yourdomain.com/api/v1
+  VITE_GOOGLE_MAPS_API_KEY=your-key
+  VITE_IMAGE_BASE_URL=https://api.yourdomain.com/uploads/profile/
+
+In Coolify UI:
+  Project -> Application -> Build -> Build Arguments
+
+----------------------------------------------------------------------
+3) DNS / SSL
+----------------------------------------------------------------------
+- Point api.yourdomain.com to backend app in Coolify
+- Point app.yourdomain.com to frontend app in Coolify
+- Enable Coolify SSL (Let's Encrypt)
+
+----------------------------------------------------------------------
+4) Post-deploy checks
+----------------------------------------------------------------------
+- https://api.yourdomain.com/api/v1/health
+- https://api.yourdomain.com/api/v1/docs
+- https://app.yourdomain.com/health
+- Login and file upload flows
+
+----------------------------------------------------------------------
+5) Optional: Docker Compose on Coolify
+----------------------------------------------------------------------
+Use docker-compose.coolify.yml at repo root with a shared .env file
+if you prefer one compose stack instead of two apps.
