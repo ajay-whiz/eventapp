@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import configuration from '@core/config/configuration';
+import { buildMongoTypeOrmOptions } from '@core/config/mongo.config';
 import { RequestContextMiddleware } from '@common/middlewares/request-context/request-context.middleware';
 import { LoggerModule } from '@core/logger/logger.module'; 
 import { EmailModule } from '@shared/email/email.module';
@@ -150,74 +151,8 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
     }),
     TypeOrmModule.forRootAsync({
       name: 'mongo',
-      useFactory: (config: ConfigService) => {
-          // For Railway production environment
-          if (process.env.NODE_ENV === 'production') {
-            // Debug config loading
-
-            try {
-              const mongoConfig = config.get('mongodb');
-
-            } catch (error) {
-
-            }
-            
-            const finalDatabaseUrl =
-              process.env.DATABASE_URL || config.get<string>('mongodb.url');
-
-            if (!finalDatabaseUrl) {
-              throw new Error(
-                'DATABASE_URL environment variable or mongodb.url config is required in production',
-              );
-            }
-            
-            return {
-              type: 'mongodb',
-              url: finalDatabaseUrl,
-              database: 'event_booking', // Explicitly specify database name
-              entities: [
-                __dirname + '/**/*.mongo.entity{.ts,.js}',
-                __dirname + '/**/*.entity{.ts,.js}'
-              ],
-              entityPrefix: '',
-              synchronize: false,
-              autoLoadEntities: true,
-              logging: ["query", "error"],
-              useNewUrlParser: true,
-              useUnifiedTopology: true,
-              tls: true,
-              tlsAllowInvalidCertificates: false,
-              tlsInsecure: false,
-              minTLSVersion: 'TLSv1.2',
-              retryWrites: true,
-              w: 'majority',
-              appName: 'EventBooking',
-              maxPoolSize: 10,
-              serverSelectionTimeoutMS: 5000,
-              socketTimeoutMS: 45000,
-              connectTimeoutMS: 10000
-            };
-          }
-          
-          // For other environments, use config
-          const typeOrmConfig = Object.assign(
-              {
-                  entities: [
-                      __dirname + '/**/*.mongo.entity{.ts,.js}',
-                      __dirname + '/**/*.entity{.ts,.js}'
-                  ],
-                  synchronize: false,
-                  autoLoadEntities: true,
-                  tls: true,
-                  tlsAllowInvalidCertificates: false,
-                  tlsInsecure: false,
-                  minTLSVersion: 'TLSv1.2',
-                  logging: ["query", "error"]
-              },
-              config.get('mongodb'),
-          );
-          return typeOrmConfig;
-      },
+      useFactory: (config: ConfigService) =>
+        buildMongoTypeOrmOptions(config, __dirname),
       inject: [ConfigService],
     }),
     LoggerModule,

@@ -37,18 +37,50 @@ function ensureBaseConfig() {
   }
 }
 
-function buildProductionConfig(baseConfig) {
-  const cors = parseCorsOrigins(process.env.CORS_ORIGINS);
-  const frontendUrl = process.env.FRONTEND_URL || baseConfig.general?.frontendUrl;
+function buildMongoConfig() {
+  if (process.env.DATABASE_URL) {
+    const useTls =
+      process.env.DATABASE_URL.startsWith('mongodb+srv://') ||
+      process.env.MONGODB_TLS === 'true';
 
-  return {
-    mongodb: {
+    return {
       type: 'mongodb',
       url: process.env.DATABASE_URL,
       database: process.env.MONGODB_DATABASE || 'event_booking',
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    },
+      tls: useTls,
+      directConnection: process.env.MONGODB_DIRECT_CONNECTION === 'true',
+    };
+  }
+
+  const host = process.env.MONGODB_HOST;
+  if (!host) {
+    return null;
+  }
+
+  return {
+    type: 'mongodb',
+    host,
+    port: Number(process.env.MONGODB_PORT || 27017),
+    username: process.env.MONGODB_USERNAME,
+    password: process.env.MONGODB_PASSWORD,
+    database: process.env.MONGODB_DATABASE || 'default',
+    authSource: process.env.MONGODB_AUTH_SOURCE || 'admin',
+    directConnection: process.env.MONGODB_DIRECT_CONNECTION !== 'false',
+    tls: process.env.MONGODB_TLS === 'true',
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  };
+}
+
+function buildProductionConfig(baseConfig) {
+  const cors = parseCorsOrigins(process.env.CORS_ORIGINS);
+  const frontendUrl = process.env.FRONTEND_URL || baseConfig.general?.frontendUrl;
+  const mongodb = buildMongoConfig();
+
+  return {
+    mongodb,
     cors: cors.length > 0 ? cors : baseConfig.cors,
     jwt: {
       secret: process.env.JWT_SECRET || baseConfig.jwt?.secret,
@@ -129,8 +161,10 @@ export function generateProductionConfig() {
   const baseConfig = readJson(basePath);
   const productionConfig = buildProductionConfig(baseConfig);
 
-  if (!productionConfig.mongodb.url) {
-    throw new Error('DATABASE_URL is required for production deployment');
+  if (!productionConfig.mongodb?.url && !productionConfig.mongodb?.host) {
+    throw new Error(
+      'MongoDB config required: set DATABASE_URL or MONGODB_HOST in Coolify env vars',
+    );
   }
 
   if (!productionConfig.jwt.secret) {
@@ -147,6 +181,6 @@ export function generateProductionConfig() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  //const outputPath = generateProductionConfig();
+  const outputPath = generateProductionConfig();
   console.log(`Generated production config at ${outputPath}`);
 }
