@@ -50,7 +50,7 @@
     "port": 27017,
     "username": "root",
     "password": "gKx9qn0ktdy1cuMdsMEfkMR87YOfhgmEw831fDz0iFJ7ENLtrIZemprp5rDdYGVZ",
-    "database": "event_app",
+    "database": "default",
     "authSource": "admin",
     "directConnection": true,
     "tls": false
