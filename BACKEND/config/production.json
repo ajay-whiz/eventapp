@@ -46,10 +46,10 @@
   },
   "mongodb": {
     "type": "mongodb",
-    "host": "juvgavjwmr489kht62123rhb",
+    "host": "lzv65z2ozh4ciig7bhblw49v",
     "port": 27017,
     "username": "root",
-    "password": "bx8N1p6FqF9PtUifnToRug9jGPqJ3IqLv6jm6OpYw8uzZKMEDPT3MMddM7gwzBCm",
+    "password": "gKx9qn0ktdy1cuMdsMEfkMR87YOfhgmEw831fDz0iFJ7ENLtrIZemprp5rDdYGVZ",
     "database": "event_app",
     "authSource": "admin",
     "directConnection": true,
