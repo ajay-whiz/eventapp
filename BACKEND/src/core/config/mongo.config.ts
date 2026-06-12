@@ -44,12 +44,6 @@ export function buildMongoTypeOrmOptions(
     synchronize: false,
     autoLoadEntities: true,
     logging: ['query', 'error'],
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 30000,
   };
 
   if (databaseUrl) {
