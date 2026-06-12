@@ -4,7 +4,8 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+# .npmrc must be present before npm ci (@nestjs v10 vs websockets v11 peer conflict)
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 COPY . .
@@ -25,7 +26,7 @@ RUN apt-get update \
     ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
