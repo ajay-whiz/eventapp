@@ -1,40 +1,45 @@
 {
-  "server": {
-    "port": 10030,
-    "prefix": "api/v1"
+  "mongodb": {
+    "type": "mongodb",
+    "url": "mongodb://root:gKx9qn0ktdy1cuMdsMEfkMR87YOfhgmEw831fDz0iFJ7ENLtrIZemprp5rDdYGVZ@lzv65z2ozh4ciig7bhblw49v:27017/event_booking?directConnection=true&authSource=admin",
+    "database": "event_booking",
+    "authSource": "admin",
+    "tls": false,
+    "directConnection": true
   },
   "cors": [
     "http://events.whizapps.cloud",
     "http://events-api.whizapps.cloud"
   ],
   "jwt": {
-      "secret": "asta-lavista-namonyano",
-      "expiry": "2d",
-      "expireTime": 1800000,
-      "jwtIssuer": "http://events.whizapps.cloud"
+    "secret": "asta-lavista-namonyano",
+    "expiry": "2d",
+    "expireTime": 1800000,
+    "jwtIssuer": "http://events.whizapps.cloud"
   },
   "auth": {
-      "cookieKeyName": "accessToken",
-      "customerCookiesName": "customerDetail",
-      "googleClientId": "6561819264-conupg1fbmh88jid1ckq5v7rtd1vjbre.apps.googleusercontent.com"
+    "cookieKeyName": "accessToken",
+    "customerCookiesName": "customerDetail",
+    "googleClientId": "672548980935-a0btm94uosor2tt6ltku06m3fk0o5ipq.apps.googleusercontent.com"
   },
-  "email" :{
-      "SMTP_HOST": "smtp.gmail.com",
-      "SMTP_PORT": 587,
-      "SMTP_SECURE": false,
-      "SMTP_USER": "ajay@whiz-solutions.com",
-      "SMTP_PASS": "gdqvxrxollckctpb",
-      "SMTP_FROM": "ajay@whiz-solutions.com"
+  "general": {
+    "frontendUrl": "https://events.whizapps.cloud"
   },
+  "email": {
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": 587,
+    "SMTP_SECURE": false,
+    "SMTP_USER": "ajay@whiz-solutions.com",
+    "SMTP_PASS": "gdqvxrxollckctpb",
+    "SMTP_FROM": "ajay@whiz-solutions.com"
+},
   "sendGrid": {
-      "apiKey": "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",
-      "fromEmail": "majid@whiz-solutions.com",
-      "fromName": "Pacifica Shipping"
-  },  
-  "cryptoSecret": {
-    "algorithm": "aes-256-cbc",
-    "key": "64_CHAR_HEX_KEY",
-    "iv": "32_CHAR_HEX_IV"
+    "apiKey": "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",
+    "fromEmail": "majid@whiz-solutions.com"
+  },
+  "resend": {
+    "apiKey": "re_bWEYcHXr_5nR86Vwbn3Ddej9yRxC4btTp",
+    "fromEmail": "akhil@whiz-solutions.com"
   },
   "aws": {
     "secretname": "production.secret",
@@ -44,15 +49,14 @@
     "bucketTempFolderName": "temp",
     "logGroupName": "event-booking-prod"
   },
-  "mongodb": {
-    "type": "mongodb",
-    "host": "lzv65z2ozh4ciig7bhblw49v",
-    "port": 27017,
-    "username": "root",
-    "password": "gKx9qn0ktdy1cuMdsMEfkMR87YOfhgmEw831fDz0iFJ7ENLtrIZemprp5rDdYGVZ",
-    "database": "default",
-    "authSource": "admin",
-    "directConnection": true,
-    "tls": false
+  "supabase": {
+    "url": "https://juvgavjwmr489kht62123rhb-postgres.up.railway.app",
+    "serviceKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
+    "storageBucket": "uploads"
+  },
+  "baseUrl": {
+    "headerImageUrl": "https://events.whizapps.cloud",
+    "linkedInLink": "https://www.linkedin.com",
+    "cmsBaseUrl": "https://app.example.com"
   }
 }

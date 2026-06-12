@@ -37,20 +37,62 @@ function ensureBaseConfig() {
   }
 }
 
+function normalizeMongoDatabaseUrl(url, { authSource = 'admin', database } = {}) {
+  try {
+    const parsed = new URL(url);
+
+    if (!parsed.searchParams.get('authSource') && authSource) {
+      parsed.searchParams.set('authSource', authSource);
+    }
+
+    const pathDb = parsed.pathname.replace(/^\//, '');
+    if (!pathDb && database) {
+      parsed.pathname = `/${database}`;
+    }
+
+    return parsed.toString();
+  } catch {
+    if (!url.includes('authSource=') && authSource) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}authSource=${encodeURIComponent(authSource)}`;
+    }
+    return url;
+  }
+}
+
+function redactMongoUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.password) {
+      parsed.password = '***';
+    }
+    return parsed.toString();
+  } catch {
+    return url.replace(/:([^:@/]+)@/, ':***@');
+  }
+}
+
 function buildMongoConfig() {
   if (process.env.DATABASE_URL) {
+    const authSource = process.env.MONGODB_AUTH_SOURCE || 'admin';
+    const database = process.env.MONGODB_DATABASE || 'event_booking';
+    const normalizedUrl = normalizeMongoDatabaseUrl(process.env.DATABASE_URL, {
+      authSource,
+      database,
+    });
     const useTls =
-      process.env.DATABASE_URL.startsWith('mongodb+srv://') ||
+      normalizedUrl.startsWith('mongodb+srv://') ||
       process.env.MONGODB_TLS === 'true';
 
     return {
       type: 'mongodb',
-      url: process.env.DATABASE_URL,
-      database: process.env.MONGODB_DATABASE || 'event_booking',
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      url: normalizedUrl,
+      database,
+      authSource,
       tls: useTls,
-      directConnection: process.env.MONGODB_DIRECT_CONNECTION === 'true',
+      directConnection:
+        process.env.MONGODB_DIRECT_CONNECTION === 'true' ||
+        normalizedUrl.includes('directConnection=true'),
     };
   }
 
@@ -69,9 +111,56 @@ function buildMongoConfig() {
     authSource: process.env.MONGODB_AUTH_SOURCE || 'admin',
     directConnection: process.env.MONGODB_DIRECT_CONNECTION !== 'false',
     tls: process.env.MONGODB_TLS === 'true',
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
   };
+}
+
+function logMongoConfig(mongodb) {
+  if (!mongodb) {
+    return;
+  }
+
+  if (mongodb.url) {
+    const parsed = new URL(mongodb.url);
+    console.log(
+      '[MongoDB] Production config:',
+      JSON.stringify(
+        {
+          source: 'DATABASE_URL',
+          host: parsed.hostname,
+          port: parsed.port ? Number(parsed.port) : 27017,
+          username: parsed.username || undefined,
+          database:
+            parsed.pathname.replace(/^\//, '') || mongodb.database,
+          authSource:
+            parsed.searchParams.get('authSource') || mongodb.authSource,
+          tls: mongodb.tls,
+          directConnection: mongodb.directConnection,
+          connectionUrl: redactMongoUrl(mongodb.url),
+        },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
+
+  console.log(
+    '[MongoDB] Production config:',
+    JSON.stringify(
+      {
+        source: 'MONGODB_HOST',
+        host: mongodb.host,
+        port: mongodb.port,
+        username: mongodb.username,
+        database: mongodb.database,
+        authSource: mongodb.authSource,
+        tls: mongodb.tls,
+        directConnection: mongodb.directConnection,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 function buildProductionConfig(baseConfig) {
@@ -176,6 +265,8 @@ export function generateProductionConfig() {
     `${JSON.stringify(productionConfig, null, 2)}\n`,
     'utf8',
   );
+
+  logMongoConfig(productionConfig.mongodb);
 
   return productionPath;
 }
