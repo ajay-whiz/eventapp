@@ -52,7 +52,7 @@ const LoginForm: React.FC = () => {
   return (
     <AuthLayout>
       
-      <h2 className="text-2xl font-semibold text-left text-gray-800 mb-6">Login</h2>
+      {/* <h2 className="text-2xl font-semibold text-left text-gray-800 mb-6">Login</h2>
   
       <Button className="flex items-center justify-center w-full py-2 bg-white-200 text-sky-600 rounded-lg p-4 border-2 mb-4" variant="secondary">
         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 mr-2" />
@@ -64,7 +64,7 @@ const LoginForm: React.FC = () => {
         <span className="px-3 text-sm text-gray-800">OR</span>
         <div className="flex-1 h-px bg-sky-300" />
       </div>
-  
+   */}
       <FormProvider {...methods}>
         <Form<LoginFormValues> onSubmit={onSubmit} schema={loginSchema} className="flex flex-col py-6 bg-white w-full gap-6">
           <InputGroup

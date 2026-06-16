@@ -39,11 +39,11 @@ const ForgotPassword: React.FC = () => {
         
 
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">Reset Password</h2>
-
+{/* 
         <Button className="flex items-center justify-center w-full py-2 bg-white-200 text-sky-600 rounded-lg p-4 border-2 mb-4" variant="secondary">
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 mr-2" />
           Sign in with Google
-        </Button>
+        </Button> */}
 
         <div className="flex items-center my-4">
           <div className="flex-1 h-px bg-sky-300" />

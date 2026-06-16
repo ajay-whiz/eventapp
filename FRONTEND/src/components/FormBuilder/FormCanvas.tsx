@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { FormFieldComponent } from './FormFieldComponent';
 import { Button } from '../../components/ui/button';
 import { Trash2, Send, SquarePen } from 'lucide-react';
@@ -18,9 +18,15 @@ interface FormCanvasProps {
   selectedFieldId: string | null;
   onFieldSelect: (fieldId: string | null) => void;
   className?: string;
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
-export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSelect }: FormCanvasProps) => {
+export interface FormCanvasHandle {
+  submit: () => Promise<void>;
+}
+
+export const FormCanvas = forwardRef<FormCanvasHandle, FormCanvasProps>(
+  ({ fields, onFieldsChange, selectedFieldId, onFieldSelect, onSubmittingChange }, ref) => {
   const [dragOver, setDragOver] = useState(false);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -190,9 +196,9 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
     return fixedValidation;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveForm = async () => {
     setIsSubmitting(true);
+    onSubmittingChange?.(true);
 
     try {
       // Validate required fields
@@ -252,7 +258,7 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
         // Handle the response data here
         // You can set state or process the data as needed
       } catch (error) {
-        // Fetch error
+        toast.error('Failed to save form. Please try again.');
       }
 
       // Reset form data
@@ -261,11 +267,21 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
       setFormDescription('');
 
     } catch (error) {
-      alert('Error submitting form. Please try again.');
+      toast.error('Error submitting form. Please try again.');
     } finally {
       setIsSubmitting(false);
+      onSubmittingChange?.(false);
     }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await saveForm();
+  };
+
+  useImperativeHandle(ref, () => ({
+    submit: saveForm,
+  }));
 
  
 
@@ -479,4 +495,6 @@ export const FormCanvas = ({ fields, onFieldsChange, selectedFieldId, onFieldSel
     </div>
     
   );
-};
+});
+
+FormCanvas.displayName = 'FormCanvas';
