@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ComponentSidebar } from './ComponentSidebar';
-import { FormCanvas } from './FormCanvas';
+import { FormCanvas, type FormCanvasHandle } from './FormCanvas';
 import { FormPreview } from './FormPreview';
 import { PropertiesPanel } from './PropertiesPanel';
 import { Eye, Edit3, Download, Settings, ArrowLeft, Save } from 'lucide-react';
@@ -14,6 +14,8 @@ export const FormBuilder = () => {
   const [activeTab, setActiveTab] = useState('builder');
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [showPropertiesPanel, setShowPropertiesPanel] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const formCanvasRef = useRef<FormCanvasHandle>(null);
   const navigate = useNavigate(); 
   const selectedField = fields.find(field => field.id === selectedFieldId) || null;
 
@@ -87,8 +89,17 @@ export const FormBuilder = () => {
           <Button variant="default" size="sm" onClick={() => setShowPropertiesPanel(!showPropertiesPanel)}  title={showPropertiesPanel ? "Hide Properties Panel" : "Show Properties Panel"}className="flex items-center gap-1 whitespace-nowrap py-1"> <Settings className="h-4 w-4" />
           {showPropertiesPanel ? "Hide Properties" : "Show Properties"}</Button>
 
-          <Button variant="default" size="sm" className="flex items-center gap-1 whitespace-nowrap  py-1"> <Save className="h-4 w-4" />
-          Save</Button>
+          <Button
+            variant="default"
+            size="sm"
+            type="button"
+            className="flex items-center gap-1 whitespace-nowrap py-1"
+            disabled={isSaving}
+            onClick={() => formCanvasRef.current?.submit()}
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Saving...' : 'Save'}
+          </Button>
         </div>
     </div>
   
@@ -100,11 +111,13 @@ export const FormBuilder = () => {
           <div className="flex">
             <ComponentSidebar />
             <div className="flex-1" onClick={handleCanvasClick}>
-              <FormCanvas 
-                fields={fields} 
+              <FormCanvas
+                ref={formCanvasRef}
+                fields={fields}
                 onFieldsChange={setFields}
                 selectedFieldId={selectedFieldId}
                 onFieldSelect={handleFieldSelect}
+                onSubmittingChange={setIsSaving}
               />
             </div>
             <div className={`transition-all duration-300 ease-in-out fixed top-0 right-0 h-full p-10 bg-white shadow-xl ${showPropertiesPanel ? 'w-96 opacity-100 z-50' : 'w-0 opacity-0 overflow-hidden z-0'}`}>

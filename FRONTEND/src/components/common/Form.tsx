@@ -7,7 +7,7 @@ import {
   type UseFormProps,
   type FieldValues,
 } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodSafeResolver } from '../../lib/zodSafeResolver';
 import type { ZodType } from 'zod';
 
 export type FormProps<T extends FieldValues> = {
@@ -41,7 +41,7 @@ export function Form<T extends FieldValues>({
 
   if (!isInsideProvider) {
     methods = useForm<T>({
-      resolver: zodResolver(schema),
+      resolver: zodSafeResolver(schema),
       defaultValues,
       mode,
     });
