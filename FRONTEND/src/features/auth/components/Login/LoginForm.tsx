@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodSafeResolver } from '../../../../lib/zodSafeResolver';
 import { loginSchema } from '../../../../features/auth/schemas/login.schema';
 import type { LoginSchemaType } from '../../../../features/auth/schemas/login.schema';
 import { Form } from '../../../../components/common/Form';
@@ -23,8 +23,8 @@ const LoginForm: React.FC = () => {
   const rememberedEmail = localStorage.getItem('rememberedEmail');
   const rememberedPassword = localStorage.getItem('rememberedPassword');
   const methods = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    mode: 'all',
+    resolver: zodSafeResolver(loginSchema),
+    mode: 'onTouched',
     defaultValues: {
       email: rememberedEmail ?? '',
       password: rememberedPassword ?? '',
