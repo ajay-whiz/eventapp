@@ -22,10 +22,10 @@ export class CreateVenueCategoryDto {
     @Matches(/^#([0-9A-Fa-f]{6})$/, { message: 'Color must be a valid hex code (e.g., #000000)' })
     color?: string;
 
-    @ApiProperty({ description: 'Form ID associated with this venue category', required: false })
-    @IsOptional()
+    @ApiProperty({ description: 'Form ID associated with this venue category (must be a venue-category form)' })
+    @IsNotEmpty()
     @IsMongoId()
-    formId?: string;
+    formId: string;
 
     @ApiProperty({ example: true, default: true })
     @IsOptional()

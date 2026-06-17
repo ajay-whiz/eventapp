@@ -76,6 +76,10 @@ export const ROUTING = {
     VENUE_MANAGEMENT: "/venue-management",
     ADD_VENUE: "/venue-management/new",
     UPDATE_VENUE: "venue-management/:id",
+
+    VENUE_CATEGORY: "venue-category",
+    ADD_VENUE_CATEGORY: "venue-category/new",
+    UPDATE_VENUE_CATEGORY: "venue-category/:id",
     VENDOR_MANAGEMENT: "vendor-management",
     ADD_VENDORS: "vendor-management/new",
     UPDATE_VENDORS: "vendor-management/:id",

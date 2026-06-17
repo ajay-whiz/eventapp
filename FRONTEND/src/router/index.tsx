@@ -43,6 +43,8 @@ import ServiceCategoryList from '../features/serviceCategory/components/ServiceC
 import ServiceCategoryForm from '../features/serviceCategory/components/ServiceCategoryForm';
 import ServiceCategoryFormInputs from '../features/serviceCategory/components/ServiceCategoryFormInputs';
 import VenueList from '../features/venue/components/VenueList';
+import VenueCategoryList from '../features/venue-category/components/VenueCategoryList';
+import VenueCategoryForm from '../features/venue-category/components/VenueCategoryForm';
 import VendorList from '../features/vendorManagement/components/VendorList';
 import VendorForm from '../features/vendorManagement/components/VendorForm';
 import ContentPolicyList from '../features/content-policy/components/ContentPolicyList';
@@ -127,6 +129,10 @@ const AppRoutes = () => {
         <Route path={ROUTING.VENUE_MANAGEMENT} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="read"><VenueList /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_VENUE} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="write"><AddVenueForm /></ProtectedRoute>} />
         <Route path={ROUTING.UPDATE_VENUE} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="write"><AddVenueForm /></ProtectedRoute>} />
+
+        <Route path={ROUTING.VENUE_CATEGORY} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="read"><VenueCategoryList /></ProtectedRoute>} />
+        <Route path={ROUTING.ADD_VENUE_CATEGORY} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="write"><VenueCategoryForm /></ProtectedRoute>} />
+        <Route path={ROUTING.UPDATE_VENUE_CATEGORY} element={<ProtectedRoute requiredFeature="venue_management" requiredPermission="write"><VenueCategoryForm /></ProtectedRoute>} />
 
 
 

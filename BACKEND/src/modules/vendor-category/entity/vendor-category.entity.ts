@@ -5,7 +5,7 @@ import { BaseModel } from '@shared/entities/base.entity';
 export class VendorCategory extends BaseModel{
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ nullable: true, default: null })
   description?: string;
@@ -17,8 +17,8 @@ export class VendorCategory extends BaseModel{
   color?: string;
 
   @Column()
-  formId: string;
+  formId!: string;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive: boolean = true;
 }

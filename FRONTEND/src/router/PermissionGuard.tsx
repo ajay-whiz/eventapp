@@ -33,6 +33,7 @@ const ROUTE_FEATURE_MAPPING: Record<string, string> = {
   '/form-list': 'form_builder',
   '/form-builder': 'form_builder',
   '/venue-management': 'venue_management',
+  '/venue-category': 'venue_management',
   '/category-management': 'service_category',
   '/service-category': 'service_category',
   '/vendor-management': 'vendor_management',

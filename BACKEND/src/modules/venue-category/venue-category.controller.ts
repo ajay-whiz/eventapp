@@ -15,6 +15,7 @@ export class VenueCategoryController {
     constructor(private readonly venueCategoryService: VenueCategoryService) {}
 
     @Post()
+    @ApiOperation({ summary: 'Create venue category in the shared categories collection' })
     create(@Body() createVenueCategoryDto: CreateVenueCategoryDto): Promise<VenueCategoryResponseDto> {
         return this.venueCategoryService.create(createVenueCategoryDto);
     }

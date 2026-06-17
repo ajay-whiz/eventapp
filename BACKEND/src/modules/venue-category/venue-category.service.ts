@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MongoRepository, ObjectLiteral } from 'typeorm';
-import { VenueCategory } from './entity/venue-category.entity';
+import { BadRequestException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, MongoRepository } from 'typeorm';
 import { ServiceCategory } from '../service-category/entity/service-category.entity';
 import { CreateVenueCategoryDto } from './dto/request/create-venue-category.dto';
 import { UpdateVenueCategoryDto } from './dto/request/update-venue-category.dto';
@@ -14,19 +13,154 @@ import { IPaginationMeta } from '@common/interfaces/paginationMeta.interface';
 import { Form } from '@modules/form/entity/form.entity';
 
 @Injectable()
-export class VenueCategoryService {
+export class VenueCategoryService implements OnModuleInit {
+  private readonly logger = new Logger(VenueCategoryService.name);
+
   constructor(
-    @InjectRepository(VenueCategory, 'mongo')
-    private readonly repo: MongoRepository<VenueCategory>,
     @InjectRepository(ServiceCategory, 'mongo')
-    private readonly serviceCategoryRepo: MongoRepository<ServiceCategory>,
+    private readonly categoryRepo: MongoRepository<ServiceCategory>,
     @InjectRepository(Form, 'mongo')
     private readonly formRepo: MongoRepository<Form>,
+    @InjectDataSource('mongo')
+    private readonly dataSource: DataSource,
   ) {}
 
+  async onModuleInit(): Promise<void> {
+    await this.migrateLegacyVenueCategories();
+  }
+
+  /** Copy records from legacy `venue_categories` into shared `categories` collection. */
+  private async migrateLegacyVenueCategories(): Promise<void> {
+    try {
+      const driverOptions = this.dataSource.options as {
+        host?: string;
+        port?: number;
+        database?: string;
+      };
+      const host = driverOptions.host || 'localhost';
+      const port = driverOptions.port || 27017;
+      const database = driverOptions.database || 'event_booking';
+
+      const { MongoClient } = await import('mongodb');
+      const client = new MongoClient(`mongodb://${host}:${port}`);
+      await client.connect();
+      const legacyRecords = await client
+        .db(database)
+        .collection('venue_categories')
+        .find({ isDeleted: { $ne: true } })
+        .toArray();
+      await client.close();
+
+      let migrated = 0;
+      for (const legacy of legacyRecords) {
+        const existing = await this.categoryRepo.findOneBy({ _id: legacy._id });
+        if (existing) {
+          continue;
+        }
+
+        try {
+          await this.validateVenueCategoryForm(String(legacy.formId));
+        } catch {
+          continue;
+        }
+
+        const category = this.categoryRepo.create({
+          name: legacy.name,
+          description: legacy.description,
+          formId: String(legacy.formId),
+          isActive: legacy.isActive ?? true,
+          isDeleted: false,
+          key: legacy.key,
+          createdBy: legacy.createdBy || 'migration',
+          updatedBy: legacy.updatedBy || 'migration',
+          createdAt: legacy.createdAt,
+          updatedAt: legacy.updatedAt,
+        });
+        category.id = legacy._id;
+        await this.categoryRepo.save(category);
+        migrated++;
+      }
+
+      if (migrated > 0) {
+        this.logger.log(`Migrated ${migrated} venue category record(s) from venue_categories to categories`);
+      }
+    } catch (error) {
+      this.logger.warn(`Legacy venue category migration skipped: ${error?.message || error}`);
+    }
+  }
+
+  private buildFormIdObjectIdStage() {
+    return {
+      $addFields: {
+        formIdObj: {
+          $cond: {
+            if: {
+              $and: [
+                { $ne: ['$formId', null] },
+                { $ne: ['$formId', ''] },
+                { $ne: ['$formId', undefined] },
+              ],
+            },
+            then: {
+              $cond: {
+                if: { $eq: [{ $type: '$formId' }, 'objectId'] },
+                then: '$formId',
+                else: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $eq: [{ $type: '$formId' }, 'string'] },
+                        { $eq: [{ $strLenCP: '$formId' }, 24] },
+                      ],
+                    },
+                    then: { $toObjectId: '$formId' },
+                    else: null,
+                  },
+                },
+              },
+            },
+            else: null,
+          },
+        },
+      },
+    };
+  }
+
+  private async validateVenueCategoryForm(formId?: string): Promise<void> {
+    if (!formId || formId.trim() === '') {
+      throw new BadRequestException('formId is required for venue categories');
+    }
+    if (!ObjectId.isValid(formId)) {
+      throw new BadRequestException(`Invalid formId format: ${formId}`);
+    }
+    const form = await this.formRepo.findOneBy({ _id: new ObjectId(formId) });
+    if (!form) {
+      throw new NotFoundException(`Form with ID ${formId} not found`);
+    }
+    if (form.type !== 'venue-category') {
+      throw new BadRequestException(
+        `Form must have type 'venue-category'. Found '${form.type}'`,
+      );
+    }
+  }
+
   async create(dto: CreateVenueCategoryDto): Promise<VenueCategoryResponseDto> {
-    const venueCategory = this.repo.create(dto);
-    const savedVenueCategory = await this.repo.save(venueCategory);
+    await this.validateVenueCategoryForm(dto.formId);
+
+    const venueCategory = this.categoryRepo.create({
+      name: dto.name.trim(),
+      description: dto.description?.trim() || undefined,
+      formId: String(dto.formId).trim(),
+      isActive: dto.isActive ?? true,
+      isDeleted: false,
+    });
+
+    const savedVenueCategory = await this.categoryRepo.save(venueCategory);
+
+    this.logger.log(
+      `Created venue category "${savedVenueCategory.name}" in categories (id: ${savedVenueCategory.id})`,
+    );
+
     return plainToInstance(VenueCategoryResponseDto, savedVenueCategory, {
       excludeExtraneousValues: true,
     });
@@ -45,20 +179,15 @@ export class VenueCategoryService {
       // Match categories (optionally filter by search)
       {
         $match: {
-          ...(search ? { name: { $regex: search, $options: 'i' } } : {})
-        }
+          isDeleted: { $ne: true },
+          ...(search ? { name: { $regex: search, $options: 'i' } } : {}),
+        },
       },
-      // Convert formId to ObjectId for lookup
+      this.buildFormIdObjectIdStage(),
       {
-        $addFields: {
-          formIdObj: {
-            $cond: {
-              if: { $and: [{ $ne: ['$formId', null] }, { $ne: ['$formId', ''] }] },
-              then: { $toObjectId: '$formId' },
-              else: null
-            }
-          }
-        }
+        $match: {
+          formIdObj: { $ne: null },
+        },
       },
       // Join with forms collection
       {
@@ -66,21 +195,22 @@ export class VenueCategoryService {
           from: 'forms',
           localField: 'formIdObj',
           foreignField: '_id',
-          as: 'formData'
-        }
+          as: 'formData',
+        },
       },
       // Unwind form data (only keep categories that have a form)
       {
         $unwind: {
           path: '$formData',
-          preserveNullAndEmptyArrays: false
-        }
+          preserveNullAndEmptyArrays: false,
+        },
       },
       // Filter to only include categories with forms of type 'venue-category'
       {
         $match: {
-          'formData.type': 'venue-category'
-        }
+          'formData.type': 'venue-category',
+          'formData.isDeleted': { $ne: true },
+        },
       },
       // Sort by createdAt descending (similar to service-category)
       {
@@ -90,7 +220,7 @@ export class VenueCategoryService {
 
     // Get total count (before pagination)
     const countPipeline = [...pipeline, { $count: 'total' }];
-    const countResult = await this.serviceCategoryRepo.aggregate(countPipeline).toArray();
+    const countResult = await this.categoryRepo.aggregate(countPipeline).toArray();
     const total = countResult.length > 0 ? countResult[0].total : 0;
 
     // Add pagination
@@ -100,7 +230,7 @@ export class VenueCategoryService {
     );
 
     // Execute aggregation on 'categories' collection (ServiceCategory)
-    const venueCategoriesWithForms = await this.serviceCategoryRepo.aggregate(pipeline).toArray();
+    const venueCategoriesWithForms = await this.categoryRepo.aggregate(pipeline).toArray();
 
     // Process and transform results
     const processedCategories = venueCategoriesWithForms.map((category: any) => {
@@ -142,18 +272,13 @@ export class VenueCategoryService {
     }
 
     // Use aggregation to join category with forms and filter by form type 'venue-category'
-    const results = await this.serviceCategoryRepo
+    const results = await this.categoryRepo
       .aggregate([
         { $match: { _id: new ObjectId(id) } },
+        this.buildFormIdObjectIdStage(),
         {
-          $addFields: {
-            formIdObj: {
-              $cond: {
-                if: { $and: [{ $ne: ['$formId', null] }, { $ne: ['$formId', ''] }] },
-                then: { $toObjectId: '$formId' },
-                else: null
-              }
-            }
+          $match: {
+            formIdObj: { $ne: null },
           },
         },
         {
@@ -173,7 +298,8 @@ export class VenueCategoryService {
         // Filter to only include categories with forms of type 'venue-category'
         {
           $match: {
-            'formData.type': 'venue-category'
+            'formData.type': 'venue-category',
+            'formData.isDeleted': { $ne: true },
           }
         },
         { 
@@ -202,7 +328,7 @@ export class VenueCategoryService {
 
     if (!results.length) {
       // Check if category exists but form type is wrong
-      const category = await this.serviceCategoryRepo.findOneBy({ _id: new ObjectId(id) });
+      const category = await this.categoryRepo.findOneBy({ _id: new ObjectId(id) });
       if (!category || category.isDeleted) {
         throw new NotFoundException('Venue Category not found');
       }
@@ -322,14 +448,17 @@ export class VenueCategoryService {
       throw new NotFoundException(`Invalid venue category id format: ${id}`);
     }
 
-    const venueCategory = await this.repo.findOne({
+    const venueCategory = await this.categoryRepo.findOne({
       where: { _id: new ObjectId(id), isDeleted: false },
     });
     if (!venueCategory) {
       throw new NotFoundException(`Venue category not found with id: ${id}`);
     }
+    if (dto.formId) {
+      await this.validateVenueCategoryForm(dto.formId);
+    }
     Object.assign(venueCategory, dto);
-    const savedVenueCategory = await this.repo.save(venueCategory);
+    const savedVenueCategory = await this.categoryRepo.save(venueCategory);
     return plainToInstance(VenueCategoryResponseDto, savedVenueCategory, {
       excludeExtraneousValues: true,
     });
@@ -341,7 +470,7 @@ export class VenueCategoryService {
       throw new NotFoundException(`Invalid venue category id format: ${id}`);
     }
 
-    const result = await this.repo.updateOne(
+    const result = await this.categoryRepo.updateOne(
       { _id: new ObjectId(id) },
       { $set: { isActive: false, isDeleted: true, updatedAt: new Date()} },
     );
@@ -355,7 +484,7 @@ export class VenueCategoryService {
     if (!ObjectId.isValid(id)) {
       throw new NotFoundException(`Invalid venue category id format: ${id}`);
     }
-    const result = await this.repo.updateOne(
+    const result = await this.categoryRepo.updateOne(
       { _id: new ObjectId(id) },
       { $set: { isActive, updatedAt: new Date() } },
     );

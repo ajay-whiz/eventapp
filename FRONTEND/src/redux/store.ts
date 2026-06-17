@@ -10,6 +10,7 @@ import { serviceCategorySlice } from '../features/serviceCategory/slices/Service
 import vendorReducer from '../features/vendorManagement/slices/VendorSlice';
 import { contentPolicySlice } from '../features/content-policy/slices/contentPolicySlice';
 import bookingReducer from '../features/booking/slices/bookingSlice';
+import { venueCategorySlice } from '../features/venue-category/slices/venueCategorySlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     vendor: vendorReducer,
     enterprises: enterpriseSlice.reducer,
     venue: VenueSlice.reducer, // Assuming venue is part of the venueCategory slice
+    venueCategories: venueCategorySlice.reducer,
     contentPolicy: contentPolicySlice.reducer,
     booking: bookingReducer,
   },

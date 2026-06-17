@@ -198,12 +198,13 @@ export function useServiceCategoryActions() {
     }
   }, [dispatch]);
 
-  const getFormsList = useCallback(async () => {
+  const getFormsList = useCallback(async (type = 'vendor-service') => {
     try {
       const response = await api.get(API_ROUTES.GET_ALL_FORMS, {
         params: {
           page: 1,
           limit: 100,
+          type,
         },
         headers: {
           'Content-Type': 'application/json',

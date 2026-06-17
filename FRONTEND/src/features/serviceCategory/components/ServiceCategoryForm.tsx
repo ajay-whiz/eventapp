@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodSafeResolver } from '../../../lib/zodSafeResolver';
 import { InputGroup } from '../../../components/molecules/InputGroup';
 import { Button } from '../../../components/atoms/Button';
 import { FormError } from '../../../components/atoms/FormError';
@@ -15,6 +15,13 @@ import Layout from '../../../layouts/Layout';
 import Breadcrumbs from '../../../components/common/BreadCrumb';
 import Modal from '../../../components/common/Modal';
 import { ConfirmModal } from '../../../components/molecules/ConfirmModal';
+import { ROUTING } from '../../../constants/routes';
+
+const getFormDocumentId = (form: { id?: string; _id?: string }) => {
+  const raw = form.id ?? form._id;
+  if (!raw) return '';
+  return typeof raw === 'string' ? raw : String(raw);
+};
 
 interface ServiceCategoryFormProps {
   editingServiceCategory?: any;
@@ -42,8 +49,8 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   const [selectedInputForDelete, setSelectedInputForDelete] = useState<{ id: string; label: string } | null>(null);
 
   const methods = useForm<ServiceCategorySchemaType>({
-    resolver: zodResolver(serviceCategorySchema),
-    mode: 'all',
+    resolver: zodSafeResolver(serviceCategorySchema),
+    mode: 'onTouched',
     defaultValues: {
       name: '',
       description: '',
@@ -52,14 +59,21 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   });
    const { formState: { errors, isDirty } } = methods;
 
-  const { reset, watch } = methods;
-  
-  // Watch form values in real-time for debugging
-  const watchedValues = watch();
+  const { reset, watch, control } = methods;
+  const name = watch('name');
+  const formId = watch('formId');
 
-
-
-
+  const formOptions = useMemo(
+    () =>
+      forms
+        .filter((form) => form.type === 'vendor-service')
+        .map((form) => ({
+          label: form.name || form.description || 'Untitled form',
+          value: getFormDocumentId(form),
+        }))
+        .filter((option) => option.value),
+    [forms],
+  );
   useEffect(() => {
     const load = async () => {
       if (id && !isEmbedded) {
@@ -86,27 +100,14 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
   const serviceCategoryToEdit = isEmbedded ? currentServiceCategory : selectedCategory;
   
   useEffect(() => {
-    if (isEditMode && serviceCategoryToEdit) {
+    if (!id || !serviceCategoryToEdit) return;
 
-
-
-
-
-
-      reset({
-        name: serviceCategoryToEdit.name,
-        description: serviceCategoryToEdit.description,
-        formId: serviceCategoryToEdit.formId || '',
-      });
-    } else {
-      // Reset for create mode
-      reset({
-        name: '',
-        description: '',
-        formId: '',
-      });
-    }
-  }, [serviceCategoryToEdit, isEditMode, reset, currentServiceCategory]);
+    reset({
+      name: serviceCategoryToEdit.name ?? '',
+      description: serviceCategoryToEdit.description ?? '',
+      formId: serviceCategoryToEdit.formId ?? '',
+    });
+  }, [id, serviceCategoryToEdit, reset]);
   
 
   const onSubmit = async (data: ServiceCategorySchemaType) => {
@@ -157,14 +158,10 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
 
   // Check if form can be submitted
   const canSubmit = useMemo(() => {
-    if (isEditMode) {
-      // For edit mode, require form to be dirty (has changes)
-      return isDirty;
-    } else {
-      // For add mode, require at least name field to have content
-      return isDirty && !!methods.watch('name')?.trim();
-    }
-  }, [isDirty, isEditMode, methods]);
+    if (categoryLoading) return false;
+    if (isEditMode) return isDirty;
+    return !!name?.trim() && !!formId?.trim();
+  }, [categoryLoading, isEditMode, isDirty, name, formId]);
   
 
   return ( 
@@ -217,7 +214,59 @@ const CategoryForm: React.FC<ServiceCategoryFormProps> = ({ editingServiceCatego
                     id="description"
                     placeholder="Enter description"
                     autoComplete="description"
-                    e error={errors?.description?.message}
+                    error={errors?.description?.message}
+                  />
+                  <Controller
+                    name="formId"
+                    control={control}
+                    render={({ field }) => {
+                      const selectedOption = formOptions.find(
+                        (option) => option.value === field.value,
+                      );
+                      return (
+                        <div>
+                          <SelectGroup
+                            label="Select Form"
+                            options={[
+                              { label: 'Select a form...', value: '' },
+                              ...formOptions,
+                            ]}
+                            value={
+                              selectedOption
+                                ? [selectedOption]
+                                : field.value
+                                  ? [{ label: field.value, value: field.value }]
+                                  : []
+                            }
+                            onChange={(selection) =>
+                              field.onChange(
+                                Array.isArray(selection)
+                                  ? selection[0]?.value ?? ''
+                                  : '',
+                              )
+                            }
+                            isMulti={false}
+                            error={errors.formId?.message}
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Forms must be created in{' '}
+                            <button
+                              type="button"
+                              className="font-medium text-sky-600 underline"
+                              onClick={() => navigate(ROUTING.FORM_BUILDER)}
+                            >
+                              Form Builder
+                            </button>{' '}
+                            with category type <strong>vendor-service</strong>.
+                          </p>
+                          {formOptions.length === 0 && (
+                            <p className="mt-1 text-sm text-amber-600">
+                              No vendor-service forms found. Create one in Form Builder first.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
                   />
                   <div className="border-b border-gray-200 my-3" />
                 </div>

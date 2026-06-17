@@ -80,6 +80,12 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
     icon: <LayoutGrid size={24} />,
     defaultLabel: 'Venue Service',
   },
+  venue_category: {
+    uniqueId: 'venue_category',
+    route: '/venue-category',
+    icon: <Package size={24} />,
+    defaultLabel: 'Venue Category',
+  },
   service_category: {
     uniqueId: 'service_category',
     route: '/service-category',
@@ -171,6 +177,7 @@ export const generateAllMenuItems = (): MenuItemFromFeature[] => {
     'enterprise_management',
     'form_builder',
     'venue_management',
+    'venue_category',
     'service_category',
     'vendor_category',
     'vendor_management',

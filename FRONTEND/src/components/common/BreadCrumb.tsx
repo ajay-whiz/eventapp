@@ -30,6 +30,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps & { separator?: React.ReactNode }> 
     'feature-management': 'Feature Management',
     'enterprise-management': 'Enterprise Management',
     'service-category': 'Service Category',
+    'venue-category': 'Venue Category',
     'venue-management': 'Venue Management',
     'vendor-management': 'Vendor Management',
     'form-builder': 'Form Builder',
