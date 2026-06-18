@@ -59,13 +59,22 @@
     "cmsBaseUrl": "http://localhost:5173"
   },
   "upload": {
+    "storage": "local",
     "folder": "uploads",
     "apiBaseUrl": "http://localhost:10030"
   },
   "supabase": {
     "url": "",
     "serviceKey": "",
-    "storageBucket": "uploads"
+    "storageBucket": "event-apps",
+    "publicStorageUrl": "",
+    "s3": {
+      "endpoint": "",
+      "region": "ap-northeast-1",
+      "accessKeyId": "",
+      "secretAccessKey": "",
+      "bucket": "event-apps"
+    }
   },
   "mule": {
     "muleBaseUrl": "",

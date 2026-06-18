@@ -5,5 +5,10 @@
     "database": "event_booking",
     "useNewUrlParser": true,
     "useUnifiedTopology": true
+  },
+  "upload": {
+    "storage": "local",
+    "folder": "uploads",
+    "apiBaseUrl": "http://localhost:10030"
   }
 }

@@ -234,7 +234,33 @@ function buildProductionConfig(baseConfig) {
       storageBucket:
         process.env.SUPABASE_STORAGE_BUCKET ||
         baseConfig.supabase?.storageBucket ||
-        'uploads',
+        'event-apps',
+      publicStorageUrl:
+        process.env.SUPABASE_PUBLIC_STORAGE_URL ||
+        baseConfig.supabase?.publicStorageUrl ||
+        '',
+      s3: {
+        endpoint:
+          process.env.SUPABASE_S3_ENDPOINT ||
+          baseConfig.supabase?.s3?.endpoint ||
+          '',
+        region:
+          process.env.SUPABASE_S3_REGION ||
+          baseConfig.supabase?.s3?.region ||
+          'ap-northeast-1',
+        accessKeyId:
+          process.env.SUPABASE_S3_ACCESS_KEY_ID ||
+          baseConfig.supabase?.s3?.accessKeyId ||
+          '',
+        secretAccessKey:
+          process.env.SUPABASE_S3_SECRET_ACCESS_KEY ||
+          baseConfig.supabase?.s3?.secretAccessKey ||
+          '',
+        bucket:
+          process.env.SUPABASE_STORAGE_BUCKET ||
+          baseConfig.supabase?.s3?.bucket ||
+          'event-apps',
+      },
     },
     baseUrl: {
       ...baseConfig.baseUrl,
@@ -243,6 +269,10 @@ function buildProductionConfig(baseConfig) {
     },
     upload: {
       ...baseConfig.upload,
+      storage:
+        process.env.UPLOAD_STORAGE ||
+        baseConfig.upload?.storage ||
+        'supabase',
       apiBaseUrl:
         process.env.API_BASE_URL ||
         process.env.BACKEND_URL ||

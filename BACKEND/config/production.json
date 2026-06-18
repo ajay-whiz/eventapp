@@ -50,9 +50,17 @@
     "logGroupName": "event-booking-prod"
   },
   "supabase": {
-    "url": "https://juvgavjwmr489kht62123rhb-postgres.up.railway.app",
-    "serviceKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
-    "storageBucket": "uploads"
+    "url": "https://mpnyugcnoflsrvrywghq.supabase.co",
+    "serviceKey": "",
+    "storageBucket": "event-apps",
+    "publicStorageUrl": "https://mpnyugcnoflsrvrywghq.supabase.co/storage/v1/object/public/event-apps",
+    "s3": {
+      "endpoint": "https://mpnyugcnoflsrvrywghq.storage.supabase.co/storage/v1/s3",
+      "region": "ap-northeast-1",
+      "accessKeyId": "",
+      "secretAccessKey": "",
+      "bucket": "event-apps"
+    }
   },
   "baseUrl": {
     "headerImageUrl": "https://events.whizapps.cloud",
@@ -60,6 +68,7 @@
     "cmsBaseUrl": "https://app.example.com"
   },
   "upload": {
+    "storage": "supabase",
     "folder": "uploads",
     "apiBaseUrl": "https://apimarketplace.whiz-cloud.com"
   }

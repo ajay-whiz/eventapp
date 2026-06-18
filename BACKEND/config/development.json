@@ -1,0 +1,16 @@
+{
+  "upload": {
+    "storage": "supabase",
+    "apiBaseUrl": "https://apimarketplace.whiz-cloud.com"
+  },
+  "supabase": {
+    "url": "https://mpnyugcnoflsrvrywghq.supabase.co",
+    "storageBucket": "event-apps",
+    "publicStorageUrl": "https://mpnyugcnoflsrvrywghq.supabase.co/storage/v1/object/public/event-apps",
+    "s3": {
+      "endpoint": "https://mpnyugcnoflsrvrywghq.storage.supabase.co/storage/v1/s3",
+      "region": "ap-northeast-1",
+      "bucket": "event-apps"
+    }
+  }
+}
