@@ -19,6 +19,7 @@ import {
   fetchContentPolicyByIdFailure,
 } from '../slices/contentPolicySlice';
 import { API_ROUTES } from '../../../constants/routes';
+import { normalizeContentPolicy } from '../utils/normalizeContentPolicy';
 
 // API configuration
 const getApiHeaders = () => ({
@@ -135,7 +136,7 @@ export function useContentPolicyActions() {
         headers: getApiHeaders(),
       });
   
-      dispatch(fetchContentPolicyByIdSuccess(response.data.data));
+      dispatch(fetchContentPolicyByIdSuccess(normalizeContentPolicy(response.data.data) || response.data.data));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to fetch content policy';
@@ -151,8 +152,9 @@ export function useContentPolicyActions() {
         headers: getApiHeaders(),
       });
   
-      dispatch(fetchContentPolicyByIdSuccess(response.data.data));
-      return response.data.data;
+      const policy = normalizeContentPolicy(response.data.data);
+      dispatch(fetchContentPolicyByIdSuccess(policy || response.data.data));
+      return policy;
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to fetch content policy by category';

@@ -15,8 +15,18 @@ import { useNavigate } from 'react-router-dom';
 type ContentPolicyRow = {
   id: string;
   title: string;
+  category: string;
   contentPreview: string;
   content: string;
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'privacy-policy': 'Privacy Policy',
+  'terms-of-service': 'Terms of Service',
+  'cookie-policy': 'Cookie Policy',
+  'data-protection': 'Data Protection',
+  'user-agreement': 'User Agreement',
+  'about-us': 'About Us',
 };
 
 const ContentPolicyList: React.FC = () => {
@@ -100,6 +110,12 @@ const ContentPolicyList: React.FC = () => {
 
   const columns: TableColumn<ContentPolicyRow>[] = useMemo(() => [
     { key: 'title', label: 'Title', width: 90, sortable: true, searchable: true },
+    {
+      key: 'category',
+      label: 'Category',
+      width: 120,
+      render: (value) => CATEGORY_LABELS[String(value)] ?? String(value ?? '-'),
+    },
     { key: 'contentPreview', label: 'Content Preview', width: 180 },
   ], []);
 
@@ -107,6 +123,7 @@ const ContentPolicyList: React.FC = () => {
     (contentPolicies as any[])?.filter(Boolean).map((cp: any) => ({
       id: (cp.id ?? cp.key ?? `${cp.title || 'policy'}-${Math.random().toString(36).slice(2,8)}`) as string,
       title: (cp.title ?? '') as string,
+      category: (cp.category ?? '') as string,
       contentPreview: getContentPreview(cp.content ?? '', 120),
       content: (cp.content ?? '') as string,
     })) ?? []

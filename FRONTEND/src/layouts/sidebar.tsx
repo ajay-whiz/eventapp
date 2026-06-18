@@ -193,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       feature => feature && feature.uniqueId && 
       feature.uniqueId !== 'dashboard' && 
       feature.uniqueId !== 'profile_setting' &&
+      feature.uniqueId !== 'content_policy' &&
       !(isUserSuperAdmin && ['form_builder', 'role_management', 'feature_management'].includes(feature.uniqueId))
     );
     
@@ -227,6 +228,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       }
     });
     
+    // Always add Settings (before Profile)
+    const settingsConfig = getFeatureConfig('content_policy');
+    if (settingsConfig) {
+      const settingsExists = baseMenuItems.some(item => item.uniqueId === 'content_policy');
+      if (!settingsExists) {
+        baseMenuItems.push({
+          to: settingsConfig.route,
+          label: settingsConfig.defaultLabel,
+          icon: settingsConfig.icon,
+          badge: null,
+          feature: settingsConfig.defaultLabel,
+          uniqueId: settingsConfig.uniqueId,
+        });
+      }
+    }
+
     // Always add Profile Setting at the end
     const profileConfig = getFeatureConfig('profile_setting');
     if (profileConfig) {

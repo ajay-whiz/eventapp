@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth
 import LoginForm from '../features/auth/components/Login/LoginForm';
@@ -49,6 +49,7 @@ import VendorList from '../features/vendorManagement/components/VendorList';
 import VendorForm from '../features/vendorManagement/components/VendorForm';
 import ContentPolicyList from '../features/content-policy/components/ContentPolicyList';
 import ContentPolicyForm from '../features/content-policy/components/ContentPolicyForm';
+import ContentPolicyPublicPage from '../features/content-policy/components/ContentPolicyPublicPage';
 
 // Booking Management
 import BookingIndex from '../features/booking/components/BookingIndex';
@@ -74,6 +75,14 @@ const AppRoutes = () => {
         <Route path={ROUTING.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={ROUTING.RESET_PASSWORD} element={<ResetPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route
+          path={ROUTING.PRIVACY_POLICY}
+          element={<ContentPolicyPublicPage category="privacy-policy" />}
+        />
+        <Route
+          path={ROUTING.TERMS_OF_SERVICE}
+          element={<ContentPolicyPublicPage category="terms-of-service" />}
+        />
 
         {/* ------------------ Protected Routes ------------------- */}
         <Route path={ROUTING.DASHBOARD} element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -136,7 +145,8 @@ const AppRoutes = () => {
 
 
 
-        {/* Content Policy Management - Protected by Content Policy Management feature permission */}
+        {/* Content Policy Management - Protected by Content Policy feature permission */}
+        <Route path={ROUTING.SETTINGS} element={<Navigate to={`/${ROUTING.CONTENT_POLICY}`} replace />} />
         <Route path={ROUTING.CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="read"><ContentPolicyList /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="write"><ContentPolicyForm /></ProtectedRoute>} />
         <Route path={ROUTING.UPDATE_CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="write"><ContentPolicyForm /></ProtectedRoute>} />

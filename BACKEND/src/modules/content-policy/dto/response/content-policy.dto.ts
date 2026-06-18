@@ -3,7 +3,7 @@ import { ObjectId } from "typeorm";
 
 export class ContentPolicyResponseDto {
   @Expose()
-  @Transform(({ obj }) => obj.id?.toString())
+  @Transform(({ obj }) => obj._id?.toString() || obj.id?.toString())
   id: string;
 
   @Expose()

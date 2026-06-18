@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, FormProvider, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputGroup } from '../../../components/molecules/InputGroup';
@@ -14,6 +14,7 @@ import { useContentPolicy } from '../hooks/useContentPolicy';
 import { useContentPolicyActions } from '../hooks/useContentPolicyActions';
 import Layout from '../../../layouts/Layout';
 import Breadcrumbs from '../../../components/common/BreadCrumb';
+import { ROUTING } from '../../../constants/routes';
 
 interface ContentPolicyFormProps {
   editingContentPolicy?: any;
@@ -27,6 +28,15 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
   onCancel 
 }) => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const presetCategory = searchParams.get('category') || '';
+  const returnToParam = searchParams.get('returnTo');
+  const returnTo = returnToParam
+    ? (() => {
+        const decoded = decodeURIComponent(returnToParam);
+        return decoded.startsWith('/') ? decoded : `/${decoded}`;
+      })()
+    : `/${ROUTING.CONTENT_POLICY}`;
   const toast = useToast();
   const [categories, setCategories] = useState<Array<{ key: string; value: string }>>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -106,16 +116,20 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
       reset({
         title: '',
         content: '',
-        effectiveDate: '',
-        category: '',
+        effectiveDate: new Date().toISOString().slice(0, 10),
+        category: presetCategory,
       });
     }
-  }, [contentPolicyToEdit, isEditMode, reset, currentContentPolicy]);
+  }, [contentPolicyToEdit, isEditMode, reset, currentContentPolicy, presetCategory]);
 
   const onSubmit = async (data: ContentPolicySchemaType) => {
     try {
       if (isEditMode && (id || currentContentPolicy)) {
         const policyId = id || currentContentPolicy?.id;
+        if (!policyId) {
+          toast.error('Policy ID is missing. Please try again.');
+          return;
+        }
         await updateContentPolicy(
           policyId, 
           data.title, 
@@ -125,7 +139,7 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
         );
         if (!isEmbedded) {
           toast.success('Content Policy updated successfully');
-          navigate('/content-policy');
+          navigate(returnTo);
         }
       } else {
         await addContentPolicy(
@@ -136,7 +150,7 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
         );
         if (!isEmbedded) {
           toast.success('Content Policy created successfully');
-          navigate('/content-policy');
+          navigate(returnTo);
         }
         reset({ title: '', content: '', effectiveDate: '', category: '' });
       }
@@ -200,6 +214,7 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
                       }}
                       isMulti={false}
                       error={fieldState.error?.message}
+                      disabled={!isEditMode && Boolean(presetCategory)}
                     />
                   );
                 }}
@@ -244,6 +259,15 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
               >
                 {contentPolicyLoading ? 'Saving...' : isEditMode ? 'Update' : 'Create'}
               </Button>
+              {!isEmbedded && (
+                <Button
+                  type="button"
+                  variant="muted"
+                  onClick={() => navigate(returnTo)}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
 
             {error && <FormError message={error} />}

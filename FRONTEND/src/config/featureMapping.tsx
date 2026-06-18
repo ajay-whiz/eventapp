@@ -107,8 +107,8 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
   content_policy: {
     uniqueId: 'content_policy',
     route: '/content-policy',
-    icon: <FileText size={24} />,
-    defaultLabel: 'Content Policy',
+    icon: <Settings size={24} />,
+    defaultLabel: 'Settings',
   },
   booking_management: {
     uniqueId: 'booking_management',
