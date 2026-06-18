@@ -33,6 +33,7 @@ const LoginForm: React.FC = () => {
   });
 
   const onSubmit = (data: LoginFormValues) => {
+    console.log('Form submitted with data:', data);
     if (data.rememberMe) {
       localStorage.setItem('rememberedEmail', data.email);
       localStorage.setItem('rememberedPassword', data.password);
