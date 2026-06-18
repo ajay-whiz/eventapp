@@ -31,8 +31,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-#.env*
+# env files — never commit secrets
+.env
+.env.*
+!env.example
 
 # vercel
 .vercel
@@ -43,8 +45,6 @@ next-env.d.ts
 .next
 # /config/ - Commented out to include config files
 *.md
-BACKEND/uploads/*
-!BACKEND/uploads/.gitkeep
 # Exclude all JSON files except package.json, package-lock.json, tsconfig files, and nest-cli.json
  
 !package.json

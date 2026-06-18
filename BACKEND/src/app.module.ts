@@ -144,7 +144,8 @@ import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module
       isGlobal: true,
       cache: true,
       load: [configuration],
-      ignoreEnvFile: true,
+      ignoreEnvFile: false,
+      envFilePath: ['.env'],
     }),
     TypeOrmModule.forRootAsync({
       name: 'mongo',
