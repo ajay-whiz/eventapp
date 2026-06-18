@@ -33,7 +33,6 @@ COPY --from=builder /app/dist ./dist
 COPY deploy/config/base.json.example ./deploy/config/base.json.example
 COPY scripts ./scripts
 COPY event_booking ./event_booking
-COPY uploads ./uploads
 
 RUN mkdir -p uploads/images uploads/forms uploads/profile uploads/venues uploads/vendors uploads/quotation uploads/booking config
 
