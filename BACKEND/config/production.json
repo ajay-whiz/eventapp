@@ -58,5 +58,9 @@
     "headerImageUrl": "https://events.whizapps.cloud",
     "linkedInLink": "https://www.linkedin.com",
     "cmsBaseUrl": "https://app.example.com"
+  },
+  "upload": {
+    "folder": "uploads",
+    "apiBaseUrl": "https://apimarketplace.whiz-cloud.com"
   }
 }

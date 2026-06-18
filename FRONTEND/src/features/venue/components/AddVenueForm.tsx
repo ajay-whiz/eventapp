@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { Form } from '../../../components/common/Form';
@@ -75,6 +75,7 @@ const AddVenueForm: React.FC = () => {
   const enterpriseState = useEnterprise();
   const [dynamicFormErrors, setDynamicFormErrors] = useState<Record<string, string>>({});
   const [uploadingImages, setUploadingImages] = useState<Record<string, boolean>>({});
+  const uploadingImageIdsRef = useRef<Set<string>>(new Set());
 
   const toast = useToast();
   const navigate = useNavigate();
@@ -571,43 +572,59 @@ const AddVenueForm: React.FC = () => {
   // Helper function to handle immediate image upload to Supabase when images are selected
   // This ensures images are uploaded to Supabase storage immediately, not stored locally
   const handleImageUpload = async (fieldId: string, images: any[]) => {
+    const pendingImages = images.filter(
+      (img: any) =>
+        img.file &&
+        !img.url &&
+        !uploadingImageIdsRef.current.has(img.id),
+    );
+
+    if (pendingImages.length === 0) {
+      return;
+    }
+
+    pendingImages.forEach((img: any) => uploadingImageIdsRef.current.add(img.id));
     setUploadingImages(prev => ({ ...prev, [fieldId]: true }));
     
     try {
-      const uploadedImages = await Promise.all(
-        images.map(async (img: any) => {
-          if (img.file && !img.url) {
-            // Upload new file to Supabase immediately (not stored locally)
-            const supabaseUrl = await uploadSingleImage(img.file);
-            return {
-              ...img,
-              url: supabaseUrl, // Store Supabase URL, not local data URL
-              uploaded: true
-            };
-          }
-          // Return existing image (already uploaded to Supabase)
-          return {
+      const uploadedById = new Map<string, any>();
+
+      await Promise.all(
+        pendingImages.map(async (img: any) => {
+          const imageUrl = await uploadSingleImage(img.file);
+          uploadedById.set(img.id, {
             ...img,
-            uploaded: true
-          };
-        })
+            url: imageUrl,
+            uploaded: true,
+          });
+        }),
       );
-      
-      // Update the form data with Supabase URLs
-      setFormData(prev => ({
-        ...prev,
-        [fieldId]: uploadedImages
-      }));
+
+      setFormData((prev) => {
+        const currentImages = Array.isArray(prev[fieldId]) ? prev[fieldId] : images;
+        const mergedImages = currentImages.map((img: any) => uploadedById.get(img.id) || img);
+
+        pendingImages.forEach((img: any) => {
+          if (!mergedImages.some((existing: any) => existing.id === img.id)) {
+            mergedImages.push(uploadedById.get(img.id) || img);
+          }
+        });
+
+        return {
+          ...prev,
+          [fieldId]: mergedImages,
+        };
+      });
       
     } catch (error: any) {
-      // Extract detailed error message
       const errorMessage = error?.message || 
                           error?.response?.data?.message || 
                           error?.response?.data?.error || 
-                          'Failed to upload images to Supabase';
+                          'Failed to upload images';
       
-      toast.error(errorMessage || 'Failed to upload images to Supabase. Please try again.');
+      toast.error(errorMessage || 'Failed to upload images. Please try again.');
     } finally {
+      pendingImages.forEach((img: any) => uploadingImageIdsRef.current.delete(img.id));
       setUploadingImages(prev => ({ ...prev, [fieldId]: false }));
     }
   };

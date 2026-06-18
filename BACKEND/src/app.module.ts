@@ -48,6 +48,7 @@ import { AdditionalServiceModule } from './modules/additional-service/additional
 import { SimilarModule } from './modules/similar/similar.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ServiceCategoryFormInputsModule } from './modules/service-category-form-inputs/service-category-form-inputs.module';
+import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module';
 
 @Module({
   imports: [
@@ -55,12 +56,8 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
       imports: [
         ConfigModule,
         ServeStaticModule.forRoot({
-          rootPath: join(__dirname, '..', 'uploads', 'profile'), // <- serve from this folder
-          serveRoot: '/uploads/profile',   // <- serve from this route
-        }),
-        ServeStaticModule.forRoot({
-          rootPath: join(__dirname, '..', 'uploads', 'quotation'), // <- serve from this folder
-          serveRoot: '/uploads/quotation',   // <- serve from this route
+          rootPath: join(__dirname, '..', 'uploads'),
+          serveRoot: '/uploads',
         }),
       ],
       useFactory: async (configService: ConfigService) => {
@@ -192,6 +189,7 @@ import { ServiceCategoryFormInputsModule } from './modules/service-category-form
     ServingStyleModule,
     AdditionalServiceModule,
     SupabaseModule,
+    FileUploadModule,
     ChatModule
   ],
   controllers: [AppController],

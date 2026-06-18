@@ -10,8 +10,13 @@ const mainPath = join(rootDir, 'dist', 'main.js');
 
 function ensureUploadDirectories() {
   const uploadDirs = [
+    join(rootDir, 'uploads', 'images'),
+    join(rootDir, 'uploads', 'forms'),
     join(rootDir, 'uploads', 'profile'),
+    join(rootDir, 'uploads', 'venues'),
+    join(rootDir, 'uploads', 'vendors'),
     join(rootDir, 'uploads', 'quotation'),
+    join(rootDir, 'uploads', 'booking'),
   ];
 
   for (const dir of uploadDirs) {

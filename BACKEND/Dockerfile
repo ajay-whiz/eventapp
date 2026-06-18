@@ -34,7 +34,7 @@ COPY deploy/config/base.json.example ./deploy/config/base.json.example
 COPY scripts ./scripts
 COPY event_booking ./event_booking
 
-RUN mkdir -p uploads/profile uploads/quotation config
+RUN mkdir -p uploads/images uploads/forms uploads/profile uploads/venues uploads/vendors uploads/quotation uploads/booking config
 
 EXPOSE 3000
 

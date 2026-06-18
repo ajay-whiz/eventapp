@@ -19,7 +19,7 @@ import { ServiceCategory } from '../service-category/entity/service-category.ent
 import { Form } from '../form/entity/form.entity';
 import { LocationService } from '@modules/location/location.service';
 import { SupabaseService } from '@shared/modules/supabase/supabase.service';
-import * as path from 'path';
+import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
 
 @Injectable()
 export class VenueService {
@@ -36,6 +36,7 @@ export class VenueService {
     private readonly userRepo: MongoRepository<User>,
     private readonly locationService: LocationService,
     private readonly supabaseService: SupabaseService,
+    private readonly fileUploadService: FileUploadService,
   ) {}
 
   async create(createDto: CreateVenueDto, user?: any): Promise<VenueResponseDto> {
@@ -1030,85 +1031,86 @@ export class VenueService {
   }
 
   /**
-   * Upload image file to Supabase (similar to profile image upload)
-   * @param file - Multer file object
-   * @returns Promise<string> - Public URL of uploaded image
+   * Upload image file to local upload folder.
    */
-  async uploadImageToSupabase(file: Express.Multer.File): Promise<string> {
-    try {
-
-      // Validate file object
-      if (!file) {
-        throw new BadRequestException('File is required');
-      }
-      if (!file.buffer) {
-        throw new BadRequestException('File buffer is missing');
-      }
-      if (!file.mimetype) {
-        throw new BadRequestException('File mimetype is missing');
-      }
-      
-      // Validate file type
-      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-      if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
-      }
-      
-      // Generate unique filename to avoid conflicts
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const originalName = file.originalname || 'venue-image';
-      const fileExtension = path.extname(originalName) || '.jpg';
-      const fileName = `venue_${timestamp}_${randomSuffix}${fileExtension}`;
-      
-      // Check if Supabase is available
-      const isSupabaseAvailable = this.supabaseService?.isAvailable?.() || false;
-
-      // Try Supabase first (if available)
-      if (isSupabaseAvailable) {
-        try {
-
-          const supabaseBuckets = ['profiles', 'uploads', 'venues'];
-          
-          for (const bucket of supabaseBuckets) {
-            try {
-
-              const uploadResult = await this.supabaseService.upload({
-                filePath: `venue/${fileName}`,
-                file: file.buffer,
-                contentType: file.mimetype,
-                bucket: bucket,
-                upsert: true,
-              });
-              
-              if (uploadResult?.publicUrl) {
-                console.log(`✅ Supabase upload successful (bucket: ${bucket}):`, uploadResult.publicUrl);
-                return uploadResult.publicUrl;
-              }
-            } catch (supabaseError: any) {
-
-              continue;
-            }
-          }
-        } catch (supabaseError: any) {
-
-        }
-      }
-      
-      // If Supabase is not available or upload failed
+  async uploadImage(file: Express.Multer.File): Promise<string> {
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        'File upload failed: Supabase is not configured or available. Please configure Supabase upload service.'
+        `Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG, WEBP`,
       );
-      
-    } catch (error: any) {
-
-      // If it's already a BadRequestException, re-throw it
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      
-      // Otherwise, wrap it
-      throw new BadRequestException(`File upload failed: ${error?.message || 'Unknown error'}`);
     }
+
+    return this.fileUploadService.saveUploadedFile(file, 'venues');
   }
+
+  /**
+   * Legacy Supabase upload — kept for reference. Use uploadImage() for local uploads.
+   */
+  // async uploadImageToSupabase(file: Express.Multer.File): Promise<string> {
+  //   try {
+  //     if (!file) {
+  //       throw new BadRequestException('File is required');
+  //     }
+  //     if (!file.buffer) {
+  //       throw new BadRequestException('File buffer is missing');
+  //     }
+  //     if (!file.mimetype) {
+  //       throw new BadRequestException('File mimetype is missing');
+  //     }
+  //
+  //     const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+  //     if (!allowedMimeTypes.includes(file.mimetype)) {
+  //       throw new BadRequestException(
+  //         `Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`,
+  //       );
+  //     }
+  //
+  //     const timestamp = Date.now();
+  //     const randomSuffix = Math.random().toString(36).substring(2, 8);
+  //     const originalName = file.originalname || 'venue-image';
+  //     const fileExtension = path.extname(originalName) || '.jpg';
+  //     const fileName = `venue_${timestamp}_${randomSuffix}${fileExtension}`;
+  //
+  //     const isSupabaseAvailable = this.supabaseService?.isAvailable?.() || false;
+  //
+  //     if (isSupabaseAvailable) {
+  //       try {
+  //         const supabaseBuckets = ['profiles', 'uploads', 'venues'];
+  //
+  //         for (const bucket of supabaseBuckets) {
+  //           try {
+  //             const uploadResult = await this.supabaseService.upload({
+  //               filePath: `venue/${fileName}`,
+  //               file: file.buffer,
+  //               contentType: file.mimetype,
+  //               bucket: bucket,
+  //               upsert: true,
+  //             });
+  //
+  //             if (uploadResult?.publicUrl) {
+  //               return uploadResult.publicUrl;
+  //             }
+  //           } catch {
+  //             continue;
+  //           }
+  //         }
+  //       } catch {
+  //         // fall through to error below
+  //       }
+  //     }
+  //
+  //     throw new BadRequestException(
+  //       'File upload failed: Supabase is not configured or available. Please configure Supabase upload service.',
+  //     );
+  //   } catch (error: any) {
+  //     if (error instanceof BadRequestException) {
+  //       throw error;
+  //     }
+  //
+  //     throw new BadRequestException(
+  //       `File upload failed: ${error?.message || 'Unknown error'}`,
+  //     );
+  //   }
+  // }
 }

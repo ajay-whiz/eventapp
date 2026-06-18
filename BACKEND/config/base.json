@@ -58,6 +58,10 @@
     "linkedInLink": "https://www.linkedin.com",
     "cmsBaseUrl": "http://localhost:5173"
   },
+  "upload": {
+    "folder": "uploads",
+    "apiBaseUrl": "http://localhost:10030"
+  },
   "supabase": {
     "url": "",
     "serviceKey": "",

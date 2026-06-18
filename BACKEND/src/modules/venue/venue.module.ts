@@ -5,6 +5,7 @@ import { VenueService } from './venue.service';
 import { VenueController } from './venue.controller';
 import { LocationModule } from '@modules/location/location.module';
 import { RatingModule } from '../rating/rating.module';
+import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module';
 import { VenueFormValidator } from './helpers/venue-form-validator';
 import { VenueCategoryModule } from '@modules/venue-category/venue-category.module';
 import { ServiceCategory } from '../service-category/entity/service-category.entity';
@@ -20,6 +21,7 @@ import { SupabaseModule } from '@shared/modules/supabase/supabase.module';
     LocationModule,
     forwardRef(() => RatingModule),
     SupabaseModule,
+    FileUploadModule,
   ],
   controllers: [VenueController],
   providers: [VenueService, VenueFormValidator],

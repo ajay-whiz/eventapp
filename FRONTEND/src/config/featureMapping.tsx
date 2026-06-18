@@ -12,6 +12,7 @@ import {
   UsersRound,
   FileText,
   Calendar,
+  Shield,
 } from 'lucide-react';
 
 export interface FeatureConfig {
@@ -53,7 +54,7 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
   role_management: {
     uniqueId: 'role_management',
     route: '/role-management',
-    icon: <Settings size={24} />,
+    icon: <Shield size={24} />,
     defaultLabel: 'Role Management',
   },
   feature_management: {

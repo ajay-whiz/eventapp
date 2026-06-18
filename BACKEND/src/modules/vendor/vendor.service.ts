@@ -3,8 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository, ObjectLiteral } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { plainToInstance } from 'class-transformer';
-import * as path from 'path';
-import * as fs from 'fs';
 import { Vendor } from './entity/vendor.entity';
 import { VendorCategory } from '../vendor-category/entity/vendor-category.entity';
 import { ServiceCategory } from '../service-category/entity/service-category.entity';
@@ -19,6 +17,7 @@ import { IPaginationMeta } from '@common/interfaces/paginationMeta.interface';
 import { VendorFormValidator } from './helpers/vendor-form-validator';
 import { CategoryPricingHelper } from './helpers/category-pricing.helper';
 import { LocationService } from '@modules/location/location.service';
+import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
 import { Rating } from '../rating/entity/rating.entity'; // New import
 import { User } from '../user/entities/user.entity';
 
@@ -32,6 +31,7 @@ export class VendorService {
     @InjectRepository(ServiceCategory, 'mongo') private readonly serviceCategoryRepo: MongoRepository<ServiceCategory>,
     @InjectRepository(Form, 'mongo') private readonly formRepo: MongoRepository<Form>,
     private readonly locationService: LocationService,
+    private readonly fileUploadService: FileUploadService,
   ) {}
 
   async create(createDto: CreateVendorDto, user: any): Promise<VendorResponseDto> {
@@ -983,36 +983,7 @@ export class VendorService {
   }
 
   async uploadVendorImage(file: any): Promise<string> {
-    if (process.env.NODE_ENV === 'local') {
-      // For local development, save to local file system
-      const rootDir = path.resolve(__dirname, '..', '..', '..');
-      const dir = path.join(rootDir, 'uploads', 'vendors');
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      
-      // Generate unique filename to avoid conflicts
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `vendor_${timestamp}_${randomSuffix}${fileExtension}`;
-      const filePath = path.join(dir, fileName);
-      
-      fs.writeFileSync(filePath, file.buffer);
-      
-      // Return the URL path, not the file path
-      return `/uploads/vendors/${fileName}`;
-    } else {
-      // For production, upload to S3 (you'll need to implement AWS S3 service)
-      // For now, return a placeholder URL
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `vendor_${timestamp}_${randomSuffix}${fileExtension}`;
-      
-      // TODO: Implement S3 upload for production
-      return `https://your-s3-bucket.com/vendors/${fileName}`;
-    }
+    return this.fileUploadService.saveUploadedFile(file, 'vendors');
   }
 
   private getVendorAlbums(vendorAlbums: any[], placeholderImages: string[]): any[] {

@@ -241,6 +241,14 @@ function buildProductionConfig(baseConfig) {
       headerImageUrl: frontendUrl || baseConfig.baseUrl?.headerImageUrl,
       cmsBaseUrl: frontendUrl || baseConfig.baseUrl?.cmsBaseUrl,
     },
+    upload: {
+      ...baseConfig.upload,
+      apiBaseUrl:
+        process.env.API_BASE_URL ||
+        process.env.BACKEND_URL ||
+        process.env.APP_URL ||
+        baseConfig.upload?.apiBaseUrl,
+    },
   };
 }
 

@@ -8,9 +8,8 @@ import { PhotographyType } from './entity/photography-type.entity';
 import { CreateQuotationRequestDto } from './dto/request/create-quotation-request.dto';
 import { AwsS3Service } from '@core/aws/services/aws-s3.service';
 import { SupabaseService } from '@shared/modules/supabase/supabase.service';
+import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
 import { ObjectId } from 'mongodb';
-import path from 'path';
-import fs from 'fs';
 
 @Injectable()
 export class QuotationRequestService {
@@ -26,6 +25,7 @@ export class QuotationRequestService {
     private readonly configService: ConfigService,
     private readonly awsS3Service: AwsS3Service,
     private readonly supabaseService: SupabaseService,
+    private readonly fileUploadService: FileUploadService,
   ) {
     this.awsConfig = this.configService.get('aws');
   }
@@ -538,40 +538,7 @@ export class QuotationRequestService {
   }
 
   async uploadReferenceImage(file: any): Promise<string> {
-    if (process.env.NODE_ENV === 'local') {
-      // For local development, save to local file system
-      const rootDir = path.resolve(__dirname, '..', '..', '..');
-      const dir = path.join(rootDir, 'uploads', 'quotation');
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      
-      // Generate unique filename
-      const timestamp = Date.now();
-      const fileExtension = path.extname(file.originalname);
-      const fileName = `reference_${timestamp}${fileExtension}`;
-      const filePath = path.join(dir, fileName);
-      
-      fs.writeFileSync(filePath, file.buffer);
-      
-      // Return the URL path
-      return `/uploads/quotation/${fileName}`;
-    } else {
-      // For production, upload to S3
-      const awsUploadReqDto = {
-        Bucket: this.awsConfig.bucketName,
-        Key:
-          this.awsConfig.bucketFolderName +
-          '/' +
-          'quotation' +
-          '/' +
-          file.originalname,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      };
-      const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
-      return response?.Location || '';
-    }
+    return this.fileUploadService.saveUploadedFile(file, 'quotation');
   }
 
   // Helper function to wrap upload with timeout

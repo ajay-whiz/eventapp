@@ -17,6 +17,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -613,11 +614,11 @@ export class VenueController {
   @Post('upload-image')
   @UseGuards(AuthGuard('jwt'), FeatureGuard)
   @Features(FeatureType.VENUE_MANAGEMENT)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ 
     summary: 'Upload venue image',
-    description: 'Uploads a venue image file (PNG, JPEG, JPG) to Supabase. Returns the public URL of the uploaded image.'
+    description: 'Uploads a venue image file (PNG, JPEG, JPG) to the local upload folder. Returns the public URL of the uploaded image.'
   })
   @ApiBody({
     schema: {
@@ -664,8 +665,7 @@ export class VenueController {
         throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
       }
 
-      // Upload the file to Supabase and get the image URL
-      const imageUrl = await this.venueService.uploadImageToSupabase(file);
+      const imageUrl = await this.venueService.uploadImage(file);
 
       if (!imageUrl) {
         throw new BadRequestException('File upload failed - no URL returned');

@@ -33,6 +33,7 @@ import { CreateEnterpriseUserDto } from './dto/create-enterprise-user.dto';
 import path from 'path';
 import fs from 'fs';
 import { SupabaseService } from '@shared/modules/supabase/supabase.service';
+import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
 import { SimpleEmailService } from '@shared/email/simple-email.service';
 import { RobustEmailService } from '@shared/email/robust-email.service';
 import { generateEmailTemplate, generateEmailText } from '@shared/email/email-template.helper';
@@ -50,6 +51,7 @@ export class UserService {
     private readonly mailerService: MailerService,
     private readonly awsS3Service: AwsS3Service,
     private readonly supabaseService: SupabaseService,
+    private readonly fileUploadService: FileUploadService,
     private readonly simpleEmailService: SimpleEmailService,
     private readonly robustEmailService: RobustEmailService,
   ) {
@@ -1513,101 +1515,15 @@ export class UserService {
 
   async uploadFilesToS3Bucket(file: any): Promise<string> {
     try {
-
-      // Validate file object
-      if (!file) {
-        throw new BadRequestException('File is required');
-      }
-      if (!file.buffer) {
-        throw new BadRequestException('File buffer is missing');
-      }
-      if (!file.mimetype) {
-        throw new BadRequestException('File mimetype is missing');
-      }
-      
-      // Generate unique filename to avoid conflicts
-      const timestamp = Date.now();
-      const randomSuffix = Math.random().toString(36).substring(2, 8);
-      const originalName = file.originalname || 'image';
-      const fileExtension = path.extname(originalName) || '.jpg';
-      const fileName = `profile_${timestamp}_${randomSuffix}${fileExtension}`;
-      
-      // Check if Supabase is available
-      const isSupabaseAvailable = this.supabaseService?.isAvailable?.() || false;
-      
-      // Check if AWS S3 is configured
-      const hasAwsConfig = this.awsConfig && this.awsConfig.bucketName;
-
-      // Try Supabase first (if available)
-      if (isSupabaseAvailable) {
-        try {
-
-          const supabaseBuckets = ['profiles', 'uploads'];
-          
-          for (const bucket of supabaseBuckets) {
-            try {
-
-              const uploadResult = await this.supabaseService.upload({
-                filePath: `profile/${fileName}`,
-                file: file.buffer,
-                contentType: file.mimetype,
-                bucket: bucket,
-                upsert: true,
-              });
-              
-              if (uploadResult?.publicUrl) {
-                console.log(`✅ Supabase upload successful (bucket: ${bucket}):`, uploadResult.publicUrl);
-                return uploadResult.publicUrl;
-              }
-            } catch (supabaseError: any) {
-
-              continue;
-            }
-          }
-        } catch (supabaseError: any) {
-
-        }
-      }
-      
-      // Try AWS S3 as fallback (if configured)
-      if (hasAwsConfig && this.awsS3Service) {
-        try {
-
-          const awsUploadReqDto = {
-            Bucket: this.awsConfig.bucketName,
-            Key:
-              (this.awsConfig.bucketFolderName || '') +
-              '/' +
-              (this.awsConfig.bucketTempFolderName || 'temp') +
-              '/' +
-              fileName,
-            Body: file.buffer,
-            ContentType: file.mimetype,
-          };
-          const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
-          if (response?.Location) {
-
-            return response.Location;
-          }
-        } catch (s3Error: any) {
-
-        }
-      }
-      
-      // If all uploads failed
-      throw new BadRequestException(
-        'File upload failed: Neither Supabase nor AWS S3 is configured or available. Please configure at least one upload service.'
-      );
-      
+      return await this.fileUploadService.saveUploadedFile(file, 'profile');
     } catch (error: any) {
-
-      // If it's already a BadRequestException, re-throw it
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
-      // Otherwise, wrap it
-      throw new BadRequestException(`File upload failed: ${error?.message || 'Unknown error'}`);
+
+      throw new BadRequestException(
+        `File upload failed: ${error?.message || 'Unknown error'}`,
+      );
     }
   }
 

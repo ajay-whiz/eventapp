@@ -5,9 +5,9 @@ interface ImageFile {
   id: string;
   name: string;
   preview: string;
-  file?: File; // Store the actual File object for binary upload (optional for pre-existing images)
-  url?: string; // For pre-existing images from server
-  uploaded?: boolean; // Mark if image is already uploaded
+  file?: File;
+  url?: string;
+  uploaded?: boolean;
 }
 
 interface MultiImageUploadProps {
@@ -16,9 +16,17 @@ interface MultiImageUploadProps {
   isSingleMode?: boolean;
   acceptedFormats?: string[];
   onImagesChange?: (images: ImageFile[]) => void;
-  disableClick?: boolean; // For FormBuilder - disables click to allow field selection
-  initialImages?: ImageFile[]; // For pre-selected images
+  disableClick?: boolean;
+  initialImages?: ImageFile[];
 }
+
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+    reader.readAsDataURL(file);
+  });
 
 const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   className = '',
@@ -27,25 +35,41 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   acceptedFormats = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   onImagesChange,
   disableClick = false,
-  initialImages = []
+  initialImages = [],
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef<ImageFile[]>(initialImages);
   const [dragActive, setDragActive] = useState(false);
   const [images, setImages] = useState<ImageFile[]>(initialImages);
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Memoize initialImages to prevent unnecessary re-renders
   const memoizedInitialImages = useMemo(() => initialImages, [JSON.stringify(initialImages)]);
 
-  // Update images when initialImages prop changes
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
   useEffect(() => {
     if (memoizedInitialImages.length > 0) {
       setImages(memoizedInitialImages);
+      imagesRef.current = memoizedInitialImages;
     }
   }, [memoizedInitialImages]);
 
-  const processFiles = useCallback((files: File[]) => {
+  const notifyChange = useCallback((nextImages: ImageFile[]) => {
+    onImagesChange?.(nextImages);
+  }, [onImagesChange]);
+
+  const applyImageUpdate = useCallback((getNextImages: (prev: ImageFile[]) => ImageFile[]) => {
+    const nextImages = getNextImages(imagesRef.current);
+    imagesRef.current = nextImages;
+    setImages(nextImages);
+    notifyChange(nextImages);
+  }, [notifyChange]);
+
+  const processFiles = useCallback(async (files: File[]) => {
     const newErrors: string[] = [];
+    const validFiles: File[] = [];
 
     files.forEach((file) => {
       if (!acceptedFormats.includes(file.type)) {
@@ -53,31 +77,41 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         newErrors.push(`${file.name}: File too large (max 5MB)`);
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImage: ImageFile = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          preview: e.target?.result as string,
-          file: file // Store the actual File object for binary upload
-        };
-        
-        setImages(prev => {
-          const updated = isSingleMode ? [newImage] : [...prev, newImage];
-          onImagesChange?.(updated);
-          return updated;
-        });
-      };
-      reader.readAsDataURL(file);
+      validFiles.push(file);
     });
 
     setErrors(newErrors);
-  }, [acceptedFormats, isSingleMode, onImagesChange]);
+    if (validFiles.length === 0) return;
+
+    try {
+      const newImages = await Promise.all(
+        validFiles.map(async (file) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          preview: await readFileAsDataUrl(file),
+          file,
+        })),
+      );
+
+      applyImageUpdate((prev) =>
+        isSingleMode ? newImages.slice(0, 1) : [...prev, ...newImages],
+      );
+    } catch {
+      setErrors((prev) => [...prev, 'Failed to read selected file(s)']);
+    }
+  }, [acceptedFormats, isSingleMode, applyImageUpdate]);
+
+  const openFilePicker = useCallback((event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    if (!disabled && !disableClick) {
+      fileInputRef.current?.click();
+    }
+  }, [disabled, disableClick]);
 
   const handleDragIn = useCallback((event: DragEvent<HTMLDivElement>): void => {
     event.preventDefault();
@@ -102,48 +136,42 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
     event.preventDefault();
     event.stopPropagation();
     setDragActive(false);
-    
+
     if (disabled) return;
-    
+
     const files = Array.from(event.dataTransfer.files);
-    processFiles(files);
+    void processFiles(files);
   }, [disabled, processFiles]);
 
   const handleFileInputChange = useCallback((event: ChangeEvent<HTMLInputElement>): void => {
     if (disabled) return;
-    
+
     const files = Array.from(event.target.files || []);
-    processFiles(files);
+    void processFiles(files);
+    event.target.value = '';
   }, [disabled, processFiles]);
 
-  const getPreviewSizeClasses = () => {
-    return 'w-20 h-20 flex-shrink-0';
-  };
-
-  const removeImage = useCallback((id: string): void => {
+  const removeImage = useCallback((id: string, event: React.MouseEvent): void => {
+    event.stopPropagation();
     if (disabled) return;
-    
-    setImages(prev => {
-      const updated = prev.filter(img => img.id !== id);
-      onImagesChange?.(updated);
-      return updated;
-    });
-  }, [disabled, onImagesChange]);
+
+    applyImageUpdate((prev) => prev.filter((img) => img.id !== id));
+  }, [disabled, applyImageUpdate]);
+
+  const previewSizeClasses = 'w-20 h-20 flex-shrink-0';
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Upload Area */}
       <div
         className={`
           border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white
           ${dragActive ? 'border-sky-500 bg-sky-50' : ''}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}
         onDragEnter={handleDragIn}
         onDragLeave={handleDragOut}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={() => !disabled && !disableClick && fileInputRef.current?.click()}
       >
         <input
           ref={fileInputRef}
@@ -155,12 +183,11 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
           disabled={disabled}
         />
 
-        {/* Preview Gallery */}
         <div className="flex gap-4 overflow-x-auto">
           {images.map((img) => (
             <div
               key={img.id}
-              className={`relative rounded-md border border-gray-200 overflow-hidden ${getPreviewSizeClasses()}`}
+              className={`relative rounded-md border border-gray-200 overflow-hidden ${previewSizeClasses}`}
             >
               <img
                 src={img.preview || img.url}
@@ -168,38 +195,28 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
                 className="w-full h-full object-cover"
               />
               <button
-                onClick={() => removeImage(img.id)}
-                className="absolute top-1 right-1 text-white text-xs  hover:bg-red-700 cursor-pointer"
+                type="button"
+                onClick={(event) => removeImage(img.id, event)}
+                className="absolute top-1 right-1 text-white text-xs hover:bg-red-700 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           ))}
 
-          {/* Upload Slot */}
-          <label
-            htmlFor="image-upload"
-            className={`flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md  cursor-pointer ${getPreviewSizeClasses()} hover:border-sky-400`}
+          <button
+            type="button"
+            onClick={openFilePicker}
+            disabled={disabled || disableClick}
+            className={`flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md cursor-pointer ${previewSizeClasses} hover:border-sky-400 disabled:cursor-not-allowed`}
           >
             <Plus className="w-6 h-6 text-gray-400" />
-            <input
-              id="image-upload"
-              type="file"
-              multiple={!isSingleMode}
-              accept={acceptedFormats.join(',')}
-              onChange={handleFileInputChange}
-              ref={fileInputRef}
-              className="hidden"
-              disabled={disabled}
-            />
-          </label>
+          </button>
         </div>
 
-        {/* Label */}
         <p className="mt-3 text-sm text-gray-600 text-center">Upload Images</p>
       </div>
 
-      {/* Error Messages */}
       {errors.length > 0 && (
         <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
           <p className="text-sm font-semibold text-red-700 mb-2">Upload Errors</p>
