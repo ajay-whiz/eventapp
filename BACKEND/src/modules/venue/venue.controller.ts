@@ -82,6 +82,20 @@ export class VenueController {
     description: 'Search term to filter venues by name or location',
     example: 'wedding hall',
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for nearest location sorting and distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for nearest location sorting and distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Venues retrieved successfully',
@@ -103,7 +117,9 @@ export class VenueController {
       return {
         ...venue,
         categoryId: originalVenue?.categoryId || venue.categoryId,
-        categoryName: originalVenue?.categoryName || venue.categoryName || 'General Venue'
+        categoryName: originalVenue?.categoryName || venue.categoryName || 'General Venue',
+        primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
+        locations: originalVenue?.locations || venue.locations,
       };
     });
     
@@ -141,6 +157,20 @@ export class VenueController {
     type: String,
     description: 'Search term to filter venues by name or location',
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for nearest location sorting and distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for nearest location sorting and distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Venues retrieved successfully',
@@ -159,7 +189,20 @@ export class VenueController {
     @Query() paginationDto: VenuePaginationDto,
   ): Promise<VenueUserPaginatedResponseDto> {
     const { data, pagination } = await this.venueService.findByCategoryForUser(categoryId, paginationDto);
-    return { data: plainToInstance(VenueUserResponseDto, data, { excludeExtraneousValues: true }), pagination };
+    const transformedData = plainToInstance(VenueUserResponseDto, data, { excludeExtraneousValues: true });
+
+    const finalData = transformedData.map((venue: any, index: number) => {
+      const originalVenue = data[index];
+      return {
+        ...venue,
+        categoryId: originalVenue?.categoryId || venue.categoryId,
+        categoryName: originalVenue?.categoryName || venue.categoryName || 'General Venue',
+        primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
+        locations: originalVenue?.locations || venue.locations,
+      };
+    });
+
+    return { data: finalData, pagination };
   }
   
   @Post()
@@ -368,6 +411,20 @@ export class VenueController {
     description: 'Filter venues by category ObjectId',
     example: '507f1f77bcf86cd799439011',
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for nearest location sorting and distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for nearest location sorting and distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Venues retrieved successfully',
@@ -468,6 +525,18 @@ export class VenueController {
     description: 'MongoDB ObjectId of the venue',
     example: '507f1f77bcf86cd799439011',
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    description: 'User latitude used to sort locations by nearest distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    description: 'User longitude used to sort locations by nearest distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Venue details retrieved successfully',
@@ -481,8 +550,14 @@ export class VenueController {
     status: HttpStatus.NOT_FOUND,
     description: 'Venue not found',
   })
-  findOneDetail(@Param('id') id: string): Promise<VenueDetailResponseDto> {
-    return this.venueService.findOneDetail(id);
+  findOneDetail(
+    @Param('id') id: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+  ): Promise<VenueDetailResponseDto> {
+    const queryLat = lat != null && lat !== '' ? Number(lat) : undefined;
+    const queryLng = lng != null && lng !== '' ? Number(lng) : undefined;
+    return this.venueService.findOneDetail(id, queryLat, queryLng);
   }
 
   @Post('upload-image')

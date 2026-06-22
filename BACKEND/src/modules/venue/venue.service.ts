@@ -37,6 +37,11 @@ import {
   getListingAlbums,
   updateListingAlbum,
 } from '@shared/utils/listing-album.persistence';
+import {
+  buildListingDetailLocations,
+  buildListingDetailLocationsFromRecords,
+  groupLocationsByServiceId,
+} from '@shared/utils/listing-detail-location.util';
 
 @Injectable()
 export class VenueService {
@@ -222,7 +227,7 @@ export class VenueService {
   }
 
   async findAll(paginationDto: VenuePaginationDto): Promise<VenuePaginatedResponseDto> {
-    const { page = 1, limit = 10, search, categoryId } = paginationDto;
+    const { page = 1, limit = 10, search, categoryId, lat, lng } = paginationDto;
     const skip = (page - 1) * limit;
 
     // Build query conditions
@@ -253,8 +258,24 @@ export class VenueService {
         this.venueRepo.count(query)
       ]);
 
+      const serviceIds = venues
+        .map((venue) => venue.id?.toString())
+        .filter((id): id is string => Boolean(id));
+      const allStoredLocations = await this.locationService.findAllByServiceIds(serviceIds);
+      const locationsByServiceId = groupLocationsByServiceId(allStoredLocations);
+
       const transformedVenues = await Promise.all(venues.map(async (venue) => {
-        const storedLocation = await this.locationService.findByServiceId(venue.id?.toString());
+        const serviceId = venue.id?.toString();
+        const locationFields = buildListingDetailLocationsFromRecords(
+          this.locationService,
+          locationsByServiceId.get(serviceId) || [],
+          {
+            entityName: venue.name,
+            formData: venue.formData,
+            queryLat: lat,
+            queryLng: lng,
+          },
+        );
         
         // Get category information for pricing generation
         let categoryName = 'General Venue';
@@ -288,14 +309,9 @@ export class VenueService {
           serviceCategoryId: venue.categoryId,
           categoryId: venueCategoryId,
           categoryName: categoryName,
-          location: {
-            address: storedLocation?.address || venue.formData?.address || venue.formData?.location || 'Address not available',
-            city: venue.formData?.city || 'City not available',
-            latitude: (storedLocation?.latitude as number) ?? venue.formData?.latitude ?? 0,
-            longitude: (storedLocation?.longitude as number) ?? venue.formData?.longitude ?? 0,
-            pinTitle: venue.formData?.pinTitle || venue.name,
-            mapImageUrl: venue.formData?.mapImageUrl || 'https://maps.googleapis.com/...'
-          },
+          location: locationFields.location,
+          primaryLocation: locationFields.primaryLocation,
+          locations: locationFields.locations,
           pricing: venue.formData?.pricing || categoryPricing
         };
       }));
@@ -310,6 +326,8 @@ export class VenueService {
         if (originalVenue) {
           venueDto.categoryId = originalVenue.categoryId;
           venueDto.categoryName = originalVenue.categoryName;
+          venueDto.primaryLocation = originalVenue.primaryLocation;
+          venueDto.locations = originalVenue.locations;
         }
         return venueDto;
       });
@@ -328,7 +346,7 @@ export class VenueService {
   }
 
   async findAllForUser(paginationDto: VenuePaginationDto): Promise<{ data: any[], pagination: IPaginationMeta }> {
-    const { page = 1, limit = 10, search, categoryId } = paginationDto;
+    const { page = 1, limit = 10, search, categoryId, lat, lng } = paginationDto;
     const skip = (page - 1) * limit;
 
     // Build query conditions
@@ -359,9 +377,25 @@ export class VenueService {
         this.venueRepo.count(query)
       ]);
 
+      const serviceIds = venues
+        .map((venue) => venue.id?.toString())
+        .filter((id): id is string => Boolean(id));
+      const allStoredLocations = await this.locationService.findAllByServiceIds(serviceIds);
+      const locationsByServiceId = groupLocationsByServiceId(allStoredLocations);
+
       // Enrich each venue with location and category name for user listing
       const transformedVenues = await Promise.all(venues.map(async (venue) => {
-        const storedLocation = await this.locationService.findByServiceId(venue.id?.toString());
+        const serviceId = venue.id?.toString();
+        const locationFields = buildListingDetailLocationsFromRecords(
+          this.locationService,
+          locationsByServiceId.get(serviceId) || [],
+          {
+            entityName: venue.name,
+            formData: venue.formData,
+            queryLat: lat,
+            queryLng: lng,
+          },
+        );
         
         // Get category name from category table based on categoryId
         let categoryName = 'General Venue';
@@ -445,14 +479,9 @@ export class VenueService {
           categoryName: categoryName,
           price: priceFromFormData,
           imageUrl: imageUrlFromFormData,
-          location: {
-            address: storedLocation?.address || venue.formData?.address || venue.formData?.location || 'Address not available',
-            city: venue.formData?.city || 'City not available',
-            latitude: (storedLocation?.latitude as number) ?? venue.formData?.latitude ?? 0,
-            longitude: (storedLocation?.longitude as number) ?? venue.formData?.longitude ?? 0,
-            pinTitle: venue.formData?.pinTitle || venue.name,
-            mapImageUrl: venue.formData?.mapImageUrl || 'https://maps.googleapis.com/...'
-          }
+          location: locationFields.location,
+          primaryLocation: locationFields.primaryLocation,
+          locations: locationFields.locations,
         };
       }));
       const pagination: IPaginationMeta = {
@@ -473,46 +502,7 @@ export class VenueService {
       throw new BadRequestException('Invalid category ID format');
     }
 
-    const { page = 1, limit = 10, search } = paginationDto;
-    const skip = (page - 1) * limit;
-
-    // Build query conditions
-    const query: ObjectLiteral = {
-      categoryId: categoryId,
-      isDeleted: false,
-    };
-
-    if (search) {
-      query.$or = [
-        { name: { $regex: new RegExp(search, 'i') } },
-        { 'formData.location': { $regex: new RegExp(search, 'i') } },
-        { 'formData.description': { $regex: new RegExp(search, 'i') } }
-      ];
-    }
-
-    try {
-      const [venues, total] = await Promise.all([
-        this.venueRepo.find({
-          where: query,
-          skip,
-          take: limit,
-          order: { createdAt: 'DESC' }
-        }),
-        this.venueRepo.count(query)
-      ]);
-
-      // Return raw data for user endpoint transformation
-      const pagination: IPaginationMeta = {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      };
-
-      return { data: venues, pagination };
-    } catch (error) {
-      throw new BadRequestException('Failed to fetch venues');
-    }
+    return this.findAllForUser({ ...paginationDto, categoryId });
   }
 
   async findOne(id: string): Promise<VenueResponseDto> {
@@ -571,7 +561,11 @@ export class VenueService {
     });
   }
 
-  async findOneDetail(id: string): Promise<VenueDetailResponseDto> {
+  async findOneDetail(
+    id: string,
+    queryLat?: number,
+    queryLng?: number,
+  ): Promise<VenueDetailResponseDto> {
     if (!ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid venue ID format');
     }
@@ -679,8 +673,13 @@ export class VenueService {
       : 0;
     const reviewCount = ratings.length;
 
-      // Resolve location from locations collection (by serviceId = venue.id)
-      const storedLocation = await this.locationService.findByServiceId(venue.id?.toString());
+    const locationData = await buildListingDetailLocations(this.locationService, {
+      serviceId: venue.id?.toString(),
+      entityName: venue.name,
+      formData: venue.formData,
+      queryLat,
+      queryLng,
+    });
 
       // Prepare placeholder HTTPS images for venue/event related content
       const placeholderImages = [
@@ -707,14 +706,9 @@ export class VenueService {
         id: venue.id?.toString(),
         name: venue.name,
         title: venue.title,
-        location: {
-          address: storedLocation?.address || venue.formData?.address || venue.formData?.location || 'Address not available',
-          city: venue.formData?.city || 'City not available',
-          latitude: (storedLocation?.latitude as number) ?? venue.formData?.latitude ?? 0,
-          longitude: (storedLocation?.longitude as number) ?? venue.formData?.longitude ?? 0,
-          pinTitle: venue.formData?.pinTitle || venue.name,
-          mapImageUrl: venue.formData?.mapImageUrl || 'https://maps.googleapis.com/...'
-        },
+        location: locationData.location,
+        primaryLocation: locationData.primaryLocation,
+        locations: locationData.locations,
         avgRating: Math.round(avgRating * 10) / 10, // Round to 1 decimal place
         reviewCount: reviewCount,
         description: venue.description || venue.formData?.description || 'No description available',

@@ -46,4 +46,24 @@ export class VenuePaginationDto {
   @IsOptional()
   @IsString()
   categoryId?: string;
+
+  @ApiProperty({
+    description: 'User latitude for sorting locations by nearest distance',
+    required: false,
+    example: 37.785834,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lat?: number;
+
+  @ApiProperty({
+    description: 'User longitude for sorting locations by nearest distance',
+    required: false,
+    example: -122.406417,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lng?: number;
 }

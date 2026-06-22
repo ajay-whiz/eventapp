@@ -1,5 +1,6 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { DetailLocationItemDto } from '@shared/dto/detail-location-item.dto';
 
 class LocationDto {
   @ApiProperty({ description: 'Full address' })
@@ -62,6 +63,19 @@ export class VendorUserResponseDto {
   @Expose()
   @Type(() => LocationDto)
   location: LocationDto;
+
+  @ApiProperty({ description: 'Nearest or primary location' })
+  @Expose()
+  @Type(() => DetailLocationItemDto)
+  primaryLocation: DetailLocationItemDto;
+
+  @ApiProperty({
+    description: 'All locations for this vendor',
+    type: [DetailLocationItemDto],
+  })
+  @Expose()
+  @Type(() => DetailLocationItemDto)
+  locations: DetailLocationItemDto[];
 
   @ApiProperty({ description: 'Price of the vendor' })
   @Expose()

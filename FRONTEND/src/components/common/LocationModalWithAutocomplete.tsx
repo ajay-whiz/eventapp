@@ -5,6 +5,7 @@ import { Input } from '../atoms/Input';
 import { Label } from '../ui/label';
 import { Loader2, CheckCircle, AlertCircle, MapPin, Globe, X } from 'lucide-react';
 import GooglePlacesAutocomplete from './GooglePlacesAutocomplete';
+import { extractCityFromPlace } from '../../utils/locationCity';
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ interface LocationModalProps {
 
 interface LocationFormData {
   address: string;
+  city?: string;
+  name?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -33,6 +36,7 @@ const LocationModalWithAutocomplete: React.FC<LocationModalProps> = ({
   const [geocodingStatus, setGeocodingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
+  const [selectedCity, setSelectedCity] = useState('');
 
 
   const {
@@ -58,6 +62,14 @@ const LocationModalWithAutocomplete: React.FC<LocationModalProps> = ({
       setValue('address', place.formatted_address);
     }
 
+    const city = extractCityFromPlace(place);
+    setSelectedCity(city);
+    setValue('city', city);
+
+    if (place.name) {
+      setValue('name', place.name);
+    }
+
     // Set coordinates
     if (place.geometry?.location) {
       const lat = place.geometry.location.lat();
@@ -74,9 +86,14 @@ const LocationModalWithAutocomplete: React.FC<LocationModalProps> = ({
   const onSubmit = async (data: LocationFormData) => {
     setIsLoading(true);
     try {
-      await onSave(data);
+      await onSave({
+        ...data,
+        city: selectedCity,
+        name: selectedPlace?.name,
+      });
       reset();
       setSelectedPlace(null);
+      setSelectedCity('');
       setCoordinates(null);
       setGeocodingStatus('idle');
       onClose();

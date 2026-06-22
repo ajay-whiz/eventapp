@@ -108,6 +108,20 @@ export class VendorController {
     description: 'Filter vendors by maximum price',
     example: 100000,
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for nearest location sorting and distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for nearest location sorting and distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Vendors retrieved successfully',
@@ -170,7 +184,7 @@ export class VendorController {
           
           // Remove any unwanted fields that might have been exposed (like "Image", "formData", etc.)
           const cleanedDto: any = {};
-          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'price', 'pricing', 'rating', 'reviews', 'image'];
+          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'primaryLocation', 'locations', 'price', 'pricing', 'rating', 'reviews', 'image'];
           allowedFields.forEach(field => {
             if (vendorDto && vendorDto[field] !== undefined) {
               cleanedDto[field] = vendorDto[field];
@@ -180,6 +194,8 @@ export class VendorController {
           if (originalVendor) {
             cleanedDto.categoryId = originalVendor.categoryId || '';
             cleanedDto.categoryName = originalVendor.categoryName || '';
+            cleanedDto.primaryLocation = originalVendor.primaryLocation || vendorDto.primaryLocation;
+            cleanedDto.locations = originalVendor.locations || vendorDto.locations;
             
             // Extract image URL - ensure it's always a string from index 0
             let extractedImageUrl = '';
@@ -407,6 +423,20 @@ export class VendorController {
     description: 'Filter vendors by maximum price',
     example: 100000,
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for nearest location sorting and distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for nearest location sorting and distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Vendors retrieved successfully',
@@ -561,6 +591,18 @@ export class VendorController {
     description: 'MongoDB ObjectId of the vendor',
     example: '507f1f77bcf86cd799439011',
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    description: 'User latitude used to sort locations by nearest distance',
+    example: 37.785834,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    description: 'User longitude used to sort locations by nearest distance',
+    example: -122.406417,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Vendor details retrieved successfully',
@@ -574,8 +616,14 @@ export class VendorController {
     status: HttpStatus.NOT_FOUND,
     description: 'Vendor not found',
   })
-  findOneDetail(@Param('id') id: string): Promise<VendorDetailResponseDto> {
-    return this.vendorService.findOneDetail(id);
+  findOneDetail(
+    @Param('id') id: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+  ): Promise<VendorDetailResponseDto> {
+    const queryLat = lat != null && lat !== '' ? Number(lat) : undefined;
+    const queryLng = lng != null && lng !== '' ? Number(lng) : undefined;
+    return this.vendorService.findOneDetail(id, queryLat, queryLng);
   }
 
   @Post('upload-image')

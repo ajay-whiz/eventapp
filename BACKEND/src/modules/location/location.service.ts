@@ -7,6 +7,7 @@ import { UpdateLocationDto } from './dto/request/update-location.dto';
 import { ObjectId } from 'mongodb';
 import { Vendor } from '../vendor/entity/vendor.entity';
 import { Venue } from '../venue/entity/venue.entity';
+import { extractCityFromAddress } from '@shared/utils/location-city.util';
 
 @Injectable()
 export class LocationService {
@@ -24,8 +25,50 @@ export class LocationService {
     return this.repo.findOne({ where: { serviceId } });
   }
 
+  async findAllByServiceId(serviceId: string): Promise<Location[]> {
+    if (!serviceId) return [];
+
+    return this.repo.find({
+      where: {
+        serviceId,
+        isDeleted: false,
+        isActive: true,
+      } as any,
+      order: { createdAt: 'ASC' as any },
+    });
+  }
+
+  async findAllByServiceIds(serviceIds: string[]): Promise<Location[]> {
+    const uniqueIds = [...new Set(serviceIds.filter(Boolean))];
+    if (uniqueIds.length === 0) return [];
+
+    return this.repo.find({
+      where: {
+        serviceId: { $in: uniqueIds },
+        isDeleted: false,
+        isActive: true,
+      } as any,
+      order: { createdAt: 'ASC' as any },
+    });
+  }
+
+  calculateDistanceInKm(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const meters = this.calculateDistance(lat1, lon1, lat2, lon2);
+    return Math.round((meters / 1000) * 10) / 10;
+  }
+
   async create(dto: CreateLocationDto) {
-    const entity = this.repo.create(dto);
+    const city = dto.city?.trim() || extractCityFromAddress(dto.address);
+
+    const entity = this.repo.create({
+      ...dto,
+      city: city || undefined,
+    });
     if (dto.latitude != null && dto.longitude != null) {
       (entity as any).geo = { type: 'Point', coordinates: [dto.longitude, dto.latitude] };
     }
@@ -53,6 +96,14 @@ export class LocationService {
   async update(id: string, dto: UpdateLocationDto) {
     const entity = await this.findOne(id);
     Object.assign(entity, dto);
+
+    if (dto.address !== undefined || dto.city !== undefined) {
+      entity.city =
+        dto.city?.trim() ||
+        extractCityFromAddress(dto.address ?? entity.address) ||
+        entity.city;
+    }
+
     if (dto.latitude != null && dto.longitude != null) {
       (entity as any).geo = { type: 'Point', coordinates: [dto.longitude, dto.latitude] };
     }

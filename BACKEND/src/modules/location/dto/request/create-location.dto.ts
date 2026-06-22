@@ -8,6 +8,16 @@ export class CreateLocationDto {
   @IsString()
   address: string;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @ApiProperty({ required: true })
   @Type(() => Number)
   @IsNumber()

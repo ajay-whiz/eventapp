@@ -77,4 +77,24 @@ export class VendorPaginationDto {
   @IsNumber()
   @Min(0)
   maxPrice?: number;
+
+  @ApiProperty({
+    description: 'User latitude for sorting locations by nearest distance',
+    required: false,
+    example: 37.785834,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lat?: number;
+
+  @ApiProperty({
+    description: 'User longitude for sorting locations by nearest distance',
+    required: false,
+    example: -122.406417,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lng?: number;
 }

@@ -8,6 +8,12 @@ export class Location extends BaseModel {
   address?: string;
 
   @Column({ nullable: true })
+  city?: string;
+
+  @Column({ nullable: true })
+  name?: string;
+
+  @Column({ nullable: true })
   latitude?: number;
 
   @Column({ nullable: true })

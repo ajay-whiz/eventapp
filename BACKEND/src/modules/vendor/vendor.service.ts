@@ -35,6 +35,11 @@ import {
   getListingAlbums,
   updateListingAlbum,
 } from '@shared/utils/listing-album.persistence';
+import {
+  buildListingDetailLocations,
+  buildListingDetailLocationsFromRecords,
+  groupLocationsByServiceId,
+} from '@shared/utils/listing-detail-location.util';
 import { Rating } from '../rating/entity/rating.entity'; // New import
 import { User } from '../user/entities/user.entity';
 
@@ -167,7 +172,7 @@ export class VendorService {
   }
 
   async findAll(paginationDto: VendorPaginationDto): Promise<VendorPaginatedResponseDto> {
-    const { page = 1, limit = 10, search, categoryId, location, minPrice, maxPrice } = paginationDto;
+    const { page = 1, limit = 10, search, categoryId, location, minPrice, maxPrice, lat, lng } = paginationDto;
     const skip = (page - 1) * limit;
   
     // Base query
@@ -211,6 +216,12 @@ export class VendorService {
         where: query,
         order: { createdAt: 'DESC' },
       });
+
+      const serviceIds = allVendors
+        .map((vendor) => vendor.id?.toString())
+        .filter((id): id is string => Boolean(id));
+      const allStoredLocations = await this.locationService.findAllByServiceIds(serviceIds);
+      const locationsByServiceId = groupLocationsByServiceId(allStoredLocations);
 
       // Helper function to extract price from formData (matches the logic in VendorUserResponseDto)
       const extractPriceFromFormData = (vendor: any): number => {
@@ -268,7 +279,17 @@ export class VendorService {
       // Populate vendors with category and location data, and extract price
       const populatedVendors = await Promise.all(
         allVendors.map(async (vendor) => {
-          const storedLocation = await this.locationService.findByServiceId(vendor.id?.toString());
+          const serviceId = vendor.id?.toString();
+          const locationFields = buildListingDetailLocationsFromRecords(
+            this.locationService,
+            locationsByServiceId.get(serviceId) || [],
+            {
+              entityName: vendor.name,
+              formData: vendor.formData,
+              queryLat: lat,
+              queryLng: lng,
+            },
+          );
           
           // Get category name from categories collection (ServiceCategory) based on categoryId
           // Use aggregation to join with forms and filter by vendor-service form type
@@ -399,14 +420,9 @@ export class VendorService {
             price: extractedPrice,
             // Set the extracted image URL (no hardcoded fallback)
             imageUrl: imageUrlFromFormData,
-            location: {
-              address: storedLocation?.address || vendor.formData?.address || vendor.formData?.location || 'Address not available',
-              city: vendor.formData?.city || 'City not available',
-              latitude: (storedLocation?.latitude as number) ?? vendor.formData?.latitude ?? 0,
-              longitude: (storedLocation?.longitude as number) ?? vendor.formData?.longitude ?? 0,
-              pinTitle: vendor.formData?.pinTitle || vendor.name,
-              mapImageUrl: vendor.formData?.mapImageUrl || 'https://maps.googleapis.com/...'
-            },
+            location: locationFields.location,
+            primaryLocation: locationFields.primaryLocation,
+            locations: locationFields.locations,
             pricing: vendor.formData?.pricing || categoryPricing
           };
         })
@@ -548,7 +564,11 @@ export class VendorService {
     });
   }
 
-  async findOneDetail(id: string): Promise<VendorDetailResponseDto> {
+  async findOneDetail(
+    id: string,
+    queryLat?: number,
+    queryLng?: number,
+  ): Promise<VendorDetailResponseDto> {
     if (!ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid vendor ID format');
     }
@@ -674,8 +694,13 @@ export class VendorService {
       : 0;
     const reviewCount = ratings.length;
 
-    // Resolve location from locations collection (by serviceId = vendor.id)
-    const storedLocation = await this.locationService.findByServiceId(vendor.id?.toString());
+    const locationData = await buildListingDetailLocations(this.locationService, {
+      serviceId: vendor.id?.toString(),
+      entityName: vendor.name,
+      formData: vendor.formData,
+      queryLat,
+      queryLng,
+    });
 
       // Prepare placeholder HTTPS images for vendor/venue/event related content
       const placeholderImages = [
@@ -702,14 +727,9 @@ export class VendorService {
       id: vendor.id?.toString(),
       name: vendor.name,
       title: vendor.title,
-      location: {
-        address: storedLocation?.address || vendor.formData?.address || vendor.formData?.location || 'Address not available',
-        city: vendor.formData?.city || 'City not available',
-        latitude: (storedLocation?.latitude as number) ?? vendor.formData?.latitude ?? 0,
-        longitude: (storedLocation?.longitude as number) ?? vendor.formData?.longitude ?? 0,
-        pinTitle: vendor.formData?.pinTitle || vendor.name,
-        mapImageUrl: vendor.formData?.mapImageUrl || 'https://maps.googleapis.com/...'
-      },
+      location: locationData.location,
+      primaryLocation: locationData.primaryLocation,
+      locations: locationData.locations,
       avgRating: Math.round(avgRating * 10) / 10, // Round to 1 decimal place
       reviewCount: reviewCount,
       description: vendor.description || vendor.formData?.description || 'No description available',

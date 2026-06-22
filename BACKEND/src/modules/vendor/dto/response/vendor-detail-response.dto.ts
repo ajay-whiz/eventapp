@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
+import { DetailLocationItemDto } from '@shared/dto/detail-location-item.dto';
 
 export class LocationDto {
   @ApiProperty({ description: 'Full address' })
@@ -90,6 +91,17 @@ export class VendorDetailResponseDto {
   @ApiProperty({ description: 'Location details' })
   @Expose()
   location: LocationDto;
+
+  @ApiProperty({ description: 'Nearest or default primary location' })
+  @Expose()
+  primaryLocation: DetailLocationItemDto;
+
+  @ApiProperty({
+    description: 'All associated locations, sorted by distance when lat/lng are provided',
+    type: [DetailLocationItemDto],
+  })
+  @Expose()
+  locations: DetailLocationItemDto[];
 
   @ApiProperty({ description: 'Average rating' })
   @Expose()
