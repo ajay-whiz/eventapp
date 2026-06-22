@@ -310,6 +310,7 @@ export class VenueService {
           serviceCategoryId: venue.categoryId,
           categoryId: venueCategoryId,
           categoryName: categoryName,
+          imageUrl: extractPrimaryImageFromFormData(venue),
           location: locationFields.location,
           primaryLocation: locationFields.primaryLocation,
           locations: locationFields.locations,
@@ -329,6 +330,12 @@ export class VenueService {
           venueDto.categoryName = originalVenue.categoryName;
           venueDto.primaryLocation = originalVenue.primaryLocation;
           venueDto.locations = originalVenue.locations;
+          if (originalVenue.imageUrl !== undefined) {
+            venueDto.imageUrl = originalVenue.imageUrl;
+          }
+          if (originalVenue.formData) {
+            venueDto.formData = originalVenue.formData;
+          }
         }
         return venueDto;
       });
@@ -436,7 +443,7 @@ export class VenueService {
         
         // Extract price and imageUrl from formData fields
         let priceFromFormData = venue.formData?.price || venue.price || 0;
-        let imageUrlFromFormData = venue.formData?.imageUrl || venue.formData?.images?.[0] || venue.imageUrl || '';
+        const imageUrlFromFormData = extractPrimaryImageFromFormData(venue);
         
         // Extract from formData.fields if it exists
         if (venue.formData?.fields && Array.isArray(venue.formData.fields)) {
@@ -451,25 +458,6 @@ export class VenueService {
               : priceField.actualValue;
             if (priceValue > 0) {
               priceFromFormData = priceValue;
-            }
-          }
-          
-          // Find image from MultiImageUpload fields
-          const imageField = venue.formData.fields.find((field: any) => 
-            field.type === 'MultiImageUpload' && 
-            field.actualValue && 
-            Array.isArray(field.actualValue) && 
-            field.actualValue.length > 0
-          );
-          if (imageField && imageField.actualValue && imageField.actualValue.length > 0) {
-            const firstImage = imageField.actualValue[0];
-            // Check for url.imageUrl structure
-            if (firstImage.url && firstImage.url.imageUrl) {
-              imageUrlFromFormData = firstImage.url.imageUrl;
-            } else if (typeof firstImage === 'string') {
-              imageUrlFromFormData = firstImage;
-            } else if (firstImage.url) {
-              imageUrlFromFormData = firstImage.url;
             }
           }
         }
@@ -907,9 +895,9 @@ export class VenueService {
 
       }
       return this.findOne(id);
-    } catch (error) {
+    } catch (error:any) {
 
-      throw new BadRequestException(`Failed to update venue: ${error.message}`);
+      throw new BadRequestException(`Failed to update venue: ${error?.message}`);
     }
   }
 
