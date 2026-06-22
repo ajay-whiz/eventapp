@@ -102,4 +102,5 @@ export interface TableComponentProps<T extends TableRow> {
   showLocationOption?: boolean;
   showQuotationOption?: boolean;
   showCategoryInputsOption?: boolean;
+  showViewOption?: boolean;
 }

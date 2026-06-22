@@ -219,7 +219,8 @@ export class ContentPolicyService {
           { "key": "cookie-policy", "value": "Cookie Policy" },
           { "key": "data-protection", "value": "Data Protection" },
           { "key": "user-agreement", "value": "User Agreement" },
-          { "key": "about-us", "value": "About Us" }
+          { "key": "about-us", "value": "About Us" },
+          { "key": "support", "value": "Support" }
         ]
       };
   }

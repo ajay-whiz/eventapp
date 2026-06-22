@@ -46,6 +46,7 @@ function TableComponent<T extends TableRow>(props: TableComponentProps<T>) {
     showLocationOption = false,
     showCategoryInputsOption = false,
     showQuotationOption = false,
+    showViewOption = false,
   } = props;
 
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -312,6 +313,8 @@ function TableComponent<T extends TableRow>(props: TableComponentProps<T>) {
                             canDeactivate={canEdit}
                             isActive={Boolean((row as any)?.isActive)}
                             onEdit={() => onRowAction?.("edit", row)}
+                            onView={() => onRowAction?.("view", row)}
+                            canView={showViewOption}
                             onDelete={() => onRowAction?.("delete", row)}
                             onResetPassword={() => onRowAction?.("reset-password", row)}
                             onActivate={() => onRowAction?.("activate", row)}
@@ -327,6 +330,7 @@ function TableComponent<T extends TableRow>(props: TableComponentProps<T>) {
                             showLocationOption={showLocationOption}
                             showCategoryInputsOption={showCategoryInputsOption}
                             showQuotationOption={showQuotationOption}
+                            showViewOption={showViewOption}
                           />
                         </td>
                       )}

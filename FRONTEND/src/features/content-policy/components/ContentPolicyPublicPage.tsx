@@ -1,104 +1,109 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../../axios';
-import { API_ROUTES, ROUTING } from '../../../constants/routes';
+import { ROUTING } from '../../../constants/routes';
 import ContentViewer from '../../../components/common/ContentViewer';
-import type { ContentPolicy } from '../../../types/ContentPolicy';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  'privacy-policy': 'Privacy Policy',
-  'terms-of-service': 'Terms of Service',
-};
+import { usePublicContentPolicy } from '../hooks/usePublicContentPolicy';
+import { formatPolicyUpdatedAt } from '../utils/contentPolicySlugs';
 
 interface ContentPolicyPublicPageProps {
-  category: 'privacy-policy' | 'terms-of-service';
+  slug: string;
 }
 
-const ContentPolicyPublicPage: React.FC<ContentPolicyPublicPageProps> = ({ category }) => {
-  const [policy, setPolicy] = useState<ContentPolicy | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const ContentPolicyPublicPage: React.FC<ContentPolicyPublicPageProps> = ({ slug }) => {
+  const { policy, loading, error, notFound } = usePublicContentPolicy(slug);
+  const pageTitle = policy?.title || slug.replace(/-/g, ' ');
+  const updatedLabel = formatPolicyUpdatedAt(policy?.updatedAt);
 
   useEffect(() => {
-    let cancelled = false;
+    const previousTitle = document.title;
+    document.title = policy?.title
+      ? `${policy.title} | Event Booking`
+      : `${pageTitle} | Event Booking`;
 
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await api.get(`${API_ROUTES.CONTENT_POLICIES}/category/${category}`);
-        if (!cancelled) {
-          setPolicy(response.data?.data ?? response.data);
-        }
-      } catch (err: any) {
-        if (!cancelled) {
-          setError(
-            err.response?.data?.message ||
-              err.message ||
-              'Unable to load this policy right now.',
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+    let meta = document.querySelector('meta[name="description"]');
+    const hadMeta = Boolean(meta);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'description');
+      document.head.appendChild(meta);
+    }
+    const previousDescription = meta.getAttribute('content') || '';
+    meta.setAttribute(
+      'content',
+      policy?.title
+        ? `Read our ${policy.title}.`
+        : `Public ${pageTitle} information.`,
+    );
+
+    return () => {
+      document.title = previousTitle;
+      if (hadMeta) {
+        meta?.setAttribute('content', previousDescription);
+      } else {
+        meta?.remove();
       }
     };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [category]);
-
-  const pageTitle = policy?.title || CATEGORY_LABELS[category] || 'Policy';
+  }, [policy?.title, pageTitle]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
-          <div>
+    <main className="min-h-screen bg-gray-50 py-8 px-4 sm:py-10">
+      <article className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <header className="px-5 sm:px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-sky-600 font-semibold">
-              {CATEGORY_LABELS[category]}
+              Legal & Policies
             </p>
-            <h1 className="text-2xl font-semibold text-gray-900 mt-1">{pageTitle}</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mt-1 capitalize">
+              {pageTitle}
+            </h1>
+            {updatedLabel && (
+              <p className="text-sm text-gray-500 mt-2">
+                Last updated: <time dateTime={policy?.updatedAt}>{updatedLabel}</time>
+              </p>
+            )}
           </div>
-          <Link
-            to={ROUTING.LOGIN}
-            className="text-sm font-medium text-sky-600 hover:text-sky-700 hover:underline shrink-0"
-          >
-            Back to Login
-          </Link>
-        </div>
+        </header>
 
-        <div className="p-6">
+        <section className="p-5 sm:p-6" aria-live="polite">
           {loading && (
-            <div className="flex items-center justify-center py-16 text-gray-500">
+            <div
+              className="flex items-center justify-center py-16 text-gray-500"
+              role="status"
+              aria-label="Loading content"
+            >
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mr-3" />
-              Loading policy...
+              Loading content...
             </div>
           )}
 
           {!loading && error && (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-red-700 text-sm">
+            <div
+              className="rounded-lg bg-red-50 border border-red-100 px-4 py-4 text-red-700 text-sm"
+              role="alert"
+            >
               {error}
             </div>
           )}
 
-          {!loading && !error && policy?.content && (
+          {!loading && !error && notFound && (
+            <div className="text-center py-16 px-4">
+              <h2 className="text-lg font-semibold text-gray-900">Content not found</h2>
+              <p className="text-gray-500 mt-2 text-sm">
+                The requested policy page does not exist or has no published content yet.
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && !notFound && policy?.content && (
             <ContentViewer
               content={policy.content}
               className="border-0 bg-transparent p-0"
               maxHeight="none"
             />
           )}
-
-          {!loading && !error && !policy?.content && (
-            <p className="text-gray-500 text-center py-12">No content available for this policy.</p>
-          )}
-        </div>
-      </div>
-    </div>
+        </section>
+      </article>
+    </main>
   );
 };
 

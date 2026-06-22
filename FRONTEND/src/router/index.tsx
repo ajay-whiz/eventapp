@@ -49,7 +49,7 @@ import VendorList from '../features/vendorManagement/components/VendorList';
 import VendorForm from '../features/vendorManagement/components/VendorForm';
 import ContentPolicyList from '../features/content-policy/components/ContentPolicyList';
 import ContentPolicyForm from '../features/content-policy/components/ContentPolicyForm';
-import ContentPolicyPublicPage from '../features/content-policy/components/ContentPolicyPublicPage';
+import ContentPolicyDynamicRoute from '../features/content-policy/components/ContentPolicyDynamicRoute';
 
 // Booking Management
 import BookingIndex from '../features/booking/components/BookingIndex';
@@ -77,11 +77,15 @@ const AppRoutes = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path={ROUTING.PRIVACY_POLICY}
-          element={<ContentPolicyPublicPage category="privacy-policy" />}
+          element={<Navigate to="/content-policy/privacy-policy" replace />}
         />
         <Route
           path={ROUTING.TERMS_OF_SERVICE}
-          element={<ContentPolicyPublicPage category="terms-of-service" />}
+          element={<Navigate to="/content-policy/terms-and-conditions" replace />}
+        />
+        <Route
+          path={ROUTING.PUBLIC_CONTENT_POLICY}
+          element={<ContentPolicyDynamicRoute />}
         />
 
         {/* ------------------ Protected Routes ------------------- */}
@@ -149,7 +153,6 @@ const AppRoutes = () => {
         <Route path={ROUTING.SETTINGS} element={<Navigate to={`/${ROUTING.CONTENT_POLICY}`} replace />} />
         <Route path={ROUTING.CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="read"><ContentPolicyList /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="write"><ContentPolicyForm /></ProtectedRoute>} />
-        <Route path={ROUTING.UPDATE_CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="write"><ContentPolicyForm /></ProtectedRoute>} />
 
         {/* Booking Management - Protected by Booking Management feature permission */}
         <Route path={ROUTING.BOOKING_MANAGEMENT} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="read"><BookingIndex /></ProtectedRoute>} />

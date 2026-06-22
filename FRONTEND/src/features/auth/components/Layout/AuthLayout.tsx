@@ -21,15 +21,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           />
         </div>
         {children}
-        <div className="mt-8 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
-          <Link to="/privacy-policy" className="text-sky-600 hover:underline font-medium">
+        {/* <div className="mt-8 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
+          <Link to="/content-policy/privacy-policy" className="text-sky-600 hover:underline font-medium">
             Privacy Policy
           </Link>
           <span className="mx-2 text-gray-300">|</span>
-          <Link to="/terms-of-service" className="text-sky-600 hover:underline font-medium">
+          <Link to="/content-policy/terms-and-conditions" className="text-sky-600 hover:underline font-medium">
             Terms of Service
           </Link>
-        </div>
+        </div> */}
       </div>
 
       {/* Right: Illustration */}

@@ -27,7 +27,7 @@ const ContentPolicyForm: React.FC<ContentPolicyFormProps> = ({
   onFormSubmit, 
   onCancel 
 }) => {
-  const { id } = useParams();
+  const { slugOrId: id } = useParams<{ slugOrId: string }>();
   const [searchParams] = useSearchParams();
   const presetCategory = searchParams.get('category') || '';
   const returnToParam = searchParams.get('returnTo');

@@ -2,15 +2,13 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Layout from '../../../layouts/Layout';
 import TableComponent from '../../../components/atoms/Table';
 import type { TableColumn, TableAction } from '../../../types/table';
-import { Button } from '../../../components/atoms/Button';
 import { ConfirmModal } from '../../../components/molecules/ConfirmModal';
 import { useToast } from '../../../components/atoms/Toast';
 import { useContentPolicy } from '../hooks/useContentPolicy';
 import { useContentPolicyActions } from '../hooks/useContentPolicyActions';
 import { getContentPreview } from '../../../utils/htmlUtils';
-import ContentViewer from '../../../components/common/ContentViewer';
-import ContentPolicyForm from './ContentPolicyForm';
 import { useNavigate } from 'react-router-dom';
+import { getPublicContentPolicyPath } from '../utils/contentPolicySlugs';
 
 type ContentPolicyRow = {
   id: string;
@@ -27,6 +25,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   'data-protection': 'Data Protection',
   'user-agreement': 'User Agreement',
   'about-us': 'About Us',
+  'support': 'Support',
+
 };
 
 const ContentPolicyList: React.FC = () => {
@@ -40,11 +40,7 @@ const ContentPolicyList: React.FC = () => {
   const navigate = useNavigate();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedContentPolicy, setSelectedContentPolicy] = useState<ContentPolicyRow | null>(null);
-  const [viewingContentPolicy, setViewingContentPolicy] = useState<ContentPolicyRow | null>(null);
-  const [editingContentPolicy, setEditingContentPolicy] = useState<ContentPolicyRow | null>(null);
-  const [isFormVisible, setIsFormVisible] = useState(true);
 
   // Fetch content policies when page or search changes
   useEffect(() => {
@@ -70,21 +66,14 @@ const ContentPolicyList: React.FC = () => {
         setShowDeleteModal(true);
         break;
       case 'view':
-        setViewingContentPolicy(row);
-        setShowViewModal(true);
+        if (row.category) {
+          window.open(getPublicContentPolicyPath(row.category), '_blank', 'noopener,noreferrer');
+        } else {
+          toast.error('This policy has no category and cannot be viewed publicly.');
+        }
         break;
     }
-  }, []);
-
-  const handleFormSuccess = useCallback(() => {
-    const wasEditing = Boolean(editingContentPolicy);
-    setEditingContentPolicy(null);
-    toast.success(wasEditing ? 'Content Policy updated successfully' : 'Content Policy created successfully');
-  }, [editingContentPolicy, toast]);
-
-  const handleFormCancel = useCallback(() => {
-    setEditingContentPolicy(null);
-  }, []);
+  }, [navigate, toast]);
 
   const confirmDelete = useCallback(async () => {
     if (!selectedContentPolicy) return;
@@ -101,11 +90,6 @@ const ContentPolicyList: React.FC = () => {
   const cancelDelete = useCallback(() => {
     setShowDeleteModal(false);
     setSelectedContentPolicy(null);
-  }, []);
-
-  const closeViewModal = useCallback(() => {
-    setShowViewModal(false);
-    setViewingContentPolicy(null);
   }, []);
 
   const columns: TableColumn<ContentPolicyRow>[] = useMemo(() => [
@@ -157,6 +141,7 @@ const ContentPolicyList: React.FC = () => {
           }, [getContentPolicyList, searchQuery])}
           loading={loading}
           showAddButton   
+          showViewOption
           addButtonRoute="/content-policy/new"
           addButtonText='Add Content Policy'
         />
@@ -171,64 +156,6 @@ const ContentPolicyList: React.FC = () => {
             cancelLabel="Cancel"
           />
           )}
-          
-          {/* View Content Modal */}
-          {showViewModal && viewingContentPolicy && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{viewingContentPolicy.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      {/* Additional metadata can be displayed here if needed */}
-                    </p>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={closeViewModal}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </Button>
-                </div>
-                <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
-                  <ContentViewer 
-                    content={viewingContentPolicy.content}
-                    className="border-0 bg-transparent p-0"
-                    maxHeight="none"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
-                  <Button variant="secondary" onClick={closeViewModal}>
-                    Close
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    onClick={() => {
-                      closeViewModal();
-                      handleAction('edit', viewingContentPolicy);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-{/*           
-          {isFormVisible ? (
-            <ContentPolicyForm
-              editingContentPolicy={editingContentPolicy}
-              onFormSubmit={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
-          ) : (
-            <div className="p-8 text-gray-500 text-center border-2 border-dashed border-gray-300 rounded-lg">
-              <h3 className="text-lg font-medium mb-2">Content Policy Form</h3>
-              <p>Click "Add Content Policy" to create a new policy or click "Edit" on any policy to modify it.</p>
-            </div>
-          )} */}
         </div>
       </>
     </Layout>

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText,PlusIcon } from "lucide-react";
+import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText, PlusIcon, Eye } from "lucide-react";
 import { createPortal } from "react-dom";
 
 type RowActionMenuProps = {
   onEdit?: () => void;
   onDelete?: () => void;
+  onView?: () => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  canView?: boolean;
   onResetPassword?: () => void;
   canResetPassword?: boolean;
   onActivate?: () => void;
@@ -25,13 +27,16 @@ type RowActionMenuProps = {
   showLocationOption?: boolean;
   showCategoryInputsOption?: boolean;
   showQuotationOption?: boolean;
+  showViewOption?: boolean;
 };
 
 export const RowActionMenu = ({
   onEdit,
   onDelete,
+  onView,
   canEdit = false,
   canDelete = false,
+  canView = false,
   onResetPassword,
   canResetPassword = false,
   onActivate,
@@ -49,6 +54,7 @@ export const RowActionMenu = ({
   showLocationOption = true,
   showCategoryInputsOption = false,
   showQuotationOption = false,
+  showViewOption = false,
 }: RowActionMenuProps) => {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<'top' | 'bottom'>('bottom');
@@ -150,6 +156,18 @@ export const RowActionMenu = ({
                 role="menuitem"
               >
                 <Pencil className="size-4" /> Edit
+              </li>
+            )}
+            {showViewOption && canView && (
+              <li
+                onClick={() => {
+                  setOpen(false);
+                  onView?.();
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sky-700 cursor-pointer"
+                role="menuitem"
+              >
+                <Eye className="size-4" /> View
               </li>
             )}
             {canDelete && (
