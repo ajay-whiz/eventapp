@@ -61,19 +61,31 @@ export class UserService {
   }
 
   async signup(body: SignUpReqDto): Promise<{ message: string }> {
+    const normalizedEmail = body.email.toLowerCase().trim();
+
     const existingUser = await this.userRepository.findOneBy({
-      email: body.email,
+      email: normalizedEmail,
     });
-    if (existingUser) {
+
+    if (existingUser && !existingUser.isDeleted) {
       throw new ConflictException('Email already registered');
     }
+
     const existingUserByPhone = await this.userRepository.findOneBy({
       countryCode: body.countryCode,
       phoneNumber: body.phoneNumber,
     });
-    if (existingUserByPhone) {
-      throw new ConflictException('Phone number already registered');
+
+    if (existingUserByPhone && !existingUserByPhone.isDeleted) {
+      const reactivatingSameUser =
+        existingUser?.isDeleted &&
+        existingUserByPhone.id?.toString() === existingUser.id?.toString();
+
+      if (!reactivatingSameUser) {
+        throw new ConflictException('Phone number already registered');
+      }
     }
+
     const hashedPassword = await bcrypt.hash(body.password, 10);
     // 1. Find or create the default role and feature
     let defaultRole = await this.roleService.findByName(RoleType.USER);
@@ -95,15 +107,40 @@ export class UserService {
     const otp = '111111'; // Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    const user = this.userRepository.create({
-      ...body,
-      password: hashedPassword,
-      roleIds: [defaultRole.id],
-      otp: otp,
-      expireAt: expiresAt,
-      isMobileAppUser: true,
-      userType: 'USER',
-    });
+    let user: User;
+
+    if (existingUser?.isDeleted) {
+      Object.assign(existingUser, {
+        ...body,
+        email: normalizedEmail,
+        password: hashedPassword,
+        roleIds: [defaultRole.id],
+        otp,
+        expireAt: expiresAt,
+        isMobileAppUser: true,
+        userType: 'USER',
+        isDeleted: false,
+        isActive: false,
+        isEmailVerified: false,
+        isPhoneVerified: false,
+        deletedAt: null,
+        token: null,
+        fcmToken: null,
+        updatedAt: new Date(),
+      });
+      user = existingUser;
+    } else {
+      user = this.userRepository.create({
+        ...body,
+        email: normalizedEmail,
+        password: hashedPassword,
+        roleIds: [defaultRole.id],
+        otp: otp,
+        expireAt: expiresAt,
+        isMobileAppUser: true,
+        userType: 'USER',
+      });
+    }
 
     await this.userRepository.save(user);
     
