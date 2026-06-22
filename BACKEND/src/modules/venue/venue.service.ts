@@ -42,6 +42,7 @@ import {
   buildListingDetailLocationsFromRecords,
   groupLocationsByServiceId,
 } from '@shared/utils/listing-detail-location.util';
+import { extractImagesFromFormData, extractPrimaryImageFromFormData } from '@shared/utils/listing-form-images.util';
 
 @Injectable()
 export class VenueService {
@@ -553,7 +554,8 @@ export class VenueService {
       serviceCategoryId: venue.categoryId,
       pricing: venue.formData?.pricing || categoryPricing,
       enterpriseId: venue.enterpriseId,
-      enterpriseName: venue.enterpriseName
+      enterpriseName: venue.enterpriseName,
+      imageUrl: extractPrimaryImageFromFormData(venue),
     };
 
     return plainToInstance(VenueResponseDto, transformedVenue, { 
@@ -681,22 +683,7 @@ export class VenueService {
       queryLng,
     });
 
-      // Prepare placeholder HTTPS images for venue/event related content
-      const placeholderImages = [
-        'https://picsum.photos/1200/800?random=1', // Wedding venue
-        'https://picsum.photos/1200/800?random=2', // Event decoration
-        'https://picsum.photos/1200/800?random=3', // Wedding ceremony
-        'https://picsum.photos/1200/800?random=4', // Reception hall
-        'https://picsum.photos/1200/800?random=5', // Catering setup
-        'https://picsum.photos/1200/800?random=6', // Event planning
-        'https://picsum.photos/1200/800?random=7', // Wedding photography
-        'https://picsum.photos/1200/800?random=8'  // Event venue
-      ];
-      
-      const ensureHttpsImages = (list?: string[], fallbackCount: number = 6): string[] => {
-        const base = Array.isArray(list) && list.length > 0 ? list : placeholderImages.slice(0, fallbackCount);
-        return base.map((url) => (typeof url === 'string' && url.startsWith('http') ? url : placeholderImages[Math.floor(Math.random() * placeholderImages.length)]));
-      };
+      const formImages = extractImagesFromFormData(venue);
 
       // Get venue albums from the venue document
       const venueAlbums = venue.albums || [];
@@ -714,9 +701,7 @@ export class VenueService {
         description: venue.description || venue.formData?.description || 'No description available',
         longDescription: venue.longDescription || venue.formData?.longDescription || 'Detailed information about our venue and facilities will be available soon.',
         about: venue.formData?.about || venue.description || 'No additional information available',
-        images: ensureHttpsImages(
-          (venue.formData?.images as string[]) || (venue.imageUrl ? [venue.imageUrl] : [])
-        ),
+        images: formImages,
         pricing: {
           pricing: venue.formData?.pricing || CategoryPricingHelper.generateCategoryPricing(categoryName),
           packages: venue.formData?.packages || [
@@ -730,7 +715,7 @@ export class VenueService {
         priceRange: venue.formData?.priceRange || '₹1,00,000 - ₹10,00,000',
         roomCount: venue.formData?.roomCount || 50,
         cateringPolicy: venue.formData?.cateringPolicy || 'Inhouse catering only',
-        albums: this.getVenueAlbums(venueAlbums, placeholderImages),
+        albums: this.getVenueAlbums(venueAlbums, formImages),
         reviews: ratings.slice(0, 10).map(rating => {
           const user = usersById[rating.userId || ''];
           const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Anonymous';
@@ -998,33 +983,26 @@ export class VenueService {
     }
   }
 
-  private getVenueAlbums(venueAlbums: any[], placeholderImages: string[]): any[] {
-    // If venue has albums, return them
+  private getVenueAlbums(venueAlbums: any[], formImages: string[]): any[] {
     if (venueAlbums && venueAlbums.length > 0) {
       return venueAlbums;
     }
-    
-    // Otherwise, return dummy albums
-    return [
-      {
-        id: new ObjectId().toString(),
-        name: 'Wedding Hall Gallery',
-        images: placeholderImages.slice(0, 4),
-        imageCount: 4,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: new ObjectId().toString(),
-        name: 'Event Spaces',
-        images: placeholderImages.slice(4, 8),
-        imageCount: 4,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
+
+    if (formImages.length > 0) {
+      return [
+        {
+          id: new ObjectId().toString(),
+          name: 'Gallery',
+          images: formImages,
+          imageCount: formImages.length,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
+    return [];
   }
 
   async updateRating(venueId: string, averageRating: number, totalRatings: number): Promise<void> {

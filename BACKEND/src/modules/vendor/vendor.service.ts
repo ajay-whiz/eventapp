@@ -40,6 +40,7 @@ import {
   buildListingDetailLocationsFromRecords,
   groupLocationsByServiceId,
 } from '@shared/utils/listing-detail-location.util';
+import { extractImagesFromFormData, extractPrimaryImageFromFormData } from '@shared/utils/listing-form-images.util';
 import { Rating } from '../rating/entity/rating.entity'; // New import
 import { User } from '../user/entities/user.entity';
 
@@ -556,7 +557,8 @@ export class VendorService {
     // Transform the response with pricing
     const transformedVendor = {
       ...vendor,
-      pricing: vendor.formData?.pricing || categoryPricing
+      pricing: vendor.formData?.pricing || categoryPricing,
+      imageUrl: extractPrimaryImageFromFormData(vendor),
     };
 
     return plainToInstance(VendorResponseDto, transformedVendor, { 
@@ -702,22 +704,7 @@ export class VendorService {
       queryLng,
     });
 
-      // Prepare placeholder HTTPS images for vendor/venue/event related content
-      const placeholderImages = [
-        'https://picsum.photos/1200/800?random=1', // Wedding venue
-        'https://picsum.photos/1200/800?random=2', // Event decoration
-        'https://picsum.photos/1200/800?random=3', // Wedding ceremony
-        'https://picsum.photos/1200/800?random=4', // Reception hall
-        'https://picsum.photos/1200/800?random=5', // Catering setup
-        'https://picsum.photos/1200/800?random=6', // Event planning
-        'https://picsum.photos/1200/800?random=7', // Wedding photography
-        'https://picsum.photos/1200/800?random=8'  // Event venue
-      ];
-    
-    const ensureHttpsImages = (list?: string[], fallbackCount: number = 6): string[] => {
-      const base = Array.isArray(list) && list.length > 0 ? list : placeholderImages.slice(0, fallbackCount);
-      return base.map((url) => (typeof url === 'string' && url.startsWith('http') ? url : placeholderImages[Math.floor(Math.random() * placeholderImages.length)]));
-    };
+    const formImages = extractImagesFromFormData(vendor);
 
     // Get vendor albums from the vendor document
     const vendorAlbums = vendor.albums || [];
@@ -735,9 +722,7 @@ export class VendorService {
       description: vendor.description || vendor.formData?.description || 'No description available',
       longDescription: vendor.longDescription || vendor.formData?.longDescription || 'Detailed information about our services will be available soon.',
       about: vendor.formData?.about || vendor.description || 'No additional information available',
-      images: ensureHttpsImages(
-        (vendor.formData?.images as string[]) || (vendor.formData?.portfolio as string[]) || (vendor.imageUrl ? [vendor.imageUrl] : [])
-      ),
+      images: formImages,
       pricing: {
         pricing: vendor.formData?.pricing || CategoryPricingHelper.generateCategoryPricing(categoryName),
         packages: vendor.formData?.packages || []
@@ -745,7 +730,7 @@ export class VendorService {
       priceRange: vendor.formData?.priceRange || '₹50,000 - ₹3,00,000',
       roomCount: vendor.formData?.roomCount || 257,
       cateringPolicy: vendor.formData?.cateringPolicy || 'Inhouse catering only',
-      albums: this.getVendorAlbums(vendorAlbums, placeholderImages),
+      albums: this.getVendorAlbums(vendorAlbums, formImages),
       reviews: ratings.map(rating => {
         const user = usersById[rating.userId || ''];
         const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Anonymous';
@@ -1023,33 +1008,26 @@ export class VendorService {
     return this.fileUploadService.saveUploadedFile(file, 'vendors');
   }
 
-  private getVendorAlbums(vendorAlbums: any[], placeholderImages: string[]): any[] {
-    // If vendor has albums, return them
+  private getVendorAlbums(vendorAlbums: any[], formImages: string[]): any[] {
     if (vendorAlbums && vendorAlbums.length > 0) {
       return vendorAlbums;
     }
-    
-    // Otherwise, return dummy albums
-    return [
-      {
-        id: new ObjectId().toString(),
-        name: 'Wedding Venue Gallery',
-        images: placeholderImages.slice(0, 4),
-        imageCount: 4,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: new ObjectId().toString(),
-        name: 'Event Services',
-        images: placeholderImages.slice(4, 8),
-        imageCount: 4,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
+
+    if (formImages.length > 0) {
+      return [
+        {
+          id: new ObjectId().toString(),
+          name: 'Gallery',
+          images: formImages,
+          imageCount: formImages.length,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+    }
+
+    return [];
   }
 
   async updateRating(vendorId: string, averageRating: number, totalRatings: number): Promise<void> {

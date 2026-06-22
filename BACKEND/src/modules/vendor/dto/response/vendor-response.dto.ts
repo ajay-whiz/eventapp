@@ -142,7 +142,7 @@ export class VendorResponseDto {
 
   @ApiProperty({ description: "URL of the vendor's image" })
   @Expose()
-  @Transform(({ obj }) => obj.imageUrl || obj.formData?.images?.[0] || 'https://t3.ftcdn.net/jpg/05/06/74/32/360_F_506743235_coW6QAlhxlBWjnRk0VNsHqaXGGH9F4JS.jpg')
+  @Transform(({ obj }) => obj.imageUrl || obj.formData?.imageUrl || obj.formData?.images?.[0] || '')
   image: string;
 
   @ApiProperty({ description: 'Average rating of the vendor' })
