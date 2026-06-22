@@ -90,6 +90,9 @@ export class User extends BaseModel {
   @Column({ nullable: true })
   fcmToken: string;
 
+  @Column({ nullable: true })
+  deletedAt: Date | null;
+
   @BeforeInsert()
   setDefaultValues() {
     this.email = this.email.toLowerCase() || '';

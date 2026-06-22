@@ -148,6 +148,11 @@ export class UserService {
     if (!user) {
       throw new UnauthorizedException('Invalid Authorization');
     }
+
+    if (user.isDeleted) {
+      throw new UnauthorizedException('This account has been deleted.');
+    }
+
     return user;
   }
 
@@ -175,6 +180,10 @@ export class UserService {
     if (!user) {
 
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.isDeleted) {
+      throw new UnauthorizedException('This account has been deleted.');
     }
 
     // Check if user is blocked
@@ -1350,6 +1359,34 @@ export class UserService {
       return [];
     }
     return users[0];
+  }
+
+  async deleteAccount(userId: string): Promise<{ success: boolean; message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { _id: new ObjectId(userId) } as any,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isDeleted) {
+      throw new BadRequestException('Account has already been deleted');
+    }
+
+    user.isDeleted = true;
+    user.isActive = false;
+    user.deletedAt = new Date();
+    (user as any).fcmToken = null;
+    (user as any).token = null;
+    user.updatedAt = new Date();
+
+    await this.userRepository.save(user);
+
+    return {
+      success: true,
+      message: 'Account deleted successfully.',
+    };
   }
 
   async remove(id: string): Promise<{ message: string }> {

@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Patch, Post, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
+import { BadRequestException, Body, Controller, Delete, Get, Patch, Post, Put, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { UserService } from "./user.service";
 import { AuthGuard } from "@nestjs/passport";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -10,6 +10,7 @@ import { FormPaginatedResponseDto } from "@modules/form/dto/response/form-pagina
 import { FormService } from "@modules/form/form.service";
 import { UpdateFcmTokenDto } from "./dto/request/update-fcm-token.dto";
 import { UpdateFcmTokenResponseDto } from "./dto/response/update-fcm-token-response.dto";
+import { DeleteAccountResponseDto } from "./dto/response/delete-account-response.dto";
 import { plainToInstance } from "class-transformer";
 import { HttpStatus } from "@nestjs/common";
 
@@ -89,6 +90,18 @@ export class UserController {
     async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
     const userId = req.user.id;
     return this.userService.changePassword(userId, dto);
+    }
+
+    @Delete('account')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({
+      summary: 'Delete current user account',
+      description: 'Soft deletes the authenticated user account. The user will not be able to log in again.',
+    })
+    @ApiResponse({ status: HttpStatus.OK, type: DeleteAccountResponseDto })
+    async deleteAccount(@Req() req: any): Promise<DeleteAccountResponseDto> {
+      const userId = req.user.id;
+      return this.userService.deleteAccount(userId);
     }
 
     @ApiOperation({ summary: 'Get all forms with pagination and optional type filter' })
