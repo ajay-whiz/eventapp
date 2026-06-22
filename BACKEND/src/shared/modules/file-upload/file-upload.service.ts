@@ -93,6 +93,43 @@ export class FileUploadService {
     return this.saveToLocalDisk(buffer, originalName, subfolder);
   }
 
+  async saveBase64Image(
+    dataUri: string,
+    subfolder: UploadSubfolder = 'images',
+  ): Promise<string> {
+    const { buffer, mimetype, extension } = this.parseBase64Image(dataUri);
+    return this.saveBuffer(buffer, `image.${extension}`, mimetype, subfolder);
+  }
+
+  /**
+   * Upload base64 images to storage and return public URLs.
+   * Existing http(s) URLs are returned unchanged.
+   */
+  async saveBase64Images(
+    images: string[],
+    subfolder: UploadSubfolder = 'images',
+  ): Promise<string[]> {
+    const urls: string[] = [];
+
+    for (const image of images) {
+      const value = String(image || '').trim();
+      if (!value) {
+        continue;
+      }
+
+      if (this.isExistingImageUrl(value)) {
+        urls.push(value);
+        continue;
+      }
+
+      if (value.startsWith('data:image')) {
+        urls.push(await this.saveBase64Image(value, subfolder));
+      }
+    }
+
+    return urls;
+  }
+
   buildPublicUrl(relativePath: string): string {
     const normalizedPath = relativePath.startsWith('/')
       ? relativePath
@@ -277,6 +314,30 @@ export class FileUploadService {
     if (!file.buffer?.length && !(diskPath && fs.existsSync(diskPath))) {
       throw new BadRequestException('File buffer is missing');
     }
+  }
+
+  private parseBase64Image(dataUri: string): {
+    buffer: Buffer;
+    mimetype: string;
+    extension: string;
+  } {
+    const matches = dataUri.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/i);
+    if (!matches) {
+      throw new BadRequestException('Invalid image format');
+    }
+
+    const ext = matches[1].toLowerCase();
+    const normalizedExt = ext === 'jpg' ? 'jpeg' : ext;
+
+    return {
+      buffer: Buffer.from(matches[2], 'base64'),
+      mimetype: `image/${normalizedExt}`,
+      extension: ext === 'jpeg' ? 'jpg' : ext,
+    };
+  }
+
+  private isExistingImageUrl(value: string): boolean {
+    return /^https?:\/\//i.test(value) || value.startsWith('/uploads/');
   }
 
   private ensureDirectory(directory: string): string {

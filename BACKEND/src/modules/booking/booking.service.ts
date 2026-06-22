@@ -24,6 +24,7 @@ import { LocationService } from '@modules/location/location.service';
 import { UserService } from '@modules/user/user.service';
 import { CategoryPricingHelper } from '@modules/vendor/helpers/category-pricing.helper';
 import { SupabaseService } from '@shared/modules/supabase/supabase.service';
+import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
 import { BookingStatus } from '@shared/enums/bookingStatus';
 import { ChatService } from '@modules/chat/chat.service';
 import { NotificationService } from '@modules/notification/notification.service';
@@ -54,6 +55,7 @@ export class BookingService {
     private readonly locationService: LocationService,
     private readonly userService: UserService,
     private readonly supabaseService: SupabaseService,
+    private readonly fileUploadService: FileUploadService,
     @Inject(forwardRef(() => ChatService))
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
@@ -1431,9 +1433,11 @@ export class BookingService {
 
       }
 
+    const { referenceImages: _referenceImages, ...bookingFields } = dto as any;
+
     const entity = this.bookingRepo.create({
-      ...dto,
-      userId: userIdString, // Explicitly set as string
+      ...bookingFields,
+      userId: userIdString,
       referenceImages: uploadedImageUrls,
       eventDate: dto.eventDate,
       endDate: dto.endDate,
@@ -1526,7 +1530,7 @@ export class BookingService {
     //   const endDateStr = dto.endDate.replace(' 00:00:00.000', '');
     //   updateData.endDate = new Date(endDateStr);
     // }
-    if (uploadedImageUrls.length > 0) {
+    if (uploadedImageUrls.length > 0 || dto.referenceImages !== undefined) {
       updateData.referenceImages = uploadedImageUrls;
     }
     delete updateData.bookingId;
@@ -1537,178 +1541,8 @@ export class BookingService {
     return await this.findByBookingId(bookingId);
   }
 
-  // Helper function to wrap upload with timeout
-  private async uploadWithTimeout(
-    uploadPromise: Promise<any>,
-    timeoutMs: number = 30000 // 30 seconds timeout
-  ): Promise<any> {
-    return Promise.race([
-      uploadPromise,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error(`Upload timeout after ${timeoutMs}ms`)), timeoutMs)
-      )
-    ]);
-  }
-
   private async uploadBase64Images(base64Images: string[]): Promise<string[]> {
-    try {
-
-      const uploadedUrls: string[] = [];
-      const awsConfig = this.configService.get('aws');
-      const hasAwsConfig = awsConfig && awsConfig.bucketName && awsConfig.bucketFolderName;
-      
-      for (let i = 0; i < base64Images.length; i++) {
-        const base64Image = base64Images[i];
-        const imageIndex = i + 1;
-        
-        if (!base64Image) {
-
-          continue;
-        }
-        
-        try {
-          const matches = base64Image.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
-          if (!matches) {
-
-            continue; // Skip invalid images instead of throwing
-          }
-        
-        const ext = matches[1];
-        const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-        const mimetype = `image/${ext}`;
-        const timestamp = Date.now();
-        const fileName = `request_booking_${timestamp}_${Math.random()
-          .toString(36)
-          .substring(7)}.${ext}`;
-
-          let imageUrl = '';
-          let uploadSuccess = false;
-          
-          if (process.env.NODE_ENV === 'local') {
-            console.log(`🏠 Image ${imageIndex}/${base64Images.length}: Using Supabase for local development (same as profile uploads)`);
-            // Use Supabase with 'profiles' bucket (same as profile uploads)
-            const supabaseBuckets = ['profiles', 'uploads'];
-            for (const bucket of supabaseBuckets) {
-              try {
-
-                const { publicUrl } = await this.uploadWithTimeout(
-                  this.supabaseService.upload({
-                    filePath: `booking/${fileName}`,
-                    file: buffer,
-                    contentType: mimetype,
-                    bucket: bucket,
-                    upsert: true,
-                  }),
-                  30000 // 30 second timeout per upload
-                );
-                if (publicUrl) {
-                  imageUrl = publicUrl;
-                  console.log(`✅ Image ${imageIndex}/${base64Images.length}: Supabase upload successful (bucket: ${bucket}):`, imageUrl);
-                  uploadSuccess = true;
-                  break;
-                }
-              } catch (supabaseError: any) {
-
-                continue;
-              }
-            }
-          } else {
-            // Production: Try Supabase first (same as profile uploads), then AWS S3 as fallback
-            console.log(`☁️ Image ${imageIndex}/${base64Images.length}: Using Supabase for production (same as profile uploads)`);
-            
-            // Try Supabase first with 'profiles' bucket (same as profile uploads)
-            const supabaseBuckets = ['profiles', 'uploads'];
-            for (const bucket of supabaseBuckets) {
-              try {
-
-                const { publicUrl } = await this.uploadWithTimeout(
-                  this.supabaseService.upload({
-                    filePath: `booking/${fileName}`,
-                    file: buffer,
-                    contentType: mimetype,
-                    bucket: bucket,
-                    upsert: true,
-                  }),
-                  30000 // 30 second timeout per upload
-                );
-                if (publicUrl) {
-                  imageUrl = publicUrl;
-                  console.log(`✅ Image ${imageIndex}/${base64Images.length}: Supabase upload successful (bucket: ${bucket}):`, imageUrl);
-                  uploadSuccess = true;
-                  break;
-                }
-              } catch (supabaseError: any) {
-
-                continue;
-              }
-            }
-            
-            // If Supabase failed, try AWS S3 as fallback (only if configured)
-            if (!uploadSuccess && hasAwsConfig) {
-              try {
-
-                const awsUploadReqDto = {
-                  Bucket: awsConfig.bucketName,
-                  Key: awsConfig.bucketFolderName + '/' + 'booking' + '/' + fileName,
-                  Body: buffer,
-                  ContentType: mimetype,
-                } as any;
-                
-                const response = await this.awsS3Service.uploadFilesToS3Bucket(awsUploadReqDto);
-                imageUrl = (response as any)?.Location || '';
-                if (imageUrl) {
-
-                  uploadSuccess = true;
-                }
-              } catch (s3Error: any) {
-
-              }
-            }
-            
-            // If all uploads failed
-            if (!uploadSuccess) {
-
-
-              imageUrl = '';
-            }
-          }
-          
-          // Only add non-empty URLs (skip failed uploads)
-          if (imageUrl && imageUrl.trim() !== '') {
-            uploadedUrls.push(imageUrl);
-
-          } else {
-
-          }
-          
-          // Add a delay between uploads to avoid rate limiting (except for the last image)
-          // Increased delay to 500ms to prevent rate limiting with multiple images
-          if (imageIndex < base64Images.length) {
-            await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay between uploads
-          }
-        } catch (imageError: any) {
-          // Catch any error during image processing and continue with next image
-
-
-          // Continue processing other images
-          // Still add delay even on error to avoid rate limiting
-          if (imageIndex < base64Images.length) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-      }
-
-
-      // Filter out any empty strings just to be safe
-      const filteredUrls = uploadedUrls.filter(url => url && url.trim() !== '');
-
-      return filteredUrls;
-      
-    } catch (error) {
-
-      throw error;
-    }
+    return this.fileUploadService.saveBase64Images(base64Images, 'booking');
   }
 
   async cancelBooking(bookingId: string, dto: any, userId: string): Promise<any> {

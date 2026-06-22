@@ -95,7 +95,13 @@ export class CreateRequestBookingDto {
   @IsNumber()
   budgetRange?: number;
 
-  @ApiProperty({ required: false, type: [String], example: ['data:image/png;base64,...'] })
+  @ApiProperty({
+    required: false,
+    type: [String],
+    description:
+      'Reference images as base64 data URIs. Server uploads to Supabase and returns public URLs.',
+    example: ['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'],
+  })
   @IsOptional()
   @IsArray()
   referenceImages?: string[];
