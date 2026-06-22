@@ -63,6 +63,62 @@ const validateDynamicField = (field: DynamicFormField, value: any): string | und
   return undefined;
 };
 
+const getVenueImageBaseUrl = (): string => {
+  if (import.meta.env.VITE_IMAGE_BASE_URL) {
+    return String(import.meta.env.VITE_IMAGE_BASE_URL).replace(/\/+$/, '');
+  }
+
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return String(import.meta.env.VITE_API_BASE_URL).replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+  }
+
+  return import.meta.env.PROD ? 'https://events-api.whizapps.cloud' : 'http://localhost:10030';
+};
+
+const extractStoredImageUrl = (img: any): string => {
+  if (typeof img === 'string') {
+    return img;
+  }
+
+  if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
+    return img.url.imageUrl;
+  }
+
+  if (img?.url?.data && typeof img.url.data === 'string') {
+    return img.url.data;
+  }
+
+  if (typeof img?.url === 'string') {
+    return img.url;
+  }
+
+  if (typeof img?.preview === 'string' && img.preview.startsWith('http')) {
+    return img.preview;
+  }
+
+  if (typeof img?.name === 'string' && (img.name.startsWith('http') || img.name.startsWith('/uploads/'))) {
+    return img.name;
+  }
+
+  return '';
+};
+
+const transformMultiImageValue = (images: any[]) =>
+  images.map((img: any) => {
+    let imageUrl = extractStoredImageUrl(img);
+
+    if (imageUrl && imageUrl.startsWith('/uploads/')) {
+      imageUrl = `${getVenueImageBaseUrl()}${imageUrl}`;
+    }
+
+    return {
+      id: img.id || `img_${Date.now()}_${Math.random()}`,
+      name: img.name || imageUrl || 'image',
+      url: imageUrl,
+      uploaded: Boolean(imageUrl),
+    };
+  });
+
 const AddVenueForm: React.FC = () => {
   const { id } = useParams();
   const [serviceCategories, setServiceCategories] = useState<any[]>([]);
@@ -165,40 +221,7 @@ const AddVenueForm: React.FC = () => {
                 if (field.actualValue !== undefined) {
                   // Handle MultiImageUpload fields specially
                   if (field.type === 'MultiImageUpload' && Array.isArray(field.actualValue)) {
-                    const transformedImages = field.actualValue.map((img: any) => {
-                      let imageUrl = '';
-                      
-                      // Safely extract URL from various possible structures
-                      if (typeof img === 'string') {
-                        imageUrl = img;
-                      } else if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
-                        // Handle nested structure: url.imageUrl
-                        imageUrl = img.url.imageUrl;
-                      } else if (img?.url?.data && typeof img.url.data === 'string') {
-                        imageUrl = img.url.data;
-                      } else if (img?.url && typeof img.url === 'string') {
-                        imageUrl = img.url;
-                      } else if (img?.preview && typeof img.preview === 'string') {
-                        imageUrl = img.preview;
-                      }
-                      
-                      // If the URL is relative, construct the full URL
-                      if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                        const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
-                          (import.meta.env.VITE_API_BASE_URL 
-                            ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
-                            : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
-                        imageUrl = `${imageBaseUrl}${imageUrl}`;
-                      }
-                      
-                      return {
-                        id: img.id || `img_${Date.now()}_${Math.random()}`,
-                        name: img.name || 'image',
-                        url: imageUrl,
-                        uploaded: true // Mark as already uploaded
-                      };
-                    });
-                    extractedData[field.id] = transformedImages;
+                    extractedData[field.id] = transformMultiImageValue(field.actualValue);
                   } else {
                     // Handle text, select, dropdown, and other field types
                     // Store the actualValue directly
@@ -235,42 +258,7 @@ const AddVenueForm: React.FC = () => {
               const matchingField = getSelectedForm.fields.find((f: any) => f.id === fieldId);
               
               if (matchingField?.type === 'MultiImageUpload' && Array.isArray(value)) {
-                // Handle MultiImageUpload fields specially
-                const transformedImages = value.map((img: any) => {
-                  let imageUrl = '';
-                  
-                  // Safely extract URL from various possible structures
-                  if (typeof img === 'string') {
-                    imageUrl = img;
-                  } else if (img?.url?.imageUrl && typeof img.url.imageUrl === 'string') {
-                    // Handle nested structure: url.imageUrl
-                    imageUrl = img.url.imageUrl;
-                  } else if (img?.url?.data && typeof img.url.data === 'string') {
-                    imageUrl = img.url.data;
-                  } else if (img?.url && typeof img.url === 'string') {
-                    imageUrl = img.url;
-                  } else if (img?.preview && typeof img.preview === 'string') {
-                    imageUrl = img.preview;
-                  }
-                  
-                  // If the URL is relative, construct the full URL
-                  if (imageUrl && imageUrl.startsWith('/uploads/')) {
-                    // Use IMAGE_BASE_URL from config, or construct from API base URL
-                    const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 
-                      (import.meta.env.VITE_API_BASE_URL 
-                        ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1/', '').replace('marketplace.whiz-cloud.com', 'apimarketplace.whiz-cloud.com')
-                        : import.meta.env.PROD ? 'https://apimarketplace.whiz-cloud.com' : 'http://localhost:10030');
-                    imageUrl = `${imageBaseUrl}${imageUrl}`;
-                  }
-                  
-                  return {
-                    id: img.id || `img_${Date.now()}_${Math.random()}`,
-                    name: img.name || 'image',
-                    url: imageUrl,
-                    uploaded: true // Mark as already uploaded
-                  };
-                });
-                processedData[fieldId] = transformedImages;
+                processedData[fieldId] = transformMultiImageValue(value);
                 hasChanges = true;
               }
             }
@@ -602,7 +590,9 @@ const AddVenueForm: React.FC = () => {
 
       setFormData((prev) => {
         const currentImages = Array.isArray(prev[fieldId]) ? prev[fieldId] : images;
-        const mergedImages = currentImages.map((img: any) => uploadedById.get(img.id) || img);
+        const mergedImages = currentImages
+          .filter((img: any) => images.some((next: any) => next.id === img.id))
+          .map((img: any) => uploadedById.get(img.id) || img);
 
         pendingImages.forEach((img: any) => {
           if (!mergedImages.some((existing: any) => existing.id === img.id)) {
@@ -630,20 +620,24 @@ const AddVenueForm: React.FC = () => {
   };
 
   const handleFieldChange = (data: any, fieldId: any, value: any) => {
-    // Check if this is a MultiImageUpload field and handle upload immediately
     if (data.type === 'MultiImageUpload' && Array.isArray(value)) {
-      // Check if there are any new files to upload
-      const hasNewFiles = value.some((img: any) => img.file && !img.url);
-      if (hasNewFiles) {
-        handleImageUpload(fieldId, value);
-        return; // handleImageUpload will update formData
-      }
-    }
+      setFormData((prev) => ({
+        ...prev,
+        [fieldId]: value,
+      }));
 
-    setFormData(prev => ({
-      ...prev,
-      [fieldId]: value
-    }));
+      const hasNewFiles = value.some(
+        (img: any) => img.file && !img.url && !img.uploaded,
+      );
+      if (hasNewFiles) {
+        void handleImageUpload(fieldId, value);
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [fieldId]: value,
+      }));
+    }
 
     // Clear error for this field when user starts typing
     if (dynamicFormErrors[data.id]) {

@@ -50,10 +50,8 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   }, [images]);
 
   useEffect(() => {
-    if (memoizedInitialImages.length > 0) {
-      setImages(memoizedInitialImages);
-      imagesRef.current = memoizedInitialImages;
-    }
+    setImages(memoizedInitialImages);
+    imagesRef.current = memoizedInitialImages;
   }, [memoizedInitialImages]);
 
   const notifyChange = useCallback((nextImages: ImageFile[]) => {
@@ -190,7 +188,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
               className={`relative rounded-md border border-gray-200 overflow-hidden ${previewSizeClasses}`}
             >
               <img
-                src={img.preview || img.url}
+                src={img.url || img.preview}
                 alt={img.name}
                 className="w-full h-full object-cover"
               />

@@ -621,7 +621,9 @@ const VendorForm: React.FC = () => {
 
       setDynamicFormData((prev) => {
         const currentImages = Array.isArray(prev[fieldId]) ? prev[fieldId] : images;
-        const mergedImages = currentImages.map((img: any) => uploadedById.get(img.id) || img);
+        const mergedImages = currentImages
+          .filter((img: any) => images.some((next: any) => next.id === img.id))
+          .map((img: any) => uploadedById.get(img.id) || img);
 
         pendingImages.forEach((img: any) => {
           if (!mergedImages.some((existing: any) => existing.id === img.id)) {
@@ -816,17 +818,24 @@ const VendorForm: React.FC = () => {
   };
 
   const handleDynamicFieldChange = (fieldId: string, value: any) => {
-    // Check if this is an image field
     const field = dynamicForm?.fields.find(f => f.id === fieldId);
-    
+
     if (field?.type === 'MultiImageUpload' && Array.isArray(value)) {
-      // Handle immediate image upload for MultiImageUpload fields
-      handleImageUpload(fieldId, value);
-    } else {
-      // Handle other field types normally
-      setDynamicFormData(prev => ({
+      setDynamicFormData((prev) => ({
         ...prev,
-        [fieldId]: value
+        [fieldId]: value,
+      }));
+
+      const hasNewFiles = value.some(
+        (img: any) => img.file && !img.url && !img.uploaded,
+      );
+      if (hasNewFiles) {
+        void handleImageUpload(fieldId, value);
+      }
+    } else {
+      setDynamicFormData((prev) => ({
+        ...prev,
+        [fieldId]: value,
       }));
     }
     
