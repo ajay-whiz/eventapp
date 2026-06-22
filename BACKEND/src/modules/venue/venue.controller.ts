@@ -43,6 +43,10 @@ import { FeatureType } from '@shared/enums/featureType';
 import { VenueUserResponseDto } from './dto/response/venue-user-response.dto';
 import { VenueUserPaginatedResponseDto } from './dto/response/venue-user-paginated-response.dto';
 import { plainToInstance } from 'class-transformer';
+import {
+  CreateListingAlbumDto,
+  UpdateListingAlbumDto,
+} from '@shared/dto/listing-album.dto';
 
 @ApiTags('Venues')
 @Controller('venues')
@@ -481,6 +485,105 @@ export class VenueController {
     return this.venueService.findOneDetail(id);
   }
 
+  @Post('upload-image')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENUE_MANAGEMENT)
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload venue image',
+    description: 'Uploads a venue image file (PNG, JPEG, JPG) to the local upload folder. Returns the public URL of the uploaded image.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Image uploaded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        imageUrl: {
+          type: 'string',
+          example: 'https://your-supabase-url.com/storage/v1/object/public/venues/venue_1234567890_abc123.jpg',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file format or no file provided',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ imageUrl: string }> {
+    try {
+      if (!file) {
+        throw new BadRequestException('No file uploaded');
+      }
+
+      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
+      }
+
+      const imageUrl = await this.venueService.uploadImage(file);
+
+      if (!imageUrl) {
+        throw new BadRequestException('File upload failed - no URL returned');
+      }
+
+      return { imageUrl };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get(':id/albums')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENUE_MANAGEMENT)
+  @ApiOperation({ summary: 'Get albums for a venue' })
+  getAlbums(@Param('id') id: string) {
+    return this.venueService.getAlbums(id);
+  }
+
+  @Post(':id/albums')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENUE_MANAGEMENT)
+  @ApiOperation({ summary: 'Create an album for a venue' })
+  createAlbum(@Param('id') id: string, @Body() dto: CreateListingAlbumDto) {
+    return this.venueService.createAlbum(id, dto);
+  }
+
+  @Patch(':id/albums/:albumId')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENUE_MANAGEMENT)
+  @ApiOperation({ summary: 'Update a venue album' })
+  updateAlbum(
+    @Param('id') id: string,
+    @Param('albumId') albumId: string,
+    @Body() dto: UpdateListingAlbumDto,
+  ) {
+    return this.venueService.updateAlbum(id, albumId, dto);
+  }
+
+  @Delete(':id/albums/:albumId')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENUE_MANAGEMENT)
+  @ApiOperation({ summary: 'Delete a venue album' })
+  deleteAlbum(@Param('id') id: string, @Param('albumId') albumId: string) {
+    return this.venueService.deleteAlbum(id, albumId);
+  }
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), FeatureGuard)
@@ -609,74 +712,6 @@ export class VenueController {
   })
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.venueService.remove(id);
-  }
-
-  @Post('upload-image')
-  @UseGuards(AuthGuard('jwt'), FeatureGuard)
-  @Features(FeatureType.VENUE_MANAGEMENT)
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ 
-    summary: 'Upload venue image',
-    description: 'Uploads a venue image file (PNG, JPEG, JPG) to the local upload folder. Returns the public URL of the uploaded image.'
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Image uploaded successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        imageUrl: {
-          type: 'string',
-          example: 'https://your-supabase-url.com/storage/v1/object/public/venues/venue_1234567890_abc123.jpg'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid file format or no file provided' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized access' 
-  })
-  async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<{ imageUrl: string }> {
-    try {
-
-
-      if (!file) {
-        throw new BadRequestException('No file uploaded');
-      }
-
-      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-      if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
-      }
-
-      const imageUrl = await this.venueService.uploadImage(file);
-
-      if (!imageUrl) {
-        throw new BadRequestException('File upload failed - no URL returned');
-      }
-      
-      return { imageUrl };
-      
-    } catch (error) {
-
-      throw error;
-    }
   }
 }
   

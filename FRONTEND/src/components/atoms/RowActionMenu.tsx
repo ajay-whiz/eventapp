@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText, PlusIcon, Eye } from "lucide-react";
+import { ListRestart, MoreVertical, Pencil, Trash2, Power, PowerOff, MapPinned, Shield, ShieldOff, FileText, PlusIcon, Eye, Images } from "lucide-react";
 import { createPortal } from "react-dom";
 
 type RowActionMenuProps = {
@@ -16,6 +16,7 @@ type RowActionMenuProps = {
   onBlock?: () => void;
   onUnblock?: () => void;
   onLocation?: () => void;
+  onAlbums?: () => void;
   onQuotation?: () => void;
   onFormInputs?: () => void;
   canActivate?: boolean;
@@ -25,6 +26,7 @@ type RowActionMenuProps = {
   isActive?: boolean;
   isBlocked?: boolean;
   showLocationOption?: boolean;
+  showAlbumOption?: boolean;
   showCategoryInputsOption?: boolean;
   showQuotationOption?: boolean;
   showViewOption?: boolean;
@@ -44,6 +46,7 @@ export const RowActionMenu = ({
   onBlock,
   onUnblock,
   onLocation,
+  onAlbums,
   onFormInputs,
   canActivate = false,
   canDeactivate = false,
@@ -52,6 +55,7 @@ export const RowActionMenu = ({
   isActive = true,
   isBlocked = false,
   showLocationOption = true,
+  showAlbumOption = false,
   showCategoryInputsOption = false,
   showQuotationOption = false,
   showViewOption = false,
@@ -265,6 +269,18 @@ export const RowActionMenu = ({
                 role="menuitem"
               >
                 <MapPinned  className="size-4" /> Add Location
+              </li>
+            )}
+            {showAlbumOption && (
+              <li
+                onClick={() => {
+                  setOpen(false);
+                  onAlbums?.();
+                }}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-gray-700 cursor-pointer"
+                role="menuitem"
+              >
+                <Images className="size-4" /> Albums
               </li>
             )}
        

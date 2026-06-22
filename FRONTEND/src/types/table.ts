@@ -17,7 +17,7 @@ export interface TableColumn<T extends TableRow> {
 }
 
 // Action types for row operations
-export type TableAction = 'edit' | 'delete' | 'reset-password' | 'view' | 'activate' | 'deactivate' | 'block' | 'unblock' | 'location' | 'add location' | 'quotation'| 'add form inputs';
+export type TableAction = 'edit' | 'delete' | 'reset-password' | 'view' | 'activate' | 'deactivate' | 'block' | 'unblock' | 'location' | 'add location' | 'albums' | 'quotation'| 'add form inputs';
 
 // Configuration object for table behavior
 export interface TableConfig {
@@ -100,6 +100,7 @@ export interface TableComponentProps<T extends TableRow> {
   showResetPasswordOption?: boolean;
   hideDeleteAction?: boolean;
   showLocationOption?: boolean;
+  showAlbumOption?: boolean;
   showQuotationOption?: boolean;
   showCategoryInputsOption?: boolean;
   showViewOption?: boolean;

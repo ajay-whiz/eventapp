@@ -18,6 +18,23 @@ import { VendorFormValidator } from './helpers/vendor-form-validator';
 import { CategoryPricingHelper } from './helpers/category-pricing.helper';
 import { LocationService } from '@modules/location/location.service';
 import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
+import {
+  CreateListingAlbumDto,
+  ListingAlbumResponseDto,
+  UpdateListingAlbumDto,
+} from '@shared/dto/listing-album.dto';
+import {
+  buildListingAlbum,
+  getActiveAlbums,
+  ListingAlbumRecord,
+  updateListingAlbumRecord,
+} from '@shared/utils/listing-album.util';
+import {
+  addListingAlbum,
+  deleteListingAlbum,
+  getListingAlbums,
+  updateListingAlbum,
+} from '@shared/utils/listing-album.persistence';
 import { Rating } from '../rating/entity/rating.entity'; // New import
 import { User } from '../user/entities/user.entity';
 
@@ -1027,5 +1044,31 @@ export class VendorService {
     } catch (error) {
 
     }
+  }
+
+  async getAlbums(vendorId: string): Promise<ListingAlbumResponseDto[]> {
+    return getListingAlbums(this.vendorRepo, vendorId, 'Vendor');
+  }
+
+  async createAlbum(
+    vendorId: string,
+    dto: CreateListingAlbumDto,
+  ): Promise<ListingAlbumResponseDto> {
+    return addListingAlbum(this.vendorRepo, vendorId, dto, 'Vendor');
+  }
+
+  async updateAlbum(
+    vendorId: string,
+    albumId: string,
+    dto: UpdateListingAlbumDto,
+  ): Promise<ListingAlbumResponseDto> {
+    return updateListingAlbum(this.vendorRepo, vendorId, albumId, dto, 'Vendor');
+  }
+
+  async deleteAlbum(
+    vendorId: string,
+    albumId: string,
+  ): Promise<{ message: string }> {
+    return deleteListingAlbum(this.vendorRepo, vendorId, albumId, 'Vendor');
   }
 }

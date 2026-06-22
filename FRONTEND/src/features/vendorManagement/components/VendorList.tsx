@@ -10,6 +10,7 @@ import { useVendor } from '../hooks/useVendor';
 import { useVendorActions } from '../hooks/useVendorActions';
 import VendorForm from './VendorForm';
 import ListingLocationManager from '../../../components/common/ListingLocationManager';
+import AlbumManagementModal from '../../../components/common/AlbumManagementModal';
 import api from '../../../axios';
 import { Button } from '../../../components/atoms/Button';
 import { X } from 'lucide-react';
@@ -231,8 +232,10 @@ const VendorList: React.FC = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showAlbumModal, setShowAlbumModal] = useState(false);
   const [showLocationDeleteModal, setShowLocationDeleteModal] = useState(false);
   const [selectedVendorForLocation, setSelectedVendorForLocation] = useState<VendorRow | null>(null);
+  const [selectedVendorForAlbums, setSelectedVendorForAlbums] = useState<VendorRow | null>(null);
   const [locationToDelete, setLocationToDelete] = useState<any>(null);
   type VendorRow = { id: string; name: string; description?: string; [key: string]: any };
   const [selectedVendor, setSelectedVendor] = useState<VendorRow | null>(null);
@@ -266,6 +269,10 @@ const VendorList: React.FC = () => {
     else if (action === 'add location') {
       setSelectedVendorForLocation(vendor);
       setShowLocationModal(true);
+    }
+    else if (action === 'albums') {
+      setSelectedVendorForAlbums(vendor);
+      setShowAlbumModal(true);
     }
     // ignore other actions for vendors
   };
@@ -424,6 +431,7 @@ const VendorList: React.FC = () => {
           addButtonRoute="/vendor-management/new"
           addButtonText='Add Vendor'
           showLocationOption={true}
+          showAlbumOption={true}
         />
           {showDeleteModal && selectedVendor && (
          <ConfirmModal
@@ -503,6 +511,19 @@ const VendorList: React.FC = () => {
               message={`Are you sure you want to delete the location "${locationToDelete.name || locationToDelete.address || 'Unnamed Location'}"? This action cannot be undone.`}
               confirmLabel="Delete Location"
               cancelLabel="Cancel"
+            />
+          )}
+
+          {showAlbumModal && selectedVendorForAlbums && (
+            <AlbumManagementModal
+              isOpen={showAlbumModal}
+              entityType="vendor"
+              entityId={selectedVendorForAlbums.id}
+              entityName={selectedVendorForAlbums.name}
+              onClose={() => {
+                setShowAlbumModal(false);
+                setSelectedVendorForAlbums(null);
+              }}
             />
           )}
 

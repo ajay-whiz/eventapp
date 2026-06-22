@@ -40,6 +40,10 @@ import { FeatureType } from '@shared/enums/featureType';
 import { VendorUserResponseDto } from './dto/response/vendor-user-response.dto';
 import { VendorUserPaginatedResponseDto } from './dto/response/vendor-user-paginated-response.dto';
 import { plainToInstance } from 'class-transformer';
+import {
+  CreateListingAlbumDto,
+  UpdateListingAlbumDto,
+} from '@shared/dto/listing-album.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Vendors')
@@ -574,6 +578,106 @@ export class VendorController {
     return this.vendorService.findOneDetail(id);
   }
 
+  @Post('upload-image')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENDOR_MANAGEMENT)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload vendor image',
+    description: 'Uploads a vendor image file (PNG, JPEG, JPG). Returns the image URL that can be used in vendor creation.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Image uploaded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          example: 'OK',
+        },
+        data: {
+          type: 'string',
+          example: '/uploads/vendors/vendor_1234567890_abc123.jpg',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file format or no file provided',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized access',
+  })
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
+    }
+
+    const imageUrl = await this.vendorService.uploadVendorImage(file);
+
+    return {
+      status: 'OK',
+      data: imageUrl,
+    };
+  }
+
+  @Get(':id/albums')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENDOR_MANAGEMENT)
+  @ApiOperation({ summary: 'Get albums for a vendor' })
+  getAlbums(@Param('id') id: string) {
+    return this.vendorService.getAlbums(id);
+  }
+
+  @Post(':id/albums')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENDOR_MANAGEMENT)
+  @ApiOperation({ summary: 'Create an album for a vendor' })
+  createAlbum(@Param('id') id: string, @Body() dto: CreateListingAlbumDto) {
+    return this.vendorService.createAlbum(id, dto);
+  }
+
+  @Patch(':id/albums/:albumId')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENDOR_MANAGEMENT)
+  @ApiOperation({ summary: 'Update a vendor album' })
+  updateAlbum(
+    @Param('id') id: string,
+    @Param('albumId') albumId: string,
+    @Body() dto: UpdateListingAlbumDto,
+  ) {
+    return this.vendorService.updateAlbum(id, albumId, dto);
+  }
+
+  @Delete(':id/albums/:albumId')
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.VENDOR_MANAGEMENT)
+  @ApiOperation({ summary: 'Delete a vendor album' })
+  deleteAlbum(@Param('id') id: string, @Param('albumId') albumId: string) {
+    return this.vendorService.deleteAlbum(id, albumId);
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), FeatureGuard)
   @Features(FeatureType.VENDOR_MANAGEMENT)
@@ -669,70 +773,6 @@ export class VendorController {
   })
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.vendorService.remove(id);
-  }
-
-  @Post('upload-image')
-  @UseGuards(AuthGuard('jwt'), FeatureGuard)
-  @Features(FeatureType.VENDOR_MANAGEMENT)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ 
-    summary: 'Upload vendor image',
-    description: 'Uploads a vendor image file (PNG, JPEG, JPG). Returns the image URL that can be used in vendor creation.'
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Image uploaded successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        status: {
-          type: 'string',
-          example: 'OK',
-        },
-        data: {
-          type: 'string',
-          example: '/uploads/vendors/vendor_1234567890_abc123.jpg',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid file format or no file provided',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized access',
-  })
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
-
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(`Invalid file type: ${file.mimetype}. Allowed types: PNG, JPEG, JPG`);
-    }
-    
-    const imageUrl = await this.vendorService.uploadVendorImage(file);
-    
-    return {
-      status: 'OK',
-      data: imageUrl,
-    };
   }
 
 }

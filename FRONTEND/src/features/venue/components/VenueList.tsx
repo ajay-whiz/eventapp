@@ -9,6 +9,7 @@ import { useToast } from '../../../components/atoms/Toast';
 import { useVenue } from '../hooks/useVenue';
 import { useVenueActions } from '../hooks/useVenueAction';
 import ListingLocationManager from '../../../components/common/ListingLocationManager';
+import AlbumManagementModal from '../../../components/common/AlbumManagementModal';
 import api from '../../../axios';
 import { Button } from '../../../components/atoms/Button';
 import { X } from 'lucide-react';
@@ -25,8 +26,10 @@ const VenueList: React.FC = () => {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showAlbumModal, setShowAlbumModal] = useState(false);
   const [showLocationDeleteModal, setShowLocationDeleteModal] = useState(false);
   const [selectedVenueForLocation, setSelectedVenueForLocation] = useState<VenueRow | null>(null);
+  const [selectedVenueForAlbums, setSelectedVenueForAlbums] = useState<VenueRow | null>(null);
   const [locationToDelete, setLocationToDelete] = useState<any>(null);
   type VenueRow = { id: string; name: string; description?: string };
   const [selectedUser, setSelectedUser] = useState<VenueRow | null>(null);
@@ -53,6 +56,10 @@ const VenueList: React.FC = () => {
     else if (action === 'add location') {
       setSelectedVenueForLocation(row);
       setShowLocationModal(true);
+    }
+    else if (action === 'albums') {
+      setSelectedVenueForAlbums(row);
+      setShowAlbumModal(true);
     }
   };
 
@@ -123,6 +130,7 @@ const VenueList: React.FC = () => {
           addButtonRoute="/venue-management/new"
           addButtonText="Add Venue"
           showLocationOption={true}
+          showAlbumOption={true}
           onSearchChange={(q) => {
             setCurrentPage(1);
             setSearchQuery(q);
@@ -206,6 +214,19 @@ const VenueList: React.FC = () => {
               message={`Are you sure you want to delete the location "${locationToDelete.name || locationToDelete.address || 'Unnamed Location'}"? This action cannot be undone.`}
               confirmLabel="Delete Location"
               cancelLabel="Cancel"
+            />
+          )}
+
+          {showAlbumModal && selectedVenueForAlbums && (
+            <AlbumManagementModal
+              isOpen={showAlbumModal}
+              entityType="venue"
+              entityId={selectedVenueForAlbums.id}
+              entityName={selectedVenueForAlbums.name}
+              onClose={() => {
+                setShowAlbumModal(false);
+                setSelectedVenueForAlbums(null);
+              }}
             />
           )}
       </div>

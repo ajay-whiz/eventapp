@@ -20,6 +20,23 @@ import { Form } from '../form/entity/form.entity';
 import { LocationService } from '@modules/location/location.service';
 import { SupabaseService } from '@shared/modules/supabase/supabase.service';
 import { FileUploadService } from '@shared/modules/file-upload/file-upload.service';
+import {
+  CreateListingAlbumDto,
+  ListingAlbumResponseDto,
+  UpdateListingAlbumDto,
+} from '@shared/dto/listing-album.dto';
+import {
+  buildListingAlbum,
+  getActiveAlbums,
+  ListingAlbumRecord,
+  updateListingAlbumRecord,
+} from '@shared/utils/listing-album.util';
+import {
+  addListingAlbum,
+  deleteListingAlbum,
+  getListingAlbums,
+  updateListingAlbum,
+} from '@shared/utils/listing-album.persistence';
 
 @Injectable()
 export class VenueService {
@@ -1113,4 +1130,30 @@ export class VenueService {
   //     );
   //   }
   // }
+
+  async getAlbums(venueId: string): Promise<ListingAlbumResponseDto[]> {
+    return getListingAlbums(this.venueRepo, venueId, 'Venue');
+  }
+
+  async createAlbum(
+    venueId: string,
+    dto: CreateListingAlbumDto,
+  ): Promise<ListingAlbumResponseDto> {
+    return addListingAlbum(this.venueRepo, venueId, dto, 'Venue');
+  }
+
+  async updateAlbum(
+    venueId: string,
+    albumId: string,
+    dto: UpdateListingAlbumDto,
+  ): Promise<ListingAlbumResponseDto> {
+    return updateListingAlbum(this.venueRepo, venueId, albumId, dto, 'Venue');
+  }
+
+  async deleteAlbum(
+    venueId: string,
+    albumId: string,
+  ): Promise<{ message: string }> {
+    return deleteListingAlbum(this.venueRepo, venueId, albumId, 'Venue');
+  }
 }

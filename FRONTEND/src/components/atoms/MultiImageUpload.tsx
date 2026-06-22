@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, type ChangeEvent, type DragEvent } from 'react';
 import { Plus, X } from 'lucide-react';
 
-interface ImageFile {
+export interface ImageFile {
   id: string;
   name: string;
-  preview: string;
+  preview?: string;
   file?: File;
   url?: string;
   uploaded?: boolean;
