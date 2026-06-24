@@ -19,6 +19,7 @@ import {
   fetchVendorByIdFailure,
 } from '../slices/VendorSlice';
 import { API_ROUTES } from '../../../constants/routes';
+import { normalizeBuilderFieldType } from '../../../utils/formFieldType';
 import type { VendorFormData, DynamicForm } from '../../../types/Vendor';
 
 export function useVendorActions() {
@@ -194,7 +195,7 @@ export function useVendorActions() {
               ...field, // Keep all original field properties
               // Add computed properties for UI
               label: field.metadata?.label || field.name,
-              type: field.type === 'dropdown' ? 'select' : field.type, // Map dropdown to select
+              type: normalizeBuilderFieldType(field.type),
               required: field.validation?.required?.value || false,
               placeholder: field.metadata?.placeholder || '',
               options: field.metadata?.options ? field.metadata.options.map((option: string) => ({

@@ -21,6 +21,7 @@ import { RoleService } from '@modules/role/role.service';
 import { FeatureService } from '@modules/feature/feature.service';
 import { ResetPasswordDto } from '@modules/auth/dto/request/reset-password.req.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { ObjectId } from 'mongodb';
 import { RoleType } from '@shared/enums/roleType';
 import { FeatureType } from '@shared/enums/featureType';
@@ -502,7 +503,20 @@ export class UserService {
             { isDeleted: { $exists: false } }
           ]
         },
-        { userType: 'USER' },
+        {
+          $or: [
+            { userType: 'USER' },
+            {
+              userType: { $exists: false },
+              isEnterpriseAdmin: { $ne: true },
+              $or: [
+                { enterpriseId: { $exists: false } },
+                { enterpriseId: null },
+                { enterpriseId: '' },
+              ],
+            },
+          ],
+        },
         { _id: { $ne: new ObjectId(currentUser.id) } }
       ]
     };
@@ -1440,6 +1454,105 @@ export class UserService {
       { enterpriseId: enterpriseId },
       { $set: { isActive } },
     );
+  }
+
+  async createAdminUser(dto: CreateAdminUserDto): Promise<User> {
+    if (!dto.email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    const existingByEmail = await this.userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+    if (existingByEmail && !existingByEmail.isDeleted) {
+      throw new BadRequestException('Email is already in use');
+    }
+
+    if (dto.phoneNumber) {
+      const existingByPhone = await this.userRepository.findOne({
+        where: { phoneNumber: dto.phoneNumber, countryCode: dto.countryCode },
+      });
+      if (existingByPhone && !existingByPhone.isDeleted) {
+        throw new BadRequestException('Phone number is already in use');
+      }
+    }
+
+    const activeFeatures =
+      dto.features?.filter(
+        (feature) =>
+          feature.permissions?.read ||
+          feature.permissions?.write ||
+          feature.permissions?.admin,
+      ) || [];
+
+    let roleIds: ObjectId[] = [];
+
+    if (activeFeatures.length > 0) {
+      const roleName = `CUSTOMER_USER_${Date.now()}`;
+      const { savedRole } = await this.roleService.createEnterpriseRole(
+        roleName,
+        activeFeatures,
+      );
+      roleIds = [savedRole.id];
+    } else {
+      const defaultRole = await this.getOrCreateDefaultUserRole();
+      roleIds = [defaultRole.id];
+    }
+
+    const passwordToHash = dto.password || uuidv4();
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
+
+    const user = this.userRepository.create({
+      firstName: dto.firstName || '',
+      lastName: dto.lastName || '',
+      email: normalizedEmail,
+      organizationName: dto.organizationName || '',
+      countryCode: dto.countryCode || '',
+      phoneNumber: dto.phoneNumber || '',
+      address: dto.address || '',
+      city: dto.city || '',
+      state: dto.state || '',
+      pincode: dto.pincode || '',
+      profileImage: dto.profileImage,
+      gender: dto.gender,
+      birthday: dto.birthday,
+      password: hashedPassword,
+      roleIds,
+      isActive: dto.isActive ?? false,
+      isEmailVerified: dto.isEmailVerified ?? false,
+      isPhoneVerified: false,
+      isDeleted: false,
+      isEnterpriseAdmin: false,
+      isMobileAppUser: false,
+      isBlocked: false,
+      userType: 'USER',
+    });
+
+    return this.userRepository.save(user);
+  }
+
+  private async getOrCreateDefaultUserRole() {
+    let defaultRole = await this.roleService.findByName(RoleType.USER);
+    if (defaultRole) {
+      return defaultRole;
+    }
+
+    let userFeature = await this.featureService.findByName(FeatureType.USER);
+    if (!userFeature) {
+      userFeature = await this.featureService.create({
+        name: FeatureType.USER,
+        isActive: true,
+      });
+    }
+
+    defaultRole = await this.roleService.save({
+      name: RoleType.USER,
+      featureIds: [new ObjectId(userFeature.id)],
+    });
+
+    return defaultRole;
   }
 
   async create(dto: UpdateUserDto): Promise<User> {

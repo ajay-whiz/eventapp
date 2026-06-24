@@ -6,6 +6,15 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
 import { Button } from '../atoms/Button';
 import MultiImageUpload from '../atoms/MultiImageUpload';
+import { FieldErrorMessage } from './FieldErrorMessage';
+import { FieldLabel } from './FieldLabel';
+import {
+    fieldErrorBorder,
+    getDynamicFieldButtonLabel,
+    getFieldDisplayLabel,
+    getFieldOptions,
+    isFieldRequired,
+} from '../../utils/validateDynamicField';
 
 interface DynamicFieldRendererProps {
     field: DynamicFormField;
@@ -20,52 +29,47 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
     onChange,
     error
 }) => {
-    // Use field.name if available, otherwise fall back to field.label
-    const displayLabel = field.name || field.label;
-    
+    const displayLabel = getFieldDisplayLabel(field);
+    const hasError = fieldErrorBorder(error);
+
     switch (field.type) {
         case 'text':
         case 'email':
         case 'number':
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} htmlFor={field.id} />
                     <Input
                         id={field.id}
                         type={field.type}
                         placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value)}
-                        error={error}
+                        error={hasError}
                     />
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
 
         case 'textarea':
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} htmlFor={field.id} />
                     <textarea
                         id={field.id}
                         rows={4}
-                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:border-transparent ${error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-sky-500'
+                        className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:border-transparent ${hasError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-sky-500'
                             }`}
                         placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value)}
                     />
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
 
         case 'select':
-        case 'dropdown':
-            // Get options from field.options or field.metadata.options
+        case 'dropdown': {
             const selectOptions = field.options || field.metadata?.options || [];
             const normalizedSelectOptions = Array.isArray(selectOptions)
                 ? selectOptions.map(opt =>
@@ -74,18 +78,17 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                         : opt
                 )
                 : [];
-            
-            // Find the matching option for the current value to get the correct label
-            const selectedOption = value 
+
+            const selectedOption = value
                 ? normalizedSelectOptions.find(opt => opt.value === value || opt.label === value)
                 : null;
-            
-            const selectValue = selectedOption 
+
+            const selectValue = selectedOption
                 ? [{ label: selectedOption.label, value: selectedOption.value }]
-                : value 
-                    ? [{ label: String(value), value: String(value) }] 
+                : value
+                    ? [{ label: String(value), value: String(value) }]
                     : [];
-            
+
             return (
                 <div className="col-span-1">
                     <SelectGroup
@@ -98,88 +101,87 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                         }}
                         isMulti={false}
                         error={error}
+                        required={isFieldRequired(field)}
                     />
                 </div>
             );
+        }
 
-        case 'checkbox':
+        case 'checkbox': {
+            const checkboxOptions = getFieldOptions(field);
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} />
                     <div className="space-y-2">
-                        {Array.isArray(field.options) &&
-                            field.options
-                                .map(opt =>
-                                    typeof opt === "string" ? { label: opt, value: opt } : opt
-                                )
-                                .map((option) => (
-                                    <div key={option.value} className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            id={`${field.id}_${option.value}`}
-                                            checked={Array.isArray(value) ? value.includes(option.value) : false}
-                                            onChange={(e) => {
-                                                const currentValues = Array.isArray(value) ? value : [];
-                                                if (e.target.checked) {
-                                                    onChange([...currentValues, option.value]);
-                                                } else {
-                                                    onChange(currentValues.filter((v: string) => v !== option.value));
-                                                }
-                                            }}
-                                            className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded-sm"
-                                        />
-                                        <label
-                                            htmlFor={`${field.id}_${option.value}`}
-                                            className="ml-2 block text-sm text-gray-900 whitespace-nowrap"
-                                        >
-                                            {option.label}
-                                        </label>
-                                    </div>
-                                ))}
+                        {checkboxOptions.map((option) => (
+                            <div key={option.value} className="flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id={`${field.id}_${option.value}`}
+                                    checked={Array.isArray(value) ? value.includes(option.value) : false}
+                                    onChange={(e) => {
+                                        const currentValues = Array.isArray(value) ? value : [];
+                                        if (e.target.checked) {
+                                            onChange([...currentValues, option.value]);
+                                        } else {
+                                            onChange(currentValues.filter((v: string) => v !== option.value));
+                                        }
+                                    }}
+                                    className="h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded-sm"
+                                />
+                                <label
+                                    htmlFor={`${field.id}_${option.value}`}
+                                    className="ml-2 block text-sm text-gray-900 whitespace-nowrap"
+                                >
+                                    {option.label}
+                                </label>
+                            </div>
+                        ))}
                     </div>
-
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
+        }
 
         case 'date':
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm whitespace-nowrap">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} htmlFor={field.id} />
                     <Input
                         id={field.id}
                         type="date"
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value)}
-                        error={error}
+                        error={hasError}
                     />
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
 
-        case 'radio':
-            const normalizedOptions = (field.options || []).map((opt: any) =>
+        case 'radio': {
+            const normalizedOptions = (field.options || field.metadata?.options || []).map((opt: any) =>
                 typeof opt === "string" ? { label: opt, value: opt } : opt
             );
             return (
-                <RadioGroup value={value} onValueChange={onChange}>
-                    {normalizedOptions.map((option, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                            <RadioGroupItem value={option.value} id={`${field.id}-${index}`} />
-                            <Label
-                                htmlFor={`${field.id}-${index}`}
-                                className="font-semibold text-gray-800 cursor-pointer"
-                            >
-                                {option.label}
-                            </Label>
-                        </div>
-                    ))}
-                </RadioGroup>
+                <div className="col-span-1">
+                    <FieldLabel field={field} />
+                    <RadioGroup value={value} onValueChange={onChange}>
+                        {normalizedOptions.map((option, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                                <RadioGroupItem value={option.value} id={`${field.id}-${index}`} />
+                                <Label
+                                    htmlFor={`${field.id}-${index}`}
+                                    className="font-semibold text-gray-800 cursor-pointer"
+                                >
+                                    {option.label}
+                                </Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                    <FieldErrorMessage error={error} />
+                </div>
             );
+        }
 
         case 'button':
             return (
@@ -190,20 +192,17 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                         onClick={() => onChange && onChange(field.id)}
                         className="px-4 py-2 bg-sky-600 text-white font-medium text-sm rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors duration-200"
                     >
-                        {displayLabel}
+                        {getDynamicFieldButtonLabel(field)}
                     </button>
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
 
-        case 'button-group':
-        case 'multi-select':
+        case 'button-group': {
             const groupValues = Array.isArray(value) ? value : [''];
             return (
                 <div className="col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} />
                     <div className="space-y-2">
                         {groupValues.map((val: string, index: number) => (
                             <div key={index} className="flex items-center gap-2">
@@ -217,25 +216,27 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                                         newValues[index] = e.target.value;
                                         onChange(newValues);
                                     }}
-                                    error={error}
+                                    error={hasError}
                                 />
                                 {index > 0 && (
-                                    <Button
+                                    <button
                                         type="button"
                                         onClick={() => {
                                             const newValues = groupValues.filter((_: any, i: number) => i !== index);
                                             onChange(newValues.length > 0 ? newValues : ['']);
                                         }}
-                                        className="px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                                        className="shrink-0 px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 border border-gray-300 rounded-md bg-white"
                                         title="Remove field"
+                                        aria-label="Remove field"
                                     >
                                         ✕
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         ))}
                         <Button
                             type="button"
+                            variant="muted"
                             onClick={() => {
                                 const newValues = [...groupValues, ''];
                                 onChange(newValues);
@@ -246,17 +247,47 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                             Add More
                         </Button>
                     </div>
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
+        }
 
-        case 'date-range':
+        case 'multi-select': {
+            const rawOptions = field.options || field.metadata?.options || [];
+            const normalizedMultiOptions = Array.isArray(rawOptions)
+                ? rawOptions.map((opt) =>
+                    typeof opt === 'string' ? { label: opt, value: opt } : opt
+                )
+                : [];
+            const normalizedMultiValue = Array.isArray(value)
+                ? value.map((v: string) => {
+                    const match = normalizedMultiOptions.find(
+                        (opt) => opt.value === v || opt.label === v
+                    );
+                    return match || { label: String(v), value: String(v) };
+                })
+                : [];
+
+            return (
+                <div className="col-span-1">
+                    <SelectGroup
+                        label={displayLabel}
+                        options={normalizedMultiOptions}
+                        value={normalizedMultiValue}
+                        onChange={(selected) => onChange(selected.map((item) => item.value))}
+                        isMulti={true}
+                        error={error}
+                        required={isFieldRequired(field)}
+                    />
+                </div>
+            );
+        }
+
+        case 'date-range': {
             const dateRange = value || { startDate: '', endDate: '' };
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} />
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-xs text-gray-600 mb-1">Start Date</label>
@@ -270,7 +301,7 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                                         startDate: e.target.value
                                     });
                                 }}
-                                error={error}
+                                error={hasError}
                             />
                         </div>
                         <div>
@@ -285,47 +316,44 @@ const DynamicFieldForm: React.FC<DynamicFieldRendererProps> = ({
                                         endDate: e.target.value
                                     });
                                 }}
-                                error={error}
+                                error={hasError}
                             />
                         </div>
                     </div>
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
+        }
 
         case 'MultiImageUpload':
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} />
                     <MultiImageUpload
                         isSingleMode={false}
                         onImagesChange={onChange}
                         initialImages={Array.isArray(value) ? value : []}
-                        acceptedFormats={field.validation?.invalidType?.value ? 
-                            field.validation.invalidType.value.split(',') : 
+                        acceptedFormats={field.validation?.invalidType?.value ?
+                            field.validation.invalidType.value.split(',') :
                             ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
                         }
                     />
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
 
         default:
             return (
                 <div className="col-span-1">
-                    <label className="block mb-2 font-semibold text-gray-800 text-sm ">
-                        {displayLabel} {field.required && <span className="text-red-500">*</span>}
-                    </label>
+                    <FieldLabel field={field} htmlFor={field.id} />
                     <Input
                         id={field.id}
                         placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value)}
-                        error={error}
+                        error={hasError}
                     />
-                    {error && <span className="text-red-500 text-sm mt-1">{error}</span>}
+                    <FieldErrorMessage error={error} />
                 </div>
             );
     }

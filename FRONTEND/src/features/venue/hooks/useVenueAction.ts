@@ -3,14 +3,10 @@ import { useCallback } from 'react';
 import api from '../../../axios';
 import { addVenueStart, addVenueSuccess, addVenueFailure, fetchVenueStart, fetchVenueSuccess, fetchVenueFailure, removeVenueStart, updateVenueSuccess, fetchVenueByIdStart, updateVenueFailure, updateVenueStart, removeVenueSuccess, removeVenueFailure, fetchVenueByIdSuccess, fetchVenueByIdFailure } from '../slices/venueSlice';
 import { useToast } from '../../../components/atoms/Toast';
-import { CONSTANT } from '../../../constants/constant';
-import { useNavigate } from 'react-router-dom';
-import { ROUTING } from '../../../constants/routes';
 
 export function useVenueActions() {
   const toast = useToast();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const getVenueList = useCallback(
     async (page = 1, limit = 10, searchQuery = '') => {
       dispatch(fetchVenueStart());
@@ -69,7 +65,6 @@ export function useVenueActions() {
         },
       });
       dispatch(updateVenueSuccess({ id, data }));
-      toast.success(CONSTANT.Update_venue)
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to update venue';
@@ -108,8 +103,6 @@ export function useVenueActions() {
         }
       });
       dispatch(addVenueSuccess());
-      toast.success(CONSTANT.Add_venue);
-       navigate(ROUTING.VENUE_MANAGEMENT);
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message ||

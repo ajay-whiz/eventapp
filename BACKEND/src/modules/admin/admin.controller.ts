@@ -31,6 +31,7 @@ import { CreateFeatureDto } from '@modules/feature/dto/request/create-feature.dt
 import { FeatureDto } from '@modules/feature/dto/response/feature.dto';
 import { CreateRoleDto } from '@modules/role/dto/request/create-role.dto';
 import { UpdateUserDto } from '@modules/user/dto/update-user.dto';
+import { CreateAdminUserDto } from '@modules/user/dto/create-admin-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Features } from '@common/decorators/permission.decorator';
 import { FeatureGuard } from '@common/guards/features.guard';
@@ -540,13 +541,13 @@ export class AdminController {
   async deleteUserById(@Param('id') userId: string) {
     return this.adminService.deleteUserById(userId);
   }
-  @Post('user')
+  @Post('users')
   @UseGuards(AuthGuard('jwt'), FeatureGuard)
   @Features(FeatureType.USER_MANAGEMENT)
   @ApiOperation({ summary: 'Create a new user' })
-  @ApiBody({ type: UpdateUserDto })
+  @ApiBody({ type: CreateAdminUserDto })
   @ApiResponse({ status: 201, description: 'User created successfully' })
-  async createUser(@Body() dto: UpdateUserDto) {
+  async createUser(@Body() dto: CreateAdminUserDto) {
     return this.adminService.createUser(dto);
   }
 

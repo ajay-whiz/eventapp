@@ -5,6 +5,7 @@ import { FormPreview } from './FormPreview';
 import { PropertiesPanel } from './PropertiesPanel';
 import { Eye, Edit3, Download, Settings, ArrowLeft, Save } from 'lucide-react';
 import type { FormField } from '../../types/form';
+import { normalizeBuilderFieldType } from '../../utils/formFieldType';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Button } from '../atoms/Button';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +30,16 @@ export const FormBuilder = () => {
     setSelectedFieldId(fieldId);
     // Show properties panel when a field is selected, hide when no field is selected
     setShowPropertiesPanel(fieldId !== null);
+
+    if (fieldId) {
+      setFields((currentFields) =>
+        currentFields.map((field) =>
+          field.id === fieldId && field.type === 'dropdown'
+            ? { ...field, type: normalizeBuilderFieldType(field.type) }
+            : field,
+        ),
+      );
+    }
   };
 
   const handleCanvasClick = (e: React.MouseEvent) => {

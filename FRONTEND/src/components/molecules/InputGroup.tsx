@@ -22,11 +22,12 @@ const StandaloneInputGroup: React.FC<InputGroupProps> = ({
   error,
   id,
   name,
+  required,
   connected: _connected,
   ...props
 }) => (
   <div className="relative">
-    {label && <Label htmlFor={id ?? name}>{label}</Label>}
+    {label && <Label htmlFor={id ?? name} required={required}>{label}</Label>}
     <Input id={id ?? name} error={error} name={name} {...props} />
     <FormHelperText>{helperText}</FormHelperText>
   </div>
@@ -38,6 +39,7 @@ const ConnectedInputGroup: React.FC<InputGroupProps> = ({
   error,
   id,
   name,
+  required,
   connected: _connected,
   ...props
 }) => {
@@ -53,7 +55,7 @@ const ConnectedInputGroup: React.FC<InputGroupProps> = ({
 
   return (
     <div className="relative">
-      {label && <Label htmlFor={id ?? name}>{label}</Label>}
+      {label && <Label htmlFor={id ?? name} required={required}>{label}</Label>}
       <Input
         id={id ?? name}
         error={displayError}

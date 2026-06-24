@@ -1,4 +1,4 @@
-import React, { constructor, useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -7,7 +7,13 @@ import { Plus, X, Settings } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import type { FormField } from '../../types/form';
 import { CheckboxWithLabel } from '../molecules/CheckboxWithLabel';
-import type { Header } from '@radix-ui/react-accordion';
+import { buildFieldPlaceholder, fieldTypeSupportsPlaceholder } from '../../utils/formFieldPlaceholder';
+import {
+  getBuilderFieldTypeValue,
+  getFieldTypeDisplayLabel,
+  isOptionsFieldType,
+  normalizeBuilderFieldType,
+} from '../../utils/formFieldType';
 
 interface PropertiesPanelProps {
   selectedField: FormField| null;
@@ -86,16 +92,29 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
         <div>
           <Label htmlFor="field-type">Field Type</Label>
           <Select
-            value={selectedField.type}
-            onValueChange={(value: string) =>
-              onFieldUpdate(selectedField.id, {
-                type: value as FormField["type"],
+            value={getBuilderFieldTypeValue(selectedField.type)}
+            onValueChange={(value: string) => {
+              const normalizedType = normalizeBuilderFieldType(value);
+              const updates: Partial<FormField> = {
+                type: normalizedType,
                 options:
-                  value === "select" || value === "radio" || value === "checkbox"
-                    ? ["Option 1", "Option 2"]
-                    : undefined,
-              })
-            }
+                  isOptionsFieldType(value) &&
+                  value !== 'checkbox' &&
+                  value !== 'multi-select'
+                    ? selectedField.options?.length
+                      ? selectedField.options
+                      : ['Option 1', 'Option 2']
+                    : value === 'checkbox' || value === 'multi-select'
+                      ? ['Option 1', 'Option 2']
+                      : undefined,
+              };
+
+              if (fieldTypeSupportsPlaceholder(normalizedType)) {
+                updates.placeholder = buildFieldPlaceholder(selectedField.label);
+              }
+
+              onFieldUpdate(selectedField.id, updates);
+            }}
           >
             <SelectTrigger className="w-full border border-gray-300 bg-white text-black focus:border-sky-500 cursor-pointer">
               <SelectValue placeholder="Select field type" />
@@ -114,8 +133,7 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
               <SelectItem value="date">Date</SelectItem>
               <SelectItem value="button">Button</SelectItem>
               <SelectItem value="button-group">Button Group</SelectItem>
-                <SelectItem value="multi-select">Multi Select</SelectItem>
-                <SelectItem value="multi-select">Multi Select</SelectItem>
+              <SelectItem value="multi-select">Multi Select</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -127,35 +145,35 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
             id="field-label"
             value={selectedField.label}
             className='w-full px-2 py-2 border rounded'
-            onChange={(e) => onFieldUpdate(selectedField.id, { label: e.target.value })}
+            onChange={(e) => {
+              const label = e.target.value;
+              const updates: Partial<FormField> = { label };
+
+              if (fieldTypeSupportsPlaceholder(selectedField.type)) {
+                updates.placeholder = buildFieldPlaceholder(label);
+              }
+
+              onFieldUpdate(selectedField.id, updates);
+            }}
             placeholder="Enter field label..."
           />
         </div>
 
         {/* Placeholder (for applicable fields) */}
-        {(selectedField.type === 'text' || 
-          selectedField.type === 'email' || 
-          selectedField.type === 'number' || 
-          selectedField.type === 'textarea' ||
-          selectedField.type === 'MultiImageUpload' ||
-          selectedField.type === 'date-range' ||
-          selectedField.type === 'button'  ||
-          selectedField.type === 'date' ||
-          selectedField.type === 'Address' ||
-          selectedField.type === 'button-group') && (
+        {fieldTypeSupportsPlaceholder(selectedField.type) && (
           <div>
             <Label htmlFor="field-placeholder">Placeholder</Label>
             <Input
               id="field-placeholder"
-              value={selectedField.placeholder || ''}
+              value={selectedField.placeholder || buildFieldPlaceholder(selectedField.label)}
               onChange={(e) => onFieldUpdate(selectedField.id, { placeholder: e.target.value })}
-              placeholder="Enter placeholder text..."
+              placeholder={buildFieldPlaceholder(selectedField.label) || 'Enter placeholder text...'}
             />
           </div>
         )}
 
-        {/* Options (for select and radio) */}
-        {(selectedField.type === 'select' || selectedField.type === 'radio' || selectedField.type === 'checkbox') && (
+        {/* Options (for select, radio, checkbox, and multi-select) */}
+        {isOptionsFieldType(selectedField.type) && (
           <div>
             <Label className=" font-semibold text-gray-800 text-sm' mb-3 block">Options</Label>
             <div className="space-y-3">
@@ -263,7 +281,7 @@ export const PropertiesPanel = ({ selectedField, onFieldUpdate, setShowPropertie
             </div>
             <div className="flex justify-between  font-semibold text-gray-800 text-sm">
               <span className=' font-semibold text-gray-800 text-sm'>Type:</span>
-              <span className="capitalize">{selectedField.type}</span>
+              <span>{getFieldTypeDisplayLabel(selectedField.type)}</span>
             </div>
             {selectedField.options && (
               <div className="flex justify-between">

@@ -24,6 +24,17 @@ import MultiImageUpload from '../../../components/atoms/MultiImageUpload';
 import { getUserDataFromStorage, isSuperAdmin } from '../../../utils/permissions';
 import { useEnterpriseActions } from '../../enterprise/hooks/useEnterpriseActions';
 import { useEnterprise } from '../../enterprise/hooks/useEnterprise';
+import { Input } from '../../../components/atoms/Input';
+import { FieldErrorMessage } from '../../../components/common/FieldErrorMessage';
+import { FieldLabel } from '../../../components/common/FieldLabel';
+import {
+  fieldErrorBorder,
+  getDynamicFieldButtonLabel,
+  getFieldDisplayLabel,
+  getFieldOptions,
+  isFieldRequired,
+  validateDynamicField,
+} from '../../../utils/validateDynamicField';
 
 interface DynamicFieldRendererProps {
   field: DynamicFormField;
@@ -32,80 +43,42 @@ interface DynamicFieldRendererProps {
   error?: string;
 }
 
-// Helper function to validate dynamic field values
-const validateDynamicField = (field: DynamicFormField, value: any): string | undefined => {
-  if (!field.validation) return undefined;
-  
-  const validation = field.validation;
-  
-  // Required validation
-  if (validation.required?.value) {
-    if (field.type === 'checkbox') {
-      if (!Array.isArray(value) || value.length === 0) {
-        return validation.required.message;
-      }
-    } else if (field.type === 'location') {
-      if (!value || !value.address || value.address.trim() === '') {
-        return validation.required.message;
-      }
-    } else {
-      if (!value || (typeof value === 'string' && value.trim() === '')) {
-        return validation.required.message;
-      }
-    }
-  }
-  
-  // String length validations
-  if (typeof value === 'string' && value.length > 0) {
-    if (validation.min?.value && value.length < validation.min.value) {
-      return validation.min.message;
-    }
-    if (validation.max?.value && value.length > validation.max.value) {
-      return validation.max.message;
-    }
-    if (validation.regex?.value) {
-      const regex = new RegExp(validation.regex.value);
-      if (!regex.test(value)) {
-        return validation.regex.message;
-      }
-    }
-  }
-  
-  return undefined;
-};
+// Helper function to validate dynamic field values — see utils/validateDynamicField.ts
 
-const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({ 
+const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   field, 
   value, 
   onChange, 
   error 
 }) => {
-  // Use field.name if available, otherwise fall back to field.label
-  const displayLabel = field.name || field.label;
+  const displayLabel = getFieldDisplayLabel(field);
+  const hasError = fieldErrorBorder(error);
   
   switch (field.type) {
     case 'text':
     case 'email':
     case 'number':
       return (
-        <InputGroup
-          label={displayLabel}
-          name={field.id}
-          id={field.id}
-          type={field.type}
-          placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          error={error}
-        />
+        <div className="col-span-1">
+          <InputGroup
+            label={displayLabel}
+            name={field.id}
+            id={field.id}
+            type={field.type}
+            placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            error={error}
+            required={isFieldRequired(field)}
+            connected={false}
+          />
+        </div>
       );
     
     case 'textarea':
       return (
         <div className="col-span-1">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {displayLabel} {field.required && <span className="text-red-500">*</span>}
-          </label>
+          <FieldLabel field={field} htmlFor={field.id} className="block text-sm font-semibold text-gray-700 mb-2" />
           <Textarea
             id={field.id}
             rows={4}
@@ -114,35 +87,66 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
           />
-          {error && <span className="text-red-500 text-sm">{error}</span>}
+          <FieldErrorMessage error={error} />
         </div>
       );
     
     case 'select':
+    case 'dropdown': {
+      const selectOptions = getFieldOptions(field);
+      const selectedOption = value
+        ? selectOptions.find((opt) => opt.value === value || opt.label === value)
+        : null;
+
       return (
         <div className="col-span-1">
           <SelectGroup
             label={displayLabel}
-            options={field.options || []}
-            value={value ? [{ label: value, value: value }] : []}
+            options={selectOptions}
+            value={selectedOption ? [selectedOption] : value ? [{ label: String(value), value: String(value) }] : []}
             onChange={(selected) => {
               const selectedValue = Array.isArray(selected) ? selected[0]?.value : '';
               onChange(selectedValue);
             }}
             isMulti={false}
             error={error}
+            required={isFieldRequired(field)}
           />
         </div>
       );
-    
-    case 'checkbox':
+    }
+
+    case 'multi-select': {
+      const multiOptions = getFieldOptions(field);
+      const multiValue = Array.isArray(value)
+        ? value.map((v: string) => {
+            const match = multiOptions.find((opt) => opt.value === v || opt.label === v);
+            return match || { label: String(v), value: String(v) };
+          })
+        : [];
+
       return (
-          <>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {displayLabel} {field.required && <span className="text-red-500">*</span>}
-          </label>
+        <div className="col-span-1">
+          <SelectGroup
+            label={displayLabel}
+            options={multiOptions}
+            value={multiValue}
+            onChange={(selected) => onChange(selected.map((item) => item.value))}
+            isMulti={true}
+            error={error}
+            required={isFieldRequired(field)}
+          />
+        </div>
+      );
+    }
+    
+    case 'checkbox': {
+      const checkboxOptions = getFieldOptions(field);
+      return (
+        <div className="col-span-1">
+          <FieldLabel field={field} className="block text-sm font-semibold text-gray-700 mb-2" />
           <div className="space-y-2">
-            {field.options && field.options.map((option) => (
+            {checkboxOptions.map((option) => (
               <div key={option.value} className="flex items-center">
                 <input
                   type="checkbox"
@@ -164,19 +168,19 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               </div>
             ))}
           </div>
-          {error && <span className="text-red-500 text-sm">{error}</span>}
-          </>
+          <FieldErrorMessage error={error} />
+        </div>
       );
+    }
     
-    case 'radio':
-      const normalizedOptions = (field.options || []).map((opt: any) =>
+    case 'radio': {
+      const radioOptions = field.options || field.metadata?.options || [];
+      const normalizedOptions = radioOptions.map((opt: any) =>
         typeof opt === "string" ? { label: opt, value: opt } : opt
       );
       return (
         <div className="col-span-1">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {displayLabel} {field.required && <span className="text-red-500">*</span>}
-          </label>
+          <FieldLabel field={field} className="block text-sm font-semibold text-gray-700 mb-2" />
           <RadioGroup value={value} onValueChange={onChange}>
             {normalizedOptions.map((option, index) => (
               <div key={index} className="flex items-center space-x-2">
@@ -190,55 +194,120 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               </div>
             ))}
           </RadioGroup>
-          {error && <span className="text-red-500 text-sm">{error}</span>}
+          <FieldErrorMessage error={error} />
         </div>
       );
+    }
     
     case 'date':
       return (
-        <InputGroup
-          label={displayLabel}
-          name={field.id}
-          id={field.id}
-          type="date"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          error={error}
-        />
+        <div className="col-span-1">
+          <FieldLabel field={field} htmlFor={field.id} className="block text-sm font-semibold text-gray-700 mb-2" />
+          <Input
+            id={field.id}
+            type="date"
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            error={hasError}
+          />
+          <FieldErrorMessage error={error} />
+        </div>
       );
+
+    case 'button':
+      return (
+        <div className="col-span-1">
+          <button
+            id={field.id}
+            type="button"
+            onClick={() => onChange(field.id)}
+            className="px-4 py-2 bg-sky-600 text-white font-medium text-sm rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 transition-colors duration-200"
+          >
+            {getDynamicFieldButtonLabel(field)}
+          </button>
+          <FieldErrorMessage error={error} />
+        </div>
+      );
+
+    case 'button-group': {
+      const groupValues = Array.isArray(value) ? value : [''];
+      return (
+        <div className="col-span-1">
+          <FieldLabel field={field} className="block text-sm font-semibold text-gray-700 mb-2" />
+          <div className="space-y-2">
+            {groupValues.map((val: string, index: number) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  id={`${field.id}_${index}`}
+                  type="text"
+                  placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
+                  value={val || ''}
+                  onChange={(e) => {
+                    const newValues = [...groupValues];
+                    newValues[index] = e.target.value;
+                    onChange(newValues);
+                  }}
+                  error={hasError}
+                />
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValues = groupValues.filter((_: string, i: number) => i !== index);
+                      onChange(newValues.length > 0 ? newValues : ['']);
+                    }}
+                    className="shrink-0 px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 border border-gray-300 rounded-md bg-white"
+                    title="Remove field"
+                    aria-label="Remove field"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="muted"
+              onClick={() => onChange([...groupValues, ''])}
+              className="flex items-center gap-1 px-3 py-1 text-sky-600 hover:text-sky-800 hover:bg-sky-50 rounded text-sm font-medium"
+            >
+              <span className="text-lg">+</span>
+              Add More
+            </Button>
+          </div>
+          <FieldErrorMessage error={error} />
+        </div>
+      );
+    }
     
     case 'date-range':
       const dateRange = value || { startDate: '', endDate: '' };
       return (
         <div className="col-span-1">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {displayLabel} {field.required && <span className="text-red-500">*</span>}
-          </label>
+          <FieldLabel field={field} className="block text-sm font-semibold text-gray-700 mb-2" />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">Start Date</label>
-              <InputGroup
-                name={`${field.id}_startDate`}
+              <Input
                 id={`${field.id}_startDate`}
                 type="date"
                 value={dateRange.startDate || ''}
                 onChange={(e) => onChange({ ...dateRange, startDate: e.target.value })}
-                error={error}
+                error={hasError}
               />
             </div>
             <div>
               <label className="block text-xs text-gray-600 mb-1">End Date</label>
-              <InputGroup
-                name={`${field.id}_endDate`}
+              <Input
                 id={`${field.id}_endDate`}
                 type="date"
                 value={dateRange.endDate || ''}
                 onChange={(e) => onChange({ ...dateRange, endDate: e.target.value })}
-                error={error}
+                error={hasError}
               />
             </div>
           </div>
-          {error && <span className="text-red-500 text-sm">{error}</span>}
+          <FieldErrorMessage error={error} />
         </div>
       );
     
@@ -249,7 +318,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             value={value || {}}
             onChange={onChange}
             label={displayLabel}
-            required={field.required}
+            required={isFieldRequired(field)}
             error={error}
             showCoordinates={field.metadata?.showCoordinates !== false}
           />
@@ -259,9 +328,7 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
     case 'MultiImageUpload':
       return (
         <div className="col-span-1">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            {displayLabel} {field.required && <span className="text-red-500">*</span>}
-          </label>
+          <FieldLabel field={field} className="block text-sm font-semibold text-gray-700 mb-2" />
           <MultiImageUpload
             isSingleMode={false}
             onImagesChange={onChange}
@@ -270,21 +337,25 @@ const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
             }
           />
-          {error && <span className="text-red-500 text-sm">{error}</span>}
+          <FieldErrorMessage error={error} />
         </div>
       );
     
     default:
       return (
-        <InputGroup
-          label={displayLabel}
-          name={field.id}
-          id={field.id}
-          placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value)}
-          error={error}
-        />
+        <div className="col-span-1">
+          <InputGroup
+            label={displayLabel}
+            name={field.id}
+            id={field.id}
+            placeholder={field.placeholder || `Enter ${displayLabel.toLowerCase()}`}
+            value={Array.isArray(value) ? value.join(', ') : value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            error={error}
+            required={isFieldRequired(field)}
+            connected={false}
+          />
+        </div>
       );
   }
 };

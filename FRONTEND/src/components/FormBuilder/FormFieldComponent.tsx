@@ -8,6 +8,8 @@ import { Button } from '../atoms/Button';
 import { CheckboxWithLabel } from '../molecules/CheckboxWithLabel';
 import MultiImageUpload from '../atoms/MultiImageUpload';
 import AddressComponent from '../common/AddressComponent';
+import { SelectGroup } from '../molecules/SelectGroup';
+import { buildFieldPlaceholder } from '../../utils/formFieldPlaceholder';
 
 type FieldType = 'ImageUpload' | 'MultiImageUpload' | 'Address' | 'date-range' | 'text' | 'email' | 'number' | 'date' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'dropdown' | 'toggle' | 'button' | 'button-group' | 'multi-select';
 interface FormFieldComponentProps {
@@ -163,8 +165,7 @@ export const FormFieldComponent = ({
                 </div>
             );
 
-        case 'button-group':
-        // case 'multi-select':
+        case 'button-group': {
             const groupValues = Array.isArray(value) ? value : [''];
             return (
                 <div className="space-y-2">
@@ -173,7 +174,7 @@ export const FormFieldComponent = ({
                             <Input
                                 disabled
                                 type="text"
-                                placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                                placeholder={field.placeholder || buildFieldPlaceholder(field.label)}
                                 value={val || ''}
                                 onChange={(e) => {
                                     const newValues = [...groupValues];
@@ -211,6 +212,38 @@ export const FormFieldComponent = ({
                     </Button>
                 </div>
             );
+        }
+
+        case 'multi-select': {
+            const rawOptions = field?.options?.length
+                ? field.options
+                : field?.metadata?.options || [];
+            const multiSelectOptions = rawOptions
+                .filter((option: string) => option && option.trim() !== '')
+                .map((option: string) => ({ label: option, value: option }));
+            const multiSelectValue = Array.isArray(value)
+                ? value.map((v: string) => ({ label: String(v), value: String(v) }))
+                : [];
+
+            if (multiSelectOptions.length === 0) {
+                return (
+                    <div className="text-sm text-gray-500 italic border border-dashed border-gray-300 rounded-md px-3 py-2">
+                        Add options in Field Properties to configure this multi select
+                    </div>
+                );
+            }
+
+            return (
+                <SelectGroup
+                    label=""
+                    options={multiSelectOptions}
+                    value={multiSelectValue}
+                    onChange={(selected) => onChange?.(selected.map((item) => item.value))}
+                    isMulti={true}
+                    disabled={!isSelected}
+                />
+            );
+        }
             
             
             case 'MultiImageUpload':
