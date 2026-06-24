@@ -11,6 +11,8 @@ import { Textarea } from '../atoms/Textarea';
 import { Label } from '../atoms/Label';
 import { DropDown } from '../atoms/DropDown';
 import Input from '../atoms/Input';
+import { buildFieldPlaceholder } from '../../utils/formFieldPlaceholder';
+import { normalizeBuilderFieldType } from '../../utils/formFieldType';
 
 interface FormCanvasProps {
   fields: FormField[];
@@ -104,13 +106,17 @@ export const FormCanvas = forwardRef<FormCanvasHandle, FormCanvasProps>(
         }
       } else {
         // Handle new field from sidebar
+        const normalizedType = normalizeBuilderFieldType(item.type);
         const newField: FormField = {
           id: `field_${Date.now()}`,
-          type: item.type,
+          type: normalizedType,
           label: item.name,
-          placeholder: `Enter ${item?.metadata?.placeholder?.toLowerCase()}...`,
+          placeholder: buildFieldPlaceholder(item.name),
           required: false,
-          options: item.type === 'select' || item.type === 'radio' ? ['Option 1', 'Option 2'] : undefined,
+          options:
+            normalizedType === 'select' || normalizedType === 'radio'
+              ? ['Option 1', 'Option 2']
+              : undefined,
           metadata: item?.metadata,
           validation: item?.validation,
         };
@@ -128,13 +134,20 @@ export const FormCanvas = forwardRef<FormCanvasHandle, FormCanvasProps>(
     let newRecord: any = []
     for (let index = 0; index < data?.fields?.length; index++) {
       let item = data?.fields[index]
+      const normalizedType = normalizeBuilderFieldType(item.type);
       let newField: FormField = {
         id: item?.id,
-        type: item.type,
+        type: normalizedType,
         label: item.name,
-        placeholder: `Enter ${item?.metadata?.placeholder?.toLowerCase()}...`,
+        placeholder:
+          item.placeholder ||
+          item?.metadata?.placeholder ||
+          buildFieldPlaceholder(item.name),
         required: false,
-        options: item.type === 'select' || item.type === 'radio' ? ['Option 1', 'Option 2'] : undefined,
+        options:
+          normalizedType === 'select' || normalizedType === 'radio'
+            ? item.options || item?.metadata?.options || ['Option 1', 'Option 2']
+            : undefined,
         metadata: item?.metadata,
         validation: item?.validation,
         order: item?.order,

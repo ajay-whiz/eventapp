@@ -9,6 +9,7 @@ import { CreateRoleDto } from '@modules/role/dto/request/create-role.dto';
 import { UserService } from '@modules/user/user.service';
 import { ResetPasswordDto } from '@modules/auth/dto/request/reset-password.req.dto';
 import { UpdateUserDto } from '@modules/user/dto/update-user.dto';
+import { CreateAdminUserDto } from '@modules/user/dto/create-admin-user.dto';
 import { UserFeaturePermissionService } from '@modules/user-feature-permission/user-feature-permission.service';
 import { CreateUserFeaturePermissionDto } from '@modules/user-feature-permission/dto/create-user-feature-permission.dto';
 import { UpdateRoleDto } from '@modules/role/dto/request/update-role.dto';
@@ -190,8 +191,8 @@ export class AdminService {
     await this.userService.remove(userId);
   }
 
-  async createUser(dto: UpdateUserDto) {
-    const user = await this.userService.create(dto);
+  async createUser(dto: CreateAdminUserDto) {
+    const user = await this.userService.createAdminUser(dto);
     return { message: 'User created successfully', user };    
   }
    async createFeaturePermission(dto: CreateUserFeaturePermissionDto) {

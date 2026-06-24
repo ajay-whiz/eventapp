@@ -64,36 +64,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const toggleSidebar = () => setIsExpanded((prev: boolean) => !prev);
   return (
-    // <motion.div
-    //   initial="hidden"
-    //   animate="visible"
-    //   exit="exit"
-    //   variants={slideVariants}
-    //   transition={{ duration: 0.4, ease: "easeOut" }}
-    //   className="min-h-screen bg-gray-100"
-    // >
-    //    </motion.div>
-    <div className="min-h-screen grid">
-          <div className="flex h-screen bg-neutral-100">
-            <Sidebar isExpanded={isExpanded} toggleSidebar={toggleSidebar} />
-            <main
-              className={`bg-dashboardMain text-gray-800 w-full transition-all duration-300 grid grid-rows-[auto_1fr] overflow-hidden 
-               ${isExpanded ? "ml-65" : "ml-16" }
-             `}
-            //  <main
-            //   className={`bg-dashboardMain text-gray-800 w-full transition-all duration-300 grid grid-rows-[auto_1fr] overflow-hidden 
-            //     ${isExpanded ? "ml-85" : "ml-20" }
-            //  `}
-            >
-              <Header />
-              <div className="overflow-y-auto p-6 text-gray-800 mt-[71.2px] w-full">
-                {children}
-              </div>
-            </main>
-          </div>
+    <div className="flex h-screen overflow-hidden bg-dashboardMain">
+      <Sidebar isExpanded={isExpanded} toggleSidebar={toggleSidebar} />
+      <main
+        className={`flex flex-1 min-w-0 min-h-0 flex-col bg-dashboardMain text-gray-800 transition-all duration-300 overflow-hidden ${
+          isExpanded ? 'ml-65' : 'ml-16'
+        }`}
+      >
+        <Header />
+        <div className="flex-1 min-h-0 overflow-y-auto bg-dashboardMain p-6 pt-6 mt-[71.2px] w-full">
+          {children}
         </div>
-   
-    
+      </main>
+    </div>
   );
 };
 

@@ -14,6 +14,7 @@ export type SelectGroupProps = {
   className?: string;
   heightClass?: string;
   disabled? : boolean;
+  required?: boolean;
 };
 
 export const SelectGroup: React.FC<SelectGroupProps> = ({
@@ -25,6 +26,8 @@ export const SelectGroup: React.FC<SelectGroupProps> = ({
   error,
   heightClass = "min-h-[36px]",
   disabled = false,
+  required = false,
+  className,
 }) => {
   const controlRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState<number | undefined>(undefined);
@@ -49,8 +52,11 @@ export const SelectGroup: React.FC<SelectGroupProps> = ({
   };
 
   return (
-    <div className="w-auto" ref={controlRef}>
-      <label className="block mb-2 font-semibold text-gray-800 text-sm">{label}</label>
+    <div className={`w-auto ${className ?? ''}`} ref={controlRef}>
+      <label className="block mb-2 font-semibold text-gray-800 text-sm">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </label>
       <Select
         options={options}
         value={value}

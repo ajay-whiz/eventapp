@@ -17,6 +17,7 @@ import { API_ROUTES, ROUTING } from '../../../constants/routes';
 import type { DynamicFormField } from '../../../types/Vendor';
 import DynamicFieldForm from '../../../components/common/DynamicFieldForm';
 import Breadcrumbs from '../../../components/common/BreadCrumb';
+import { validateDynamicField } from '../../../utils/validateDynamicField';
 import { Textarea } from '../../../components/atoms/Textarea';
 import { getUserDataFromStorage, isSuperAdmin } from '../../../utils/permissions';
 import { useEnterpriseActions } from '../../enterprise/hooks/useEnterpriseActions';
@@ -24,44 +25,6 @@ import { useEnterprise } from '../../enterprise/hooks/useEnterprise';
 import { createVenueSchema } from '../schemas/venue.schema';
 import FormInputManager from '../../serviceCategory/components/FormInputManager';
 type VenueFormValues = VenueSchemaType;
-
-// Helper function to validate dynamic field values
-const validateDynamicField = (field: DynamicFormField, value: any): string | undefined => {
-  if (!field.validation) return undefined;
-
-  const validation = field.validation;
-
-  // Required validation
-  if (validation.required?.value) {
-    if (field.type === 'checkbox') {
-      if (!Array.isArray(value) || value.length === 0) {
-        return validation.required.message;
-      }
-    } else {
-      if (!value || (typeof value === 'string' && value.trim() === '')) {
-        return validation.required.message;
-      }
-    }
-  }
-
-  // String length validations
-  if (typeof value === 'string' && value.length > 0) {
-    if (validation.min?.value && value.length < validation.min.value) {
-      return validation.min.message;
-    }
-    if (validation.max?.value && value.length > validation.max.value) {
-      return validation.max.message;
-    }
-    if (validation.regex?.value) {
-      const regex = new RegExp(validation.regex.value);
-      if (!regex.test(value)) {
-        return validation.regex.message;
-      }
-    }
-  }
-
-  return undefined;
-};
 
 const getVenueImageBaseUrl = (): string => {
   if (import.meta.env.VITE_IMAGE_BASE_URL) {
@@ -754,7 +717,6 @@ const AddVenueForm: React.FC = () => {
                         <>
                           <SelectGroup
                             label="Service Category"
-                            className="min-h-[363px] text-gray-800"
                             options={(serviceCategories || []).map((cat: any) => ({
                               label: cat?.name,
                               value: cat?.id,
