@@ -2,6 +2,7 @@ import React from 'react';
 import ProductTourPanel from '../Login/ProductTourPanel';
 import MobileAppDownload from '../Login/MobileAppDownload';
 import TrustSignals from '../Login/TrustSignals';
+import loginBg from '../../../../assets/images/loginbg.png';
 
 type AuthLayoutProps = {
   children: React.ReactNode;
@@ -13,17 +14,22 @@ const HeroPanel: React.FC<{ variant: 'hero' | 'compact' }> = ({ variant }) => {
   if (isHero) {
     return (
       <div
-        className="relative flex flex-col justify-between min-h-full bg-slate-900"
-        style={{ backgroundImage: "url('/assets/images/event-management1.jpg')" }}
+        className="relative flex flex-col justify-between min-h-full bg-[#e8f4fc]"
+        style={{
+          backgroundImage: `url('/assets/images/event-management1.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-900/75 to-slate-900/80" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-900/75 to-slate-900/80" />
+
         <div className="relative z-10 flex flex-col justify-between h-full p-9 md:p-10 min-h-[32rem]">
           <div>
-            <ProductTourPanel variant="hero" />
+            <ProductTourPanel variant="hero"  />
             <div className="h-px bg-white/10 my-6" />
-            <MobileAppDownload variant="hero" />
+            <MobileAppDownload variant="hero"  />
           </div>
-          <TrustSignals variant="hero" />
+          <TrustSignals variant="hero"  />
         </div>
       </div>
     );

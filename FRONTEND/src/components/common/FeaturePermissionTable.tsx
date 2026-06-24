@@ -130,7 +130,7 @@ export const FeaturePermissionTable: React.FC<FeaturePermissionTableProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {features.map((feature) => (
+                {(Array.isArray(features) ? features : []).map((feature) => (
                   <tr key={feature.id} className="border-b border-gray-100">
                     <td className="px-4 py-3 text-sm">{feature.name}</td>
                     {(['write', 'read', 'admin'] as PermissionType[]).map((perm) => (

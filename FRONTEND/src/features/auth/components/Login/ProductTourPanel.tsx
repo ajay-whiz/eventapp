@@ -7,10 +7,15 @@ import {
 
 type ProductTourPanelProps = {
   variant?: 'hero' | 'compact';
+  surface?: 'dark' | 'light';
 };
 
-const ProductTourPanel: React.FC<ProductTourPanelProps> = ({ variant = 'hero' }) => {
+const ProductTourPanel: React.FC<ProductTourPanelProps> = ({
+  variant = 'hero',
+  surface = 'dark',
+}) => {
   const isHero = variant === 'hero';
+  const isLight = surface === 'light';
 
   return (
     <div className={isHero ? 'space-y-8' : 'space-y-5'}>
@@ -19,16 +24,16 @@ const ProductTourPanel: React.FC<ProductTourPanelProps> = ({ variant = 'hero' })
           How it works
         </p>
         <h2
-          className={`font-medium text-slate-100 leading-snug ${
-            isHero ? 'text-[22px]' : 'text-lg'
-          }`}
+          className={`font-medium leading-snug ${
+            isLight ? 'text-slate-800' : 'text-slate-100'
+          } ${isHero ? 'text-[22px]' : 'text-lg'}`}
         >
           {PRODUCT_TOUR_HEADLINE}
         </h2>
         <p
-          className={`text-slate-400 mt-2.5 leading-relaxed ${
-            isHero ? 'text-[13px]' : 'text-xs'
-          }`}
+          className={`mt-2.5 leading-relaxed ${
+            isLight ? 'text-slate-600' : 'text-slate-400'
+          } ${isHero ? 'text-[13px]' : 'text-xs'}`}
         >
           {PRODUCT_TOUR_LEAD}
         </p>
@@ -45,13 +50,17 @@ const ProductTourPanel: React.FC<ProductTourPanelProps> = ({ variant = 'hero' })
               {item.step}
             </span>
             <div>
-              <p className={`font-medium text-slate-200 ${isHero ? 'text-[13px]' : 'text-xs'}`}>
+              <p
+                className={`font-medium ${isLight ? 'text-slate-800' : 'text-slate-200'} ${
+                  isHero ? 'text-[13px]' : 'text-xs'
+                }`}
+              >
                 {item.title}
               </p>
               <p
-                className={`text-slate-400 mt-0.5 leading-relaxed ${
-                  isHero ? 'text-xs' : 'text-[11px]'
-                }`}
+                className={`mt-0.5 leading-relaxed ${
+                  isLight ? 'text-slate-600' : 'text-slate-400'
+                } ${isHero ? 'text-xs' : 'text-[11px]'}`}
               >
                 {item.description}
               </p>

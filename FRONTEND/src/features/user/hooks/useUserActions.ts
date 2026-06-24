@@ -4,6 +4,44 @@ import api from '../../../axios';
 import { fetchUsersStart, fetchUsersSuccess, fetchUsersFailure, addUserStart, addUserSuccess, addUserFailure, removeUserStart, removeUserSuccess, removeUserFailure, updateUserStart , updateUserSuccess, updateUserFailure, fetchUserByIdStart, fetchUserByIdSuccess, fetchUserByIdFailure, fetchRolesStart, fetchRolesSuccess, fetchRolesFailure, fetchFeaturesStart, fetchFeaturesSuccess, fetchFeaturesFailure } from '../slices/userSlice';
 import { API_ROUTES } from '../../../constants/routes';
 
+const parseUserResponse = (response: any, fallbackId?: string) => {
+  const payload = response?.data;
+  let user = payload?.data ?? payload;
+
+  if (Array.isArray(user)) {
+    user = user[0];
+  }
+
+  if (!user || typeof user !== 'object') {
+    throw new Error('Invalid user data received');
+  }
+
+  return {
+    ...user,
+    id: String(user.id ?? user._id ?? fallbackId ?? ''),
+    address: user.address ?? '',
+    city: user.city ?? '',
+    state: user.state ?? '',
+    pincode: user.pincode ?? '',
+  };
+};
+
+const parseFeaturesList = (featuresData: unknown) => {
+  if (Array.isArray(featuresData)) {
+    return featuresData;
+  }
+
+  if (
+    featuresData &&
+    typeof featuresData === 'object' &&
+    Array.isArray((featuresData as { features?: unknown[] }).features)
+  ) {
+    return (featuresData as { features: unknown[] }).features;
+  }
+
+  return [];
+};
+
 export function useUserActions() {
   const dispatch = useDispatch();
 
@@ -54,10 +92,23 @@ export function useUserActions() {
     }
   }, [dispatch]);
 
-  const addUser = useCallback(async (firstName: string, lastName: string, email: string, organizationName: string, countryCode: string, phoneNumber: string, isActive: boolean, isEmailVerified: boolean, features: any[]) => {
+  const addUser = useCallback(async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    organizationName: string,
+    countryCode: string,
+    phoneNumber: string,
+    isActive: boolean,
+    isEmailVerified: boolean,
+    features: any[],
+    address?: string,
+    city?: string,
+    state?: string,
+    pincode?: string,
+  ) => {
     dispatch(addUserStart());
     try {
-      // Make a POST request to your authentication endpoint using axios
       const response = await api.post(`${API_ROUTES.GET_ALL_USERS}`, {
         firstName,
         lastName,
@@ -65,9 +116,13 @@ export function useUserActions() {
         organizationName,
         countryCode,
         phoneNumber,
+        address,
+        city,
+        state,
+        pincode,
         isActive: String(isActive),        
         isEmailVerified: String(isEmailVerified), 
-        features, // ✅ Changed from roleIds to features
+        features,
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +159,11 @@ export function useUserActions() {
       phoneNumber: string,
       isActive: boolean,
       isEmailVerified: boolean,
-      features: any[]
+      features: any[],
+      address?: string,
+      city?: string,
+      state?: string,
+      pincode?: string,
     ) => {
       dispatch(updateUserStart());
       try {
@@ -115,9 +174,13 @@ export function useUserActions() {
           organizationName,
           countryCode,
           phoneNumber,
+          address,
+          city,
+          state,
+          pincode,
           isActive: String(isActive),         
           isEmailVerified: String(isEmailVerified), 
-          features, // ✅ Changed from roleIds to features
+          features,
         });
 
         dispatch(updateUserSuccess(response.data));
@@ -142,11 +205,14 @@ export function useUserActions() {
         },
       });
   
-     dispatch(fetchUserByIdSuccess(response.data.data));
+      const userData = parseUserResponse(response, _id);
+      dispatch(fetchUserByIdSuccess(userData));
+      return userData;
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to fetch user';
       dispatch(fetchUserByIdFailure(errorMessage));
+      throw new Error(errorMessage);
     }
   }, [dispatch]);
 
@@ -178,7 +244,7 @@ export function useUserActions() {
         },
       });
       const featuresData = response.data?.data?.data || response.data?.data || response.data || [];
-      dispatch(fetchFeaturesSuccess(featuresData.features));
+      dispatch(fetchFeaturesSuccess(parseFeaturesList(featuresData)));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || 

@@ -20,6 +20,37 @@ import { detectCountryFromPhone } from '../../../utils/phoneUtils';
 import { FeaturePermissionTable } from '../../../components/common/FeaturePermissionTable';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
+const getSelectedUserId = (user: { id?: unknown; _id?: unknown }) =>
+  String(user?.id ?? user?._id ?? '');
+
+const mapUserFeaturesToForm = (selectedUser: any) => {
+  if (Array.isArray(selectedUser?.features) && selectedUser.features.length > 0) {
+    return selectedUser.features.map((f: any) => ({
+      featureId: String(f.featureId ?? f.id ?? ''),
+      permissions: {
+        read: f.permissions?.read ?? f.permission?.read ?? false,
+        write: f.permissions?.write ?? f.permission?.write ?? false,
+        admin: f.permissions?.admin ?? f.permission?.admin ?? false,
+      },
+    }));
+  }
+
+  if (!Array.isArray(selectedUser?.roles)) {
+    return [];
+  }
+
+  return selectedUser.roles.flatMap((role: any) =>
+    (role.features || []).map((f: any) => ({
+      featureId: String(f.featureId ?? f.id ?? f._id ?? ''),
+      permissions: {
+        read: f.permissions?.read ?? f.permission?.read ?? false,
+        write: f.permissions?.write ?? f.permission?.write ?? false,
+        admin: f.permissions?.admin ?? f.permission?.admin ?? false,
+      },
+    })),
+  );
+};
+
 type UserFormValues = UserSchemaType;
 
 const UserForm: React.FC = () => {
@@ -86,7 +117,14 @@ const UserForm: React.FC = () => {
 
    // user form when selectedUser is fetched
    useEffect(() => {
-    if (id && selectedUser) {
+    if (!id || !selectedUser) {
+      return;
+    }
+
+    if (getSelectedUserId(selectedUser) !== String(id)) {
+      return;
+    }
+
       let defaultCountryCode = selectedUser.countryCode || '';
       
       if (typeof defaultCountryCode === 'string' && defaultCountryCode.startsWith('+')) {
@@ -120,19 +158,11 @@ const UserForm: React.FC = () => {
         pincode: selectedUser.pincode || '',
         isActive: selectedUser.isActive !== undefined ? selectedUser.isActive : false,
         isEmailVerified: selectedUser.isEmailVerified !== undefined ? selectedUser.isEmailVerified : false,
-        features: selectedUser.features?.map((f: any) => ({
-          featureId: f.featureId,
-          permissions: {
-            read: f.permissions?.read ?? false,
-            write: f.permissions?.write ?? false,
-            admin: f.permissions?.admin ?? false,
-          },
-        })) || [],
+        features: mapUserFeaturesToForm(selectedUser),
       };
 
       reset(resetData);
-    }
-  }, [selectedUser, reset]);
+  }, [id, selectedUser, reset]);
 
   // Initialize features for create mode - only after features are loaded
   useEffect(() => {
@@ -163,11 +193,40 @@ const UserForm: React.FC = () => {
   ) => {
     try {
       if(id) {
-        await updateUser(id, data.firstName, data.lastName, data.email, data.organizationName, data.countryCode, data.phoneNumber, data.isActive || false, data.isEmailVerified || false, data.features);
+        await updateUser(
+          id,
+          data.firstName,
+          data.lastName,
+          data.email,
+          data.organizationName,
+          data.countryCode,
+          data.phoneNumber,
+          data.isActive || false,
+          data.isEmailVerified || false,
+          data.features,
+          data.address,
+          data.city,
+          data.state,
+          data.pincode,
+        );
         toast.success('User updated successfully');
         navigate('/user-management');
       } else {
-        await addUser(data.firstName, data.lastName, data.email, data.organizationName, data.countryCode, data.phoneNumber, data.isActive || false, data.isEmailVerified || false, data.features);
+        await addUser(
+          data.firstName,
+          data.lastName,
+          data.email,
+          data.organizationName,
+          data.countryCode,
+          data.phoneNumber,
+          data.isActive || false,
+          data.isEmailVerified || false,
+          data.features,
+          data.address,
+          data.city,
+          data.state,
+          data.pincode,
+        );
         toast.success('User created successfully');
         navigate('/user-management'); 
       }
@@ -181,12 +240,6 @@ const UserForm: React.FC = () => {
     }
   };
   
-  useEffect(() => {
-    if (id) {
-      fetchUserById(id); 
-    }
-  }, [id, fetchUserById]);
-
   return (
     <Layout>
       <h2 className="text-xl font-semibold mb-2">{id ? 'Edit User' : 'Create User'}</h2>

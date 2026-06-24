@@ -958,13 +958,154 @@ export class UserService {
     };
   }
 
-  async findEnterpriseUserByIdProjected(userId: string) {
-    const matchConditions: any = {
-      _id: new ObjectId(userId),
-      isDeleted: false,
+  private buildActiveUserMatch(userId: string) {
+    const objectId = new ObjectId(userId);
+
+    return {
+      $and: [
+        {
+          $or: [{ _id: objectId }, { id: objectId }],
+        },
+        {
+          $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+        },
+      ],
     };
+  }
+
+  private normalizeAdminUserResponse(doc: Record<string, any>) {
+    return {
+      id: String(doc.id ?? doc._id ?? ''),
+      firstName: doc.firstName ?? '',
+      lastName: doc.lastName ?? '',
+      email: doc.email ?? '',
+      countryCode: doc.countryCode ?? '',
+      organizationName: doc.organizationName ?? '',
+      phoneNumber: doc.phoneNumber ?? '',
+      address: doc.address ?? '',
+      city: doc.city ?? '',
+      state: doc.state ?? '',
+      pincode: doc.pincode ?? '',
+      isActive: doc.isActive ?? false,
+      isBlocked: doc.isBlocked ?? false,
+      isEmailVerified: doc.isEmailVerified ?? false,
+      features: Array.isArray(doc.features) ? doc.features : [],
+    };
+  }
+
+  private mapUserToAdminProjection(user: User, features: any[] = []) {
+    const userId = user.id ?? (user as any)._id;
+
+    return this.normalizeAdminUserResponse({
+      id: userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      countryCode: user.countryCode,
+      organizationName: user.organizationName,
+      phoneNumber: user.phoneNumber,
+      address: user.address,
+      city: user.city,
+      state: user.state,
+      pincode: user.pincode,
+      isActive: user.isActive,
+      isBlocked: user.isBlocked,
+      isEmailVerified: user.isEmailVerified,
+      features,
+    });
+  }
+
+  async findAdminUserByIdProjected(userId: string) {
+    if (!ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
     const pipeline: any[] = [
-      { $match: matchConditions },
+      { $match: this.buildActiveUserMatch(userId) },
+      {
+        $lookup: {
+          from: 'user_feature_permissions',
+          let: {
+            roleIdsStr: {
+              $map: {
+                input: { $ifNull: ['$roleIds', []] },
+                as: 'rid',
+                in: { $toString: '$$rid' },
+              },
+            },
+          },
+          pipeline: [
+            { $match: { $expr: { $in: ['$roleId', '$$roleIdsStr'] } } },
+            {
+              $project: {
+                _id: 0,
+                featureId: 1,
+                permissions: {
+                  read: '$read',
+                  write: '$write',
+                  admin: '$admin',
+                },
+              },
+            },
+          ],
+          as: 'featurePermissions',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          id: { $toString: '$_id' },
+          firstName: { $ifNull: ['$firstName', ''] },
+          lastName: { $ifNull: ['$lastName', ''] },
+          email: { $ifNull: ['$email', ''] },
+          countryCode: { $ifNull: ['$countryCode', ''] },
+          organizationName: { $ifNull: ['$organizationName', ''] },
+          phoneNumber: { $ifNull: ['$phoneNumber', ''] },
+          address: { $ifNull: ['$address', ''] },
+          city: { $ifNull: ['$city', ''] },
+          state: { $ifNull: ['$state', ''] },
+          pincode: { $ifNull: ['$pincode', ''] },
+          isActive: { $ifNull: ['$isActive', false] },
+          isBlocked: { $ifNull: ['$isBlocked', false] },
+          isEmailVerified: { $ifNull: ['$isEmailVerified', false] },
+          features: {
+            $map: {
+              input: '$featurePermissions',
+              as: 'fp',
+              in: {
+                featureId: '$$fp.featureId',
+                permissions: '$$fp.permissions',
+              },
+            },
+          },
+        },
+      },
+      { $limit: 1 },
+    ];
+
+    const docs = await this.userRepository.aggregate(pipeline).toArray();
+    if (docs?.length > 0) {
+      return this.normalizeAdminUserResponse(docs[0]);
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { _id: new ObjectId(userId) } as any,
+    });
+
+    if (!user || user.isDeleted === true) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.mapUserToAdminProjection(user);
+  }
+
+  async findEnterpriseUserByIdProjected(userId: string) {
+    if (!ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+
+    const pipeline: any[] = [
+      { $match: this.buildActiveUserMatch(userId) },
       {
         $lookup: {
           from: 'enterprise',
@@ -1106,7 +1247,12 @@ export class UserService {
           },
         },
         // Unwind roles to process each separately
-        { $unwind: '$roles' },
+        {
+          $unwind: {
+            path: '$roles',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
 
         // Lookup features of the current role
         {
@@ -1297,7 +1443,12 @@ export class UserService {
           },
         },
         // Unwind roles to process each separately
-        { $unwind: '$roles' },
+        {
+          $unwind: {
+            path: '$roles',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
 
         // Lookup features of the current role
         {
@@ -1407,7 +1558,29 @@ export class UserService {
       .toArray();
 
     if (users.length === 0) {
-      return [];
+      const basicUser = await this.userRepository.findOne({
+        where: { _id: new ObjectId(id) } as any,
+      });
+      if (!basicUser) {
+        return null;
+      }
+
+      return {
+        id: basicUser.id,
+        firstName: basicUser.firstName,
+        lastName: basicUser.lastName,
+        email: basicUser.email,
+        organizationName: basicUser.organizationName,
+        countryCode: basicUser.countryCode,
+        phoneNumber: basicUser.phoneNumber,
+        address: basicUser.address,
+        city: basicUser.city,
+        state: basicUser.state,
+        pincode: basicUser.pincode,
+        isActive: basicUser.isActive,
+        isEmailVerified: basicUser.isEmailVerified,
+        roles: [],
+      };
     }
     return users[0];
   }

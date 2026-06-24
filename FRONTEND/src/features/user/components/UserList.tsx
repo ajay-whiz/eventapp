@@ -11,8 +11,33 @@ import { X, User as UserIcon, Mail, Building, Phone, MapPin, CheckCircle, XCircl
 
 import type { TableColumn } from '../../../types/table';
 
+const getRoleLabel = (role: unknown): string => {
+  if (!role) return 'Unknown role';
+  if (typeof role === 'string') return role;
+  if (typeof role === 'object') {
+    const value = role as Record<string, unknown>;
+    if (typeof value.name === 'string' && value.name) return value.name;
+    if (typeof value.roleName === 'string' && value.roleName) return value.roleName;
+    if (value.id != null) return String(value.id);
+  }
+  return 'Unnamed role';
+};
+
+const getFeatureLabel = (feature: unknown): string => {
+  if (!feature) return 'Feature';
+  if (typeof feature === 'string') return feature;
+  if (typeof feature === 'object') {
+    const value = feature as Record<string, unknown>;
+    if (typeof value.name === 'string' && value.name) return value.name;
+    if (typeof value.uniqueId === 'string' && value.uniqueId) return value.uniqueId;
+    if (value.featureId != null) return String(value.featureId);
+    if (value.id != null) return String(value.id);
+  }
+  return 'Feature';
+};
+
 const UserList: React.FC = () => {
-  const { users = [], pagination, loading, selectedUser: fullUserDetails } = useUser();
+  const { users = [], pagination, loading, selectedUser: fetchedUserDetails } = useUser();
   const { getUserList, removeUser, resetUserPassword, updateUserStatus, blockUser, fetchUserById } = useUserActions();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +51,7 @@ const UserList: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [viewingUser, setViewingUser] = useState<any>(null);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -54,18 +80,29 @@ const UserList: React.FC = () => {
 
   // Handle row click to show details modal
   const handleRowClick = async (user: UserRow) => {
+    setViewingUser(user);
     setShowDetailsModal(true);
     setLoadingDetails(true);
     
     try {
-      await fetchUserById(user.id);
+      const details = await fetchUserById(user.id);
+      if (details) {
+        setViewingUser(details);
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to load user details');
       setShowDetailsModal(false);
+      setViewingUser(null);
     } finally {
       setLoadingDetails(false);
     }
   };
+
+  useEffect(() => {
+    if (fetchedUserDetails && showDetailsModal) {
+      setViewingUser(fetchedUserDetails);
+    }
+  }, [fetchedUserDetails, showDetailsModal]);
 
   type UserRow = { id: string; firstName: string; lastName: string; email: string; organizationName: string; isActive?: boolean; isBlocked?: boolean };
 
@@ -213,6 +250,7 @@ const UserList: React.FC = () => {
                   variant='muted'
                   onClick={() => {
                     setShowDetailsModal(false);
+                    setViewingUser(null);
                   }}
                   className="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                 >
@@ -220,13 +258,19 @@ const UserList: React.FC = () => {
                 </Button>
               </div>
 
-              {loadingDetails ? (
+              {loadingDetails && !viewingUser ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
                   <span className="ml-3 text-gray-600">Loading details...</span>
                 </div>
-              ) : fullUserDetails ? (
+              ) : viewingUser ? (
                 <div className="space-y-6">
+                  {loadingDetails && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-sky-600"></div>
+                      Loading full details...
+                    </div>
+                  )}
                   {/* Basic Information */}
                   <div className="border-b border-gray-200 pb-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
@@ -237,7 +281,7 @@ const UserList: React.FC = () => {
                           Full Name
                         </label>
                         <p className="text-sm text-gray-900 mt-1">
-                          {fullUserDetails.firstName} {fullUserDetails.lastName}
+                          {viewingUser.firstName} {viewingUser.lastName}
                         </p>
                       </div>
                       <div>
@@ -245,61 +289,61 @@ const UserList: React.FC = () => {
                           <Mail className="w-4 h-4" />
                           Email
                         </label>
-                        <p className="text-sm text-gray-900 mt-1">{fullUserDetails.email || 'N/A'}</p>
+                        <p className="text-sm text-gray-900 mt-1">{viewingUser.email || 'N/A'}</p>
                       </div>
-                      {fullUserDetails.phoneNumber && (
+                      {viewingUser.phoneNumber && (
                         <div>
                           <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                             <Phone className="w-4 h-4" />
                             Phone Number
                           </label>
                           <p className="text-sm text-gray-900 mt-1">
-                            {fullUserDetails.countryCode || ''} {fullUserDetails.phoneNumber}
+                            {viewingUser.countryCode || ''} {viewingUser.phoneNumber}
                           </p>
                         </div>
                       )}
-                      {fullUserDetails.organizationName && (
+                      {viewingUser.organizationName && (
                         <div>
                           <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                             <Building className="w-4 h-4" />
                             Organization
                           </label>
-                          <p className="text-sm text-gray-900 mt-1">{fullUserDetails.organizationName}</p>
+                          <p className="text-sm text-gray-900 mt-1">{viewingUser.organizationName}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Address Information */}
-                  {(fullUserDetails.address || fullUserDetails.city || fullUserDetails.state || fullUserDetails.pincode) && (
+                  {(viewingUser.address || viewingUser.city || viewingUser.state || viewingUser.pincode) && (
                     <div className="border-b border-gray-200 pb-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {fullUserDetails.address && (
+                        {viewingUser.address && (
                           <div className="md:col-span-2">
                             <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                               <MapPin className="w-4 h-4" />
                               Address
                             </label>
-                            <p className="text-sm text-gray-900 mt-1">{fullUserDetails.address}</p>
+                            <p className="text-sm text-gray-900 mt-1">{viewingUser.address}</p>
                           </div>
                         )}
-                        {fullUserDetails.city && (
+                        {viewingUser.city && (
                           <div>
                             <label className="text-sm font-medium text-gray-500">City</label>
-                            <p className="text-sm text-gray-900 mt-1">{fullUserDetails.city}</p>
+                            <p className="text-sm text-gray-900 mt-1">{viewingUser.city}</p>
                           </div>
                         )}
-                        {fullUserDetails.state && (
+                        {viewingUser.state && (
                           <div>
                             <label className="text-sm font-medium text-gray-500">State</label>
-                            <p className="text-sm text-gray-900 mt-1">{fullUserDetails.state}</p>
+                            <p className="text-sm text-gray-900 mt-1">{viewingUser.state}</p>
                           </div>
                         )}
-                        {fullUserDetails.pincode && (
+                        {viewingUser.pincode && (
                           <div>
                             <label className="text-sm font-medium text-gray-500">Pincode</label>
-                            <p className="text-sm text-gray-900 mt-1">{fullUserDetails.pincode}</p>
+                            <p className="text-sm text-gray-900 mt-1">{viewingUser.pincode}</p>
                           </div>
                         )}
                       </div>
@@ -314,16 +358,16 @@ const UserList: React.FC = () => {
                         <label className="text-sm font-medium text-gray-500">Account Status</label>
                         <div className="mt-1">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                            fullUserDetails.isActive
+                            viewingUser.isActive
                               ? 'bg-green-100 text-green-700 border border-green-200'
                               : 'bg-red-100 text-red-700 border border-red-200'
                           }`}>
-                            {fullUserDetails.isActive ? (
+                            {viewingUser.isActive ? (
                               <CheckCircle className="w-3 h-3" />
                             ) : (
                               <XCircle className="w-3 h-3" />
                             )}
-                            {fullUserDetails.isActive ? 'Active' : 'Inactive'}
+                            {viewingUser.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>
@@ -331,34 +375,34 @@ const UserList: React.FC = () => {
                         <label className="text-sm font-medium text-gray-500">Email Verification</label>
                         <div className="mt-1">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                            fullUserDetails.isEmailVerified
+                            viewingUser.isEmailVerified
                               ? 'bg-green-100 text-green-700 border border-green-200'
                               : 'bg-yellow-100 text-yellow-700 border border-yellow-200'
                           }`}>
-                            {fullUserDetails.isEmailVerified ? (
+                            {viewingUser.isEmailVerified ? (
                               <CheckCircle className="w-3 h-3" />
                             ) : (
                               <XCircle className="w-3 h-3" />
                             )}
-                            {fullUserDetails.isEmailVerified ? 'Verified' : 'Not Verified'}
+                            {viewingUser.isEmailVerified ? 'Verified' : 'Not Verified'}
                           </span>
                         </div>
                       </div>
-                      {(fullUserDetails as any).isBlocked !== undefined && (
+                      {(viewingUser as any).isBlocked !== undefined && (
                         <div>
                           <label className="text-sm font-medium text-gray-500">Block Status</label>
                           <div className="mt-1">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                              (fullUserDetails as any).isBlocked
+                              (viewingUser as any).isBlocked
                                 ? 'bg-red-100 text-red-700 border border-red-200'
                                 : 'bg-green-100 text-green-700 border border-green-200'
                             }`}>
-                              {(fullUserDetails as any).isBlocked ? (
+                              {(viewingUser as any).isBlocked ? (
                                 <XCircle className="w-3 h-3" />
                               ) : (
                                 <CheckCircle className="w-3 h-3" />
                               )}
-                              {(fullUserDetails as any).isBlocked ? 'Blocked' : 'Unblocked'}
+                              {(viewingUser as any).isBlocked ? 'Blocked' : 'Unblocked'}
                             </span>
                           </div>
                         </div>
@@ -367,31 +411,31 @@ const UserList: React.FC = () => {
                   </div>
 
                   {/* Roles and Features */}
-                  {((fullUserDetails.roles && fullUserDetails.roles.length > 0) || 
-                    (fullUserDetails.features && fullUserDetails.features.length > 0) ||
-                    (fullUserDetails.roleIds && fullUserDetails.roleIds.length > 0)) && (
+                  {/* {((viewingUser.roles && viewingUser.roles.length > 0) || 
+                    (viewingUser.features && viewingUser.features.length > 0) ||
+                    (viewingUser.roleIds && viewingUser.roleIds.length > 0)) && (
                     <div className="border-b border-gray-200 pb-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">User Roles & Permissions</h3>
-                      {fullUserDetails.roles && Array.isArray(fullUserDetails.roles) && fullUserDetails.roles.length > 0 && (
+                      {viewingUser.roles && Array.isArray(viewingUser.roles) && viewingUser.roles.length > 0 && (
                         <div className="mb-4">
                           <label className="text-sm font-medium text-gray-500">Assigned Roles</label>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {fullUserDetails.roles.map((role: any, index: number) => (
+                            {viewingUser.roles.map((role: any, index: number) => (
                               <span
                                 key={role.id || role._id || index}
                                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200"
                               >
-                                {role.name || role.roleName || role}
+                                {getRoleLabel(role)}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
-                      {fullUserDetails.roleIds && Array.isArray(fullUserDetails.roleIds) && fullUserDetails.roleIds.length > 0 && !fullUserDetails.roles && (
+                      {viewingUser.roleIds && Array.isArray(viewingUser.roleIds) && viewingUser.roleIds.length > 0 && !viewingUser.roles && (
                         <div className="mb-4">
                           <label className="text-sm font-medium text-gray-500">Role IDs</label>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {fullUserDetails.roleIds.map((roleId: string, index: number) => (
+                            {viewingUser.roleIds.map((roleId: string, index: number) => (
                               <span
                                 key={roleId || index}
                                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700 border border-sky-200"
@@ -402,42 +446,42 @@ const UserList: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      {fullUserDetails.features && Array.isArray(fullUserDetails.features) && fullUserDetails.features.length > 0 && (
+                      {viewingUser.features && Array.isArray(viewingUser.features) && viewingUser.features.length > 0 && (
                         <div>
                           <label className="text-sm font-medium text-gray-500">Features</label>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {fullUserDetails.features.map((feature: any, index: number) => (
+                            {viewingUser.features.map((feature: any, index: number) => (
                               <span
                                 key={feature.id || feature._id || feature.uniqueId || feature.featureId || index}
                                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 border border-purple-200"
                               >
-                                {feature.name || feature.uniqueId || feature.featureId || 'Feature'}
+                                {getFeatureLabel(feature)}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Timestamps */}
-                  {(fullUserDetails.createdAt || fullUserDetails.updatedAt) && (
+                  {(viewingUser.createdAt || viewingUser.updatedAt) && (
                     <div className="border-b border-gray-200 pb-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Timestamps</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {fullUserDetails.createdAt && (
+                        {viewingUser.createdAt && (
                           <div>
                             <label className="text-sm font-medium text-gray-500">Created At</label>
                             <p className="text-sm text-gray-900 mt-1">
-                              {new Date(fullUserDetails.createdAt).toLocaleString()}
+                              {new Date(viewingUser.createdAt).toLocaleString()}
                             </p>
                           </div>
                         )}
-                        {fullUserDetails.updatedAt && (
+                        {viewingUser.updatedAt && (
                           <div>
                             <label className="text-sm font-medium text-gray-500">Last Updated</label>
                             <p className="text-sm text-gray-900 mt-1">
-                              {new Date(fullUserDetails.updatedAt).toLocaleString()}
+                              {new Date(viewingUser.updatedAt).toLocaleString()}
                             </p>
                           </div>
                         )}
@@ -451,7 +495,8 @@ const UserList: React.FC = () => {
                       variant="primary"
                       onClick={() => {
                         setShowDetailsModal(false);
-                        navigate(`/user-management/${fullUserDetails.id}`);
+                        setViewingUser(null);
+                        navigate(`/user-management/${viewingUser.id}`);
                       }}
                     >
                       Edit User
@@ -460,6 +505,7 @@ const UserList: React.FC = () => {
                       variant="muted"
                       onClick={() => {
                         setShowDetailsModal(false);
+                        setViewingUser(null);
                       }}
                     >
                       Close

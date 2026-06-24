@@ -78,15 +78,17 @@ const LoginForm: React.FC = () => {
             autoComplete="username"
             className="w-full h-9 text-sm"
           />
-          <InputGroup
-            label="Password"
-            name="password"
-            id="login-password"
-            type="password"
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            className="w-full h-9 text-sm mt-3.5"
-          />
+          <div className="mt-3.5">
+            <InputGroup
+              label="Password"
+              name="password"
+              id="login-password"
+              type="password"
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              className="w-full h-9 text-sm"
+            />
+          </div>
           <div className="flex items-center justify-between text-xs mt-3 mb-4">
             <Controller
               name="rememberMe"

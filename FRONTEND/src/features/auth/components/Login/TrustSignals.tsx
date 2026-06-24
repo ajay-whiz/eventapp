@@ -10,21 +10,28 @@ const iconMap: Record<TrustSignalIcon, React.ReactNode> = {
 
 type TrustSignalsProps = {
   variant?: 'hero' | 'compact';
+  surface?: 'dark' | 'light';
 };
 
-const TrustSignals: React.FC<TrustSignalsProps> = ({ variant = 'hero' }) => {
+const TrustSignals: React.FC<TrustSignalsProps> = ({
+  variant = 'hero',
+  surface = 'dark',
+}) => {
   const isHero = variant === 'hero';
+  const isLight = surface === 'light';
 
   return (
     <div
       className={`flex flex-wrap gap-4 ${isHero ? 'mt-7' : 'mt-5'} ${
-        isHero ? '' : 'pt-4 border-t border-white/10'
+        isHero ? '' : `pt-4 border-t ${isLight ? 'border-slate-200' : 'border-white/10'}`
       }`}
     >
       {TRUST_SIGNALS.map((signal) => (
         <div
           key={signal.label}
-          className="flex items-center gap-1.5 text-[11px] text-slate-500"
+          className={`flex items-center gap-1.5 text-[11px] ${
+            isLight ? 'text-slate-600' : 'text-slate-500'
+          }`}
         >
           {iconMap[signal.icon]}
           <span>{signal.label}</span>

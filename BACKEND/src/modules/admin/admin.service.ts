@@ -162,10 +162,7 @@ export class AdminService {
   }
 
   async getUserById(userId: string) {
-    const user = await this.userService.findOneWithRoles(userId);
-    if (!user) throw new NotFoundException('User not found');
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return this.userService.findAdminUserByIdProjected(userId);
   }
 
   async updateUserById(userId: string, dto: UpdateUserDto) {
