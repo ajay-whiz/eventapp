@@ -12,7 +12,8 @@ import { useAuthActions } from '../../../../features/auth/hooks/useAuthActions';
 import { useNavigate } from 'react-router-dom';
 import { CheckboxWithLabel } from '../../../../components/molecules/CheckboxWithLabel';
 import AuthLayout from '../Layout/AuthLayout';
-// import PasswordInput from '../../../components/molecules/PasswordInput';
+import DemoAccountsSection from './DemoAccountsSection';
+import { SHOW_DEMO_ACCOUNTS, type DemoAccount } from '../../config/demoAccounts.config';
 
 type LoginFormValues = LoginSchemaType;
 
@@ -32,8 +33,12 @@ const LoginForm: React.FC = () => {
     },
   });
 
+  const handleDemoSelect = (account: DemoAccount) => {
+    methods.setValue('email', account.email, { shouldValidate: true });
+    methods.setValue('password', account.password, { shouldValidate: true });
+  };
+
   const onSubmit = (data: LoginFormValues) => {
-    console.log('Form submitted with data:', data);
     if (data.rememberMe) {
       localStorage.setItem('rememberedEmail', data.email);
       localStorage.setItem('rememberedPassword', data.password);
@@ -52,36 +57,27 @@ const LoginForm: React.FC = () => {
 
   return (
     <AuthLayout>
-      
-      {/* <h2 className="text-2xl font-semibold text-left text-gray-800 mb-6">Login</h2>
-  
-      <Button className="flex items-center justify-center w-full py-2 bg-white-200 text-sky-600 rounded-lg p-4 border-2 mb-4" variant="secondary">
-        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 mr-2" />
-        Sign in with Google
-      </Button>
-  
-      <div className="flex items-center my-4">
-        <div className="flex-1 h-px bg-sky-300" />
-        <span className="px-3 text-sm text-gray-800">OR</span>
-        <div className="flex-1 h-px bg-sky-300" />
+      <div className="mb-6">
+        <h1 className="text-[22px] font-medium text-slate-900">Sign in to Admin Portal</h1>
+        <p className="text-[13px] text-slate-500 mt-1.5 leading-relaxed">
+          Manage venues, vendors, and bookings for your event marketplace.
+        </p>
       </div>
-   */}
+
       <FormProvider {...methods}>
-        <Form<LoginFormValues> onSubmit={onSubmit} schema={loginSchema} className="flex flex-col py-6 bg-white w-full gap-6">
+        <Form<LoginFormValues>
+          onSubmit={onSubmit}
+          schema={loginSchema}
+          className="flex flex-col w-full gap-0"
+        >
           <InputGroup
             label="Email"
             name="email"
             id="login-username"
             placeholder="Enter your Email"
             autoComplete="username"
-            className="w-full"
+            className="w-full h-9 text-sm"
           />
-          {/* <PasswordInput label="Password"
-            name="password"
-            id="login-password"
-            type="password"
-            placeholder="Enter your password"
-            autoComplete="current-password" className="w-full" /> */}
           <InputGroup
             label="Password"
             name="password"
@@ -89,30 +85,43 @@ const LoginForm: React.FC = () => {
             type="password"
             placeholder="Enter your password"
             autoComplete="current-password"
-            className="w-full"
+            className="w-full h-9 text-sm mt-3.5"
           />
-          <div className="flex items-center justify-between mb-4 text-sm text-black">
-          <Controller
-            name="rememberMe"
-            control={methods.control}
-            render={({ field }) => (
-              <CheckboxWithLabel
-                name="rememberMe"
-                label="Remember me?"
-                id="rememberMe"
-                checked={field.value || false}
-                onChange={field.onChange}
-              />
-            )}
-          />
-          <button type="button" onClick={() => navigate('/forgot-password')} className="text-sky-600 hover:underline cursor-pointer font-semibold">Forget Password</button>
+          <div className="flex items-center justify-between text-xs mt-3 mb-4">
+            <Controller
+              name="rememberMe"
+              control={methods.control}
+              render={({ field }) => (
+                <CheckboxWithLabel
+                  name="rememberMe"
+                  label="Remember me"
+                  id="rememberMe"
+                  checked={field.value || false}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <button
+              type="button"
+              onClick={() => navigate('/forgot-password')}
+              className="text-blue-600 hover:underline cursor-pointer text-xs"
+            >
+              Forgot password?
+            </button>
           </div>
           <FormError message={error ?? undefined} />
-          <Button type="submit" disabled={loading} className="w-auto" size="md">
-            {loading ? 'Logging in...' : 'Login'}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full h-9 text-sm rounded-md"
+            size="md"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
           </Button>
         </Form>
       </FormProvider>
+
+      {SHOW_DEMO_ACCOUNTS && <DemoAccountsSection onSelect={handleDemoSelect} />}
     </AuthLayout>
   );
 };
