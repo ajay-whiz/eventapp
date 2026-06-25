@@ -4,18 +4,14 @@ import { CreateFormDto } from './dto/request/create-form.dto';
 import { Form } from './entity/form.entity';
 import { ApiOperation, ApiTags, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { UpdateFormDto } from './dto/request/update-form.dto';
-import { Features } from '@common/decorators/permission.decorator';
-import { FeatureGuard } from '@common/guards/features.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { FormPaginatedResponseDto } from './dto/response/form-paginated.dto';
-import { FeatureType } from '@shared/enums/featureType';
 
 @ApiTags('Forms')
 @Controller('forms')
 @ApiBearerAuth()
 @UsePipes(new ValidationPipe({ transform: true }))
-@UseGuards(AuthGuard('jwt'), FeatureGuard)
-@Features(FeatureType.FORM_BUILDER)
+@UseGuards(AuthGuard('jwt'))
 export class FormController {
   constructor(private readonly service: FormService) {}
 

@@ -4,15 +4,11 @@ import { CreateFieldDto } from './dto/request/create-field.dto';
 import { UpdateFieldDto } from './dto/request/update-field.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
-import { FeatureType } from '@shared/enums/featureType';
-import { FeatureGuard } from '@common/guards/features.guard';
-import { Features } from '@common/decorators/permission.decorator';
 
 @ApiTags('Fields')
 @ApiBearerAuth()
 @UsePipes(new ValidationPipe({ transform: true }))
-@UseGuards(AuthGuard('jwt'), FeatureGuard)
-@Features(FeatureType.FORM_BUILDER)
+@UseGuards(AuthGuard('jwt'))
 @Controller('fields')
 export class FieldsController {
   constructor(private readonly fieldsService: FieldsService) {}

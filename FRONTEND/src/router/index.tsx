@@ -130,9 +130,9 @@ const AppRoutes = () => {
         <Route path={ROUTING.ADD_VENDORS} element={<ProtectedRoute requiredFeature="vendor_management" requiredPermission="write"><VendorForm /></ProtectedRoute>} />
         <Route path={ROUTING.UPDATE_VENDORS} element={<ProtectedRoute requiredFeature="vendor_management" requiredPermission="write"><VendorForm /></ProtectedRoute>} />
          
-        {/* Form Builder - Protected by Form Builder feature permission */}
-        <Route path={ROUTING.FORM_LIST} element={<ProtectedRoute requiredFeature="form_builder" requiredPermission="read"><DynamicFormList /></ProtectedRoute>} />
-        <Route path={ROUTING.FORM_BUILDER} element={<ProtectedRoute requiredFeature="form_builder" requiredPermission="write"><Forms /></ProtectedRoute>} />
+        {/* Form Builder - available to all authenticated users */}
+        <Route path={ROUTING.FORM_LIST} element={<RequireAuth><DynamicFormList /></RequireAuth>} />
+        <Route path={ROUTING.FORM_BUILDER} element={<RequireAuth><Forms /></RequireAuth>} />
 
         {/* Profile / Account */}
         <Route path={ROUTING.PROFILE_SETTING} element={<RequireAuth><ProfileSetting /></RequireAuth>} />

@@ -161,6 +161,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
         uniqueId: dashboardConfig.uniqueId,
       });
     }
+
+    // Form Builder is available to all authenticated users
+    const formBuilderConfig = getFeatureConfig('form_builder');
+    if (formBuilderConfig) {
+      baseMenuItems.push({
+        to: formBuilderConfig.route,
+        label: formBuilderConfig.defaultLabel,
+        icon: formBuilderConfig.icon,
+        badge: null,
+        feature: formBuilderConfig.defaultLabel,
+        uniqueId: formBuilderConfig.uniqueId,
+      });
+    }
     
     // Super Admin-only menu items (not driven by feature permissions for other roles)
     if (isUserSuperAdmin) {
@@ -196,6 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       feature.uniqueId !== 'dashboard' && 
       feature.uniqueId !== 'profile_setting' &&
       feature.uniqueId !== 'content_policy' &&
+      feature.uniqueId !== 'form_builder' &&
       !isSuperAdminOnlyFeature(feature.uniqueId) &&
       !(isUserSuperAdmin && ['role_management', 'feature_management', 'enterprise_management', 'content_policy'].includes(feature.uniqueId))
     );
@@ -209,6 +223,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       
       const config = getFeatureConfig(feature.uniqueId);
       if (config) {
+        const alreadyExists = baseMenuItems.some(item => item.uniqueId === feature.uniqueId);
+        if (alreadyExists) {
+          return;
+        }
         baseMenuItems.push({
           to: config.route,
           label: feature.name || 'Unnamed Feature', // Use API name from login response

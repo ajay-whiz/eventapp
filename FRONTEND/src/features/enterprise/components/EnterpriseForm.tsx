@@ -76,6 +76,20 @@ const EnterpriseForm: React.FC = () => {
         formattedPhoneNumber = `91${formattedPhoneNumber}`;
       }
 
+      const mergedFeatures = (features?.length ? features : []).map((f) => {
+        const existing = selectedEnterprise.features?.find(
+          (ef: EnterpriseFeature) => String(ef.featureId) === String(f.id),
+        );
+        return {
+          featureId: String(f.id),
+          permissions: {
+            read: existing?.permissions?.read ?? false,
+            write: existing?.permissions?.write ?? false,
+            admin: existing?.permissions?.admin ?? false,
+          },
+        };
+      });
+
       reset({
         firstName: selectedEnterprise.firstName || '',
         lastName: selectedEnterprise.lastName || '',
@@ -88,20 +102,22 @@ const EnterpriseForm: React.FC = () => {
         city: selectedEnterprise.city || '',
         state: selectedEnterprise.state || '',
         pincode: selectedEnterprise.pincode || '',
-        features: selectedEnterprise.features?.map((f: EnterpriseFeature) => ({
-          featureId: f.featureId,
-          permissions: {
-            read: f.permissions?.read ?? false,
-            write: f.permissions?.write ?? false,
-            admin: f.permissions?.admin ?? false,
-          },
-        })) || [],
+        features: mergedFeatures.length
+          ? mergedFeatures
+          : selectedEnterprise.features?.map((f: EnterpriseFeature) => ({
+              featureId: String(f.featureId),
+              permissions: {
+                read: f.permissions?.read ?? false,
+                write: f.permissions?.write ?? false,
+                admin: f.permissions?.admin ?? false,
+              },
+            })) || [],
       });
     } else if (!id && features?.length) {
       reset((prev) => ({
         ...prev,
         features: features.map((f) => ({
-          featureId: f.id,
+          featureId: String(f.id),
           permissions: { read: false, write: false, admin: false },
         })),
       }));

@@ -497,17 +497,23 @@ export class RoleService {
   }
 
   async updateEnterpriseRole(roleId: string, roleName: string, features: CreateFeaturePermissionDto[]) {
-    const featureIds = features.map(feature => new ObjectId(feature.featureId));
-    await this.roleRepository.updateOne({ _id: new ObjectId(roleId) }, { $set: { featureIds, isInternal: true, name: roleName } });
-    await this.userFeaturePermission.bulkUpdate(
-      roleId,
-      {
-        featurePermissions: features,
-      }
+    const enabledFeatures = features.filter(
+      (feature) =>
+        feature.permissions.read ||
+        feature.permissions.write ||
+        feature.permissions.admin,
     );
+    const featureIds = enabledFeatures.map((feature) => new ObjectId(feature.featureId));
+    await this.roleRepository.updateOne(
+      { _id: new ObjectId(roleId) },
+      { $set: { featureIds, isInternal: true, name: roleName } },
+    );
+    await this.userFeaturePermission.bulkReplace(roleId, {
+      featurePermissions: enabledFeatures,
+    });
     const featurePermissions = await this.userFeaturePermission.findByRoleId(roleId);
-    const featurePermissionIds = featurePermissions.map(fp => new ObjectId(fp.id));
-    return {featurePermissionIds};
+    const featurePermissionIds = featurePermissions.map((fp) => new ObjectId(fp.id));
+    return { featurePermissionIds };
   }
 
   async deleteEnterpriseRole(roleName: string) {

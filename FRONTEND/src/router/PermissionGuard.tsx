@@ -30,8 +30,6 @@ const ROUTE_FEATURE_MAPPING: Record<string, string> = {
   '/role-management': 'role_management', 
   '/feature-management': 'feature_management',
   '/enterprise-management': 'enterprise_management',
-  '/form-list': 'form_builder',
-  '/form-builder': 'form_builder',
   '/venue-management': 'venue_management',
   '/venue-category': 'venue_management',
   '/category-management': 'service_category',
@@ -46,6 +44,8 @@ const ROUTE_FEATURE_MAPPING: Record<string, string> = {
 const UNIVERSAL_ROUTES = [
   '/dashboard',
   '/profile-setting',
+  '/form-list',
+  '/form-builder',
   '/logout'
 ];
 

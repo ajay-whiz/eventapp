@@ -155,24 +155,31 @@ export class UserFeaturePermissionService {
    await this.repo.deleteMany({ roleId: roleId, featureId: featureId });
  }
 
- // Method for complete replacement of all permissions (destructive)
  async bulkReplace(roleId: string, dto: UpdateRoleDto) {
-   // Delete all existing permissions for this role
    await this.repo.deleteMany({ roleId });
-   
-   // Insert new permissions
-   if (dto.featurePermissions && dto.featurePermissions.length > 0) {
-     const permissionsToSave = dto.featurePermissions.map(fp => {
-       return this.repo.create({
-         roleId: roleId,
-         featureId: fp.featureId,
-         read: fp.permissions.read ?? false,
-         write: fp.permissions.write ?? false,
-         admin: fp.permissions.admin ?? false,
-       });
-     });
-     await this.repo.save(permissionsToSave);
+
+   const enabledFeatures =
+     dto.featurePermissions?.filter(
+       (feature) =>
+         feature.permissions.read ||
+         feature.permissions.write ||
+         feature.permissions.admin,
+     ) || [];
+
+   if (enabledFeatures.length === 0) {
+     return;
    }
+
+   const permissionsToSave = enabledFeatures.map((fp) =>
+     this.repo.create({
+       roleId,
+       featureId: fp.featureId,
+       read: fp.permissions.read ?? false,
+       write: fp.permissions.write ?? false,
+       admin: fp.permissions.admin ?? false,
+     }),
+   );
+   await this.repo.save(permissionsToSave);
  }
   
 }

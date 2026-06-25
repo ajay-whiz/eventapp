@@ -23,8 +23,8 @@ import { UpdateEnterpriseUserDto } from './dto/request/update-enterprise-user.dt
 import { UpdateEnterpriseUserStatusDto } from './dto/request/update-enterprise-user-status.dto';
 import { Feature } from '../feature/entities/feature.entity';
 import { RoleType } from '@shared/enums/roleType';
-import { RobustEmailService } from '@shared/email/robust-email.service';
-import { generateEmailText } from '@shared/email/email-template.helper';
+import { MailerService } from '@nestjs-modules/mailer';
+import { generateEmailTemplate, generateEmailText, type EmailTemplateOptions } from '@shared/email/email-template.helper';
 
 @Injectable()
 export class EnterpriseService {
@@ -36,8 +36,35 @@ export class EnterpriseService {
     private readonly roleService: RoleService,
     private readonly featureService: FeatureService,
     private readonly userFeaturePermissionService: UserFeaturePermissionService,
-    private readonly robustEmailService: RobustEmailService,
+    private readonly mailerService: MailerService,
   ) {}
+
+  private async sendEnterpriseEmail(
+    to: string,
+    subject: string,
+    template: EmailTemplateOptions,
+    logContext?: string,
+  ): Promise<boolean> {
+    const emailText = generateEmailText(template);
+    const emailHtml = generateEmailTemplate(template);
+
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject,
+        text: emailText,
+        html: emailHtml,
+      });
+      console.log(`✅ ${logContext ?? 'Enterprise email'} sent to ${to}`);
+      return true;
+    } catch (error: any) {
+      console.error(`❌ ${logContext ?? 'Enterprise email'} failed for ${to}:`, error?.message || error);
+      if (template.buttonUrl) {
+        console.log(`📝 Invite/reset link (delivery failed): ${template.buttonUrl}`);
+      }
+      return false;
+    }
+  }
 
   private isSuperAdminUser(user: any): boolean {
     return user?.roles?.some(
@@ -130,23 +157,18 @@ export class EnterpriseService {
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
     const userName = dto.firstName || 'User';
-    const emailText = generateEmailText({
-      userName,
-      message: 'We received a request to reset your password for your WhizCloud Event Dashboard account. Click the link below to set a new password:',
-      buttonText: 'Reset Password',
-      buttonUrl: resetUrl,
-      additionalInfo: 'This link will expire in 15 minutes.',
-    });
-    const emailSent = await this.robustEmailService.sendEmail(
+    await this.sendEnterpriseEmail(
       dto.email,
-      'Reset Your Password - WhizCloud Events',
-      emailText,
+      'You are invited to WhizCloud Events',
+      {
+        userName,
+        message: `You have been invited to join ${enterpriseCreated.enterpriseName} on WhizCloud Event Dashboard. Click the link below to set your password and activate your account:`,
+        buttonText: 'Accept Invite & Set Password',
+        buttonUrl: resetUrl,
+        additionalInfo: 'This link will expire in 15 minutes.',
+      },
+      'Enterprise invite email',
     );
-    if (!emailSent) {
-      console.log(
-        `📝 Enterprise welcome email for ${dto.email} (delivery failed). Reset link: ${resetUrl}`,
-      );
-    }
     return plainToInstance(EnterpriseResponseDto, enterpriseCreated, { excludeExtraneousValues: true });
   }
 
@@ -300,66 +322,75 @@ export class EnterpriseService {
   }
 
   async update(key: string, dto: UpdateEnterpriseDto): Promise<EnterpriseResponseDto> {
-    const enterprise = await this.findOneByKey(key);
+    const enterprise = await this.repo.findOne({ where: { key } });
     if (!enterprise) {
       throw new NotFoundException('Enterprise not found');
     }
-    console.log(enterprise.id.toString());
-    const existingEnterprise = await this.repo.findOne({ where: {
-      enterpriseName: dto.enterpriseName,
-      id: Not(enterprise.id),
-    }});
+
+    const existingEnterprise = await this.repo.findOne({
+      where: {
+        enterpriseName: dto.enterpriseName,
+        key: Not(key),
+      },
+    });
     if (existingEnterprise) {
       throw new ConflictException('Enterprise already exists. Please use a different enterprise name.');
     }
-    // Prevent email change if user already exists with a different enterprise
-    const existingUser = await this.userService.findByEmail(dto?.email || '');
 
-    console.log(existingUser?.enterpriseId.toString(), enterprise.id.toString());
+    const existingUser = await this.userService.findByEmail(dto?.email || '');
     if (existingUser && existingUser.enterpriseId?.toString() !== enterprise.id.toString()) {
       throw new ConflictException('Email already exists for another enterprise.');
     }
+
     const enterpriseRoleName = `${dto.enterpriseName}_ADMIN`.toUpperCase().replaceAll(/ /g, '_');
     const oldEnterpriseRoleName = `${enterprise.enterpriseName}_ADMIN`.toUpperCase().replaceAll(/ /g, '_');
     const enterpriseAdminRole = await this.roleService.findByName(oldEnterpriseRoleName);
-    dto.features=dto.features?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
-    const {featurePermissionIds} = await this.roleService.updateEnterpriseRole(enterpriseAdminRole.id.toString(), enterpriseRoleName, dto?.features?.map(feature => ({
-      featureId: feature.featureId,
-      permissions: feature.permissions,
-    })) || []);
-    // if(dto.enterpriseName !== enterprise.enterpriseName) {
-    //   let savedRole: Role = enterpriseAdminRole;
-    //     const enterpriseRole = await this.roleService.createEnterpriseRole(enterpriseRoleName, dto?.features?.map(feature => ({
-    //       featureId: feature.featureId,
-    //       permissions: feature.permissions,
-    //     })) || []);
-    //     await this.roleService.deleteEnterpriseRole(oldEnterpriseRoleName);
-    //     savedRole = enterpriseRole.savedRole;
-    //     dto.featurePermissionsIds = enterpriseRole.userFeaturePermissions.map(fp => new ObjectId(fp.id));
-    // } else {
-    //   await this.roleService.updateEnterpriseRole(enterpriseAdminRole.id.toString(), dto?.features?.map(feature => ({
-    //     featureId: feature.featureId,
-    //     permissions: feature.permissions,
-    //   })) || []);
-    // }
+    if (!enterpriseAdminRole) {
+      throw new NotFoundException('Enterprise admin role not found');
+    }
 
-    Object.assign(enterprise, {
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      countryCode: dto.countryCode,
-      phoneNumber: dto.phoneNumber,
-      enterpriseName: dto.enterpriseName,
-      description: dto.description,
-      address: dto.address,
-      city: dto.city,
-      state: dto.state,
-      pincode: dto.pincode,
-      featurePermissionsIds: featurePermissionIds,
-      updatedAt: new Date(),
+    const enabledFeatures =
+      dto.features?.filter(
+        (feature) =>
+          feature.permissions.read ||
+          feature.permissions.write ||
+          feature.permissions.admin,
+      ) || [];
+
+    const { featurePermissionIds } = await this.roleService.updateEnterpriseRole(
+      enterpriseAdminRole.id.toString(),
+      enterpriseRoleName,
+      enabledFeatures.map((feature) => ({
+        featureId: feature.featureId,
+        permissions: feature.permissions,
+      })),
+    );
+
+    await this.repo.updateOne(
+      { key },
+      {
+        $set: {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          email: dto.email,
+          countryCode: dto.countryCode,
+          phoneNumber: dto.phoneNumber,
+          enterpriseName: dto.enterpriseName,
+          description: dto.description,
+          address: dto.address,
+          city: dto.city,
+          state: dto.state,
+          pincode: dto.pincode,
+          featurePermissionsIds: featurePermissionIds,
+          updatedAt: new Date(),
+        },
+      },
+    );
+
+    const updatedEnterprise = await this.findOneByKey(key);
+    return plainToInstance(EnterpriseResponseDto, updatedEnterprise, {
+      excludeExtraneousValues: true,
     });
-    const updatedEnt = await this.repo.save(enterprise);
-    return plainToInstance(EnterpriseResponseDto, updatedEnt, { excludeExtraneousValues: true });
   }
 
   async delete(key: string): Promise<{message: string}> {
@@ -404,19 +435,18 @@ export class EnterpriseService {
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
 
-    const emailSent = await this.robustEmailService.sendEmail(
+    await this.sendEnterpriseEmail(
       targetUser.email,
-      'Reset Your Password',
-      `Click the link to reset your password: ${resetUrl}`
+      'Reset Your Password - WhizCloud Events',
+      {
+        userName: targetUser.firstName || 'User',
+        message: 'Click the link below to reset your password:',
+        buttonText: 'Reset Password',
+        buttonUrl: resetUrl,
+        additionalInfo: 'This link will expire in 15 minutes.',
+      },
+      'Enterprise password reset email',
     );
-
-    if (emailSent) {
-
-    } else {
-      console.log(`📝 Enterprise password reset email for ${targetUser.email} (Email delivery failed, but reset link is available in logs)`);
-
-
-    }
     return { message: 'Reset link sent successfully' };
   }
 
@@ -510,23 +540,18 @@ export class EnterpriseService {
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
     const userName = dto.firstName || dto.organizationName || 'User';
-    const emailText = generateEmailText({
-      userName,
-      message: `Your account has been created for ${enterprise.enterpriseName}. Click the link below to set your password and activate your account:`,
-      buttonText: 'Set Password',
-      buttonUrl: resetUrl,
-      additionalInfo: 'This link will expire in 15 minutes.',
-    });
-    const emailSent = await this.robustEmailService.sendEmail(
+    await this.sendEnterpriseEmail(
       dto.email,
       `Welcome to ${enterprise.enterpriseName} - WhizCloud Events`,
-      emailText,
+      {
+        userName,
+        message: `Your account has been created for ${enterprise.enterpriseName}. Click the link below to set your password and activate your account:`,
+        buttonText: 'Set Password',
+        buttonUrl: resetUrl,
+        additionalInfo: 'This link will expire in 15 minutes.',
+      },
+      'Enterprise user welcome email',
     );
-    if (!emailSent) {
-      console.log(
-        `📝 Enterprise user welcome email for ${dto.email} (delivery failed). Reset link: ${resetUrl}`,
-      );
-    }
 
     return {
       message: 'User created successfully'
@@ -641,51 +666,44 @@ export class EnterpriseService {
       }
       await this.userService.updateEnterpriseUser(userId, userObj as any);
       const userName = target.firstName || target.organizationName || 'User';
-      const emailText = generateEmailText({
-        userName,
-        message: `Your password has been reset. Your new temporary password is: ${dto.password}. Please log in and change your password immediately.`,
-        additionalInfo: 'For security reasons, please change your password after logging in.',
-      });
-      const emailSent = await this.robustEmailService.sendEmail(
+      await this.sendEnterpriseEmail(
         target.email,
         'Password Reset - WhizCloud Events',
-        emailText,
+        {
+          userName,
+          message: `Your password has been reset. Your new temporary password is: ${dto.password}. Please log in and change your password immediately.`,
+          additionalInfo: 'For security reasons, please change your password after logging in.',
+        },
+        'Password reset notification',
       );
-      if (!emailSent) {
-        console.log(`📝 Password reset notification for ${target.email} (delivery failed)`);
-      }
     }
 
     return { message: 'Enterprise user updated successfully' };
   }
 
-  async updateEnterpriseUserStatus(currentUser: any, userId: string, dto: UpdateEnterpriseUserStatusDto) {
-    const target = await this.repo.findOne({ where: { _id: new ObjectId(userId) } });
-    if (!target) throw new NotFoundException('User not found');
-    const user = await this.userService.findByEmail(target.email);
-    if (!user) throw new NotFoundException('User not found in user service');
+  async updateEnterpriseUserStatus(currentUser: any, enterpriseId: string, dto: UpdateEnterpriseUserStatusDto) {
+    const enterprise = await this.repo.findOne({ where: { _id: new ObjectId(enterpriseId) } });
+    if (!enterprise) throw new NotFoundException('Enterprise not found');
+    const user = await this.userService.findByEmail(enterprise.email);
+    if (!user) throw new NotFoundException('Enterprise admin user not found');
     const isSuperAdmin = currentUser.roles.some((role: any) => role.name.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase());
 
-    // Ensure same enterprise unless super admin
-    if (!isSuperAdmin && target.id?.toString() !== currentUser.enterpriseId?.toString()) {
+    if (!isSuperAdmin && user.enterpriseId?.toString() !== currentUser.enterpriseId?.toString()) {
       throw new ForbiddenException('User does not belong to your enterprise');
     }
 
-    // Update target user's status
-    await this.userService.updateEnterpriseUser(userId, { isActive: dto.isActive } as any);
+    await this.repo.updateOne(
+      { _id: new ObjectId(enterpriseId) },
+      { $set: { isActive: dto.isActive } },
+    );
 
-    // If deactivating an enterprise admin, cascade to all enterprise users
-    if (user.isEnterpriseAdmin && dto.isActive === false) {
-      await this.repo.updateOne(
-        { _id: new ObjectId(user.enterpriseId) },
-        { $set: { isActive: false } },
-      );
+    await this.userService.updateEnterpriseUser(user.id.toString(), { isActive: dto.isActive } as any);
 
-      // Deactivate all users under this enterprise
-      await this.userService.setUsersActiveByEnterpriseId(user.enterpriseId, false);
+    if (user.isEnterpriseAdmin) {
+      await this.userService.setUsersActiveByEnterpriseId(user.enterpriseId, dto.isActive);
     }
 
-    return { message: 'User status updated successfully' };
+    return { message: 'Enterprise status updated successfully' };
   }
 }
 

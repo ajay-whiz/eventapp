@@ -3,6 +3,7 @@ import ProductTourPanel from '../Login/ProductTourPanel';
 import MobileAppDownload from '../Login/MobileAppDownload';
 import TrustSignals from '../Login/TrustSignals';
 import loginBg from '../../../../assets/images/loginbg.png';
+import { APP_BRANDING } from '../../../../config/branding';
 
 type AuthLayoutProps = {
   children: React.ReactNode;
@@ -54,8 +55,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           <div className="flex flex-col px-9 py-10 sm:px-10">
             <div className="mb-8">
               <img
-                src="/assets/images/logo.svg"
-                alt="Logo"
+                src={APP_BRANDING.logoSrc}
+                alt={APP_BRANDING.logoAlt}
                 className="block logoDashborad"
               />
             </div>

@@ -23,23 +23,28 @@ export class RobustEmailService {
   ) {}
 
   async sendEmail(to: string, subject: string, text: string): Promise<boolean> {
-    // Check if we're in production and have SendGrid configured
-    const isProduction = process.env.NODE_ENV === 'production';
-    const hasSendGrid = process.env.SENDGRID_API_KEY || this.configService.get('sendGrid.apiKey');
-    
-    let strategies;
-    
-    // Prioritize HTTP providers first (work on Railway), then SMTP
-    strategies = [
-      () => this.tryResend(to, subject, text), // Resend API (HTTP) - PRIMARY
-      () => this.trySendGridAPI(to, subject, text), // SendGrid API (HTTP) - FALLBACK
-      () => this.tryGmailSMTP(to, subject, text), // Gmail SMTP - FALLBACK
-      () => this.trySmtpOnly(to, subject, text), // SMTP variations - FALLBACK
-      () => this.tryRailwayDirect(to, subject, text), // Logging backup
-      () => this.tryRailwayEmail(to, subject, text), // Logging backup
-      () => this.tryWebhook(to, subject, text), // Logging backup
-      () => this.tryConsoleLog(to, subject, text) // Guaranteed logging
+    const smtpUser = process.env.SMTP_USER || this.configService.get('email.SMTP_USER');
+    const smtpPass = process.env.SMTP_PASS || this.configService.get('email.SMTP_PASS');
+    const hasSmtpCredentials = Boolean(smtpUser && smtpPass);
+
+    const smtpStrategies = [
+      () => this.tryGmailSMTP(to, subject, text),
+      () => this.trySmtpOnly(to, subject, text),
     ];
+    const httpStrategies = [
+      () => this.tryResend(to, subject, text),
+      () => this.trySendGridAPI(to, subject, text),
+    ];
+    const fallbackStrategies = [
+      () => this.tryRailwayDirect(to, subject, text),
+      () => this.tryRailwayEmail(to, subject, text),
+      () => this.tryWebhook(to, subject, text),
+      () => this.tryConsoleLog(to, subject, text),
+    ];
+
+    const strategies = hasSmtpCredentials
+      ? [...smtpStrategies, ...httpStrategies, ...fallbackStrategies]
+      : [...httpStrategies, ...smtpStrategies, ...fallbackStrategies];
 
     for (let i = 0; i < strategies.length; i++) {
       try {
@@ -250,7 +255,7 @@ export class RobustEmailService {
 
       console.log(`Timestamp: ${new Date().toISOString()}`);
       console.log('='.repeat(50));
-      return true;
+      return false;
     } catch (error) {
 
       throw error;

@@ -2140,7 +2140,14 @@ WhizCloud Events Team
   ): Promise<void> {
     await this.userRepository.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { password: await bcrypt.hash(newPassword, 10) } },
+      {
+        $set: {
+          password: await bcrypt.hash(newPassword, 10),
+          isActive: true,
+          isEmailVerified: true,
+          token: null,
+        },
+      },
     );
   }
 
