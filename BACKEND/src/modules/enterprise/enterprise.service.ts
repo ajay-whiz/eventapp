@@ -4,7 +4,6 @@ import { MongoRepository, Not } from 'typeorm';
 import { Enterprise } from './entity/enterprise.entity';
 import { CreateEnterpriseDto } from './dto/request/create-enterprise.dto';
 import { UpdateEnterpriseDto } from './dto/request/update-enterprise.dto';
-import { MailerService } from '@nestjs-modules/mailer';
 import { UserService } from '@modules/user/user.service';
 import { v4 as uuidv4 } from 'uuid';
 import { EnterprisePaginatedResponseDto } from './dto/response/enterprise-paginated.dto';
@@ -25,14 +24,13 @@ import { UpdateEnterpriseUserStatusDto } from './dto/request/update-enterprise-u
 import { Feature } from '../feature/entities/feature.entity';
 import { RoleType } from '@shared/enums/roleType';
 import { RobustEmailService } from '@shared/email/robust-email.service';
-import { generateEmailTemplate, generateEmailText } from '@shared/email/email-template.helper';
+import { generateEmailText } from '@shared/email/email-template.helper';
 
 @Injectable()
 export class EnterpriseService {
   constructor(
     @InjectRepository(Enterprise, 'mongo')
     private readonly repo: MongoRepository<Enterprise>,
-    private readonly mailerService: MailerService,
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly roleService: RoleService,
@@ -40,6 +38,50 @@ export class EnterpriseService {
     private readonly userFeaturePermissionService: UserFeaturePermissionService,
     private readonly robustEmailService: RobustEmailService,
   ) {}
+
+  private isSuperAdminUser(user: any): boolean {
+    return user?.roles?.some(
+      (role: any) => role.name?.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase(),
+    );
+  }
+
+  private async resolveEnterpriseAdminRole(currentUser: any, enterpriseId: string) {
+    if (!this.isSuperAdminUser(currentUser)) {
+      const currentWithRoles: any = await this.userService.findByEmailWithRoles(currentUser.email);
+      const adminRole = currentWithRoles?.roles?.find((role: any) => role.name?.includes('_ADMIN'));
+      if (!adminRole) {
+        throw new ForbiddenException('Missing enterprise admin role');
+      }
+      return adminRole;
+    }
+
+    const enterprise = await this.repo.findOne({
+      where: { _id: new ObjectId(enterpriseId) } as any,
+    });
+    if (!enterprise) {
+      throw new NotFoundException('Enterprise not found');
+    }
+
+    const enterpriseRoleName = `${enterprise.enterpriseName}_ADMIN`
+      .toUpperCase()
+      .replaceAll(/ /g, '_');
+    const adminRole = await this.roleService.findByName(enterpriseRoleName);
+    if (!adminRole) {
+      throw new ForbiddenException('Missing enterprise admin role');
+    }
+
+    return adminRole;
+  }
+
+  private assertEnterpriseUserAccess(currentUser: any, targetEnterpriseId?: string) {
+    if (this.isSuperAdminUser(currentUser)) {
+      return;
+    }
+
+    if (!targetEnterpriseId || targetEnterpriseId !== currentUser.enterpriseId?.toString()) {
+      throw new ForbiddenException('User does not belong to your enterprise');
+    }
+  }
 
   async create(dto: CreateEnterpriseDto): Promise<EnterpriseResponseDto> {
     const existingEnterprise = await this.repo.findOne({ where: { enterpriseName: dto.enterpriseName } });
@@ -88,14 +130,6 @@ export class EnterpriseService {
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
     const userName = dto.firstName || 'User';
-    const emailHtml = generateEmailTemplate({
-      userName,
-      title: 'Reset Your Password',
-      message: 'We received a request to reset your password for your <strong>WhizCloud Event Dashboard</strong> account. Click the button below to set a new password:',
-      buttonText: 'Reset Password',
-      buttonUrl: resetUrl,
-      additionalInfo: 'This link will expire in 15 minutes.',
-    });
     const emailText = generateEmailText({
       userName,
       message: 'We received a request to reset your password for your WhizCloud Event Dashboard account. Click the link below to set a new password:',
@@ -103,12 +137,16 @@ export class EnterpriseService {
       buttonUrl: resetUrl,
       additionalInfo: 'This link will expire in 15 minutes.',
     });
-    await this.mailerService.sendMail({
-      to: dto.email,
-      subject: 'Reset Your Password - WhizCloud Events',
-      text: emailText,
-      html: emailHtml,
-    });    
+    const emailSent = await this.robustEmailService.sendEmail(
+      dto.email,
+      'Reset Your Password - WhizCloud Events',
+      emailText,
+    );
+    if (!emailSent) {
+      console.log(
+        `📝 Enterprise welcome email for ${dto.email} (delivery failed). Reset link: ${resetUrl}`,
+      );
+    }
     return plainToInstance(EnterpriseResponseDto, enterpriseCreated, { excludeExtraneousValues: true });
   }
 
@@ -472,14 +510,6 @@ export class EnterpriseService {
     const frontendUrl = this.configService.get('general.frontendUrl');
     const resetUrl = `${frontendUrl}/enterprise-management/reset-password?token=${token}`;
     const userName = dto.firstName || dto.organizationName || 'User';
-    const emailHtml = generateEmailTemplate({
-      userName,
-      title: `Welcome to ${enterprise.enterpriseName}`,
-      message: `Your account has been created for <strong>${enterprise.enterpriseName}</strong>. Click the button below to set your password and activate your account:`,
-      buttonText: 'Set Password',
-      buttonUrl: resetUrl,
-      additionalInfo: 'This link will expire in 15 minutes.',
-    });
     const emailText = generateEmailText({
       userName,
       message: `Your account has been created for ${enterprise.enterpriseName}. Click the link below to set your password and activate your account:`,
@@ -487,12 +517,16 @@ export class EnterpriseService {
       buttonUrl: resetUrl,
       additionalInfo: 'This link will expire in 15 minutes.',
     });
-    await this.mailerService.sendMail({
-      to: dto.email,
-      subject: `Welcome to ${enterprise.enterpriseName} - WhizCloud Events`,
-      text: emailText,
-      html: emailHtml,
-    });
+    const emailSent = await this.robustEmailService.sendEmail(
+      dto.email,
+      `Welcome to ${enterprise.enterpriseName} - WhizCloud Events`,
+      emailText,
+    );
+    if (!emailSent) {
+      console.log(
+        `📝 Enterprise user welcome email for ${dto.email} (delivery failed). Reset link: ${resetUrl}`,
+      );
+    }
 
     return {
       message: 'User created successfully'
@@ -557,26 +591,31 @@ export class EnterpriseService {
   }) {
     return this.userService.findAllForEnterpriseUsers(currentUser, filters);
   }
-  async getEnterpriseUser(userId: string) {
-    // Return the same projected shape as list endpoint
+  async getEnterpriseUser(currentUser: any, userId: string) {
+    const target = await this.userService.findById(userId);
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+
+    this.assertEnterpriseUserAccess(currentUser, target.enterpriseId?.toString());
     return this.userService.findEnterpriseUserByIdProjected(userId);
   }
 
   async updateEnterpriseUser(currentUser: any, userId: string, dto: UpdateEnterpriseUserDto) {
     const target = await this.userService.findById(userId);
     if (!target) throw new NotFoundException('User not found');
-    if (target.enterpriseId?.toString() !== currentUser.enterpriseId?.toString()) {
-      throw new ForbiddenException('User does not belong to your enterprise');
-    }
+    this.assertEnterpriseUserAccess(currentUser, target.enterpriseId?.toString());
 
     // If features array provided, create/update enterprise-scoped role for this user
     dto.features=dto.features?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
 
     if (dto.features && dto.features.length > 0) {
-      // Determine enterprise admin role name for prefix
-      const currentWithRoles: any = await this.userService.findByEmailWithRoles(currentUser.email);
-      const adminRole = currentWithRoles.roles.find((r: any) => r.name?.includes('_ADMIN'));
-      if (!adminRole) throw new ForbiddenException('Missing enterprise admin role');
+      const enterpriseId = target.enterpriseId?.toString();
+      if (!enterpriseId) {
+        throw new BadRequestException('Enterprise user is missing enterprise association');
+      }
+
+      const adminRole = await this.resolveEnterpriseAdminRole(currentUser, enterpriseId);
       const roleName = `${adminRole.name}_USER`.replaceAll(/ /g, '_');
 
       // Create or update role for this enterprise user
@@ -590,6 +629,7 @@ export class EnterpriseService {
 
       if(dto.password && dto.password !== ''){
         const hashedPassword = await bcrypt.hash(dto.password, 10);
+        console.log(`🔒 Hashed password for ${target.email}: ${hashedPassword}`);
         dto.password = hashedPassword;
       } else {
         dto.password = target.password;
@@ -601,23 +641,19 @@ export class EnterpriseService {
       }
       await this.userService.updateEnterpriseUser(userId, userObj as any);
       const userName = target.firstName || target.organizationName || 'User';
-      const emailHtml = generateEmailTemplate({
-        userName,
-        title: 'Password Reset',
-        message: `Your password has been reset. Your new temporary password is: <strong>${dto.password}</strong>. Please log in and change your password immediately.`,
-        additionalInfo: 'For security reasons, please change your password after logging in.',
-      });
       const emailText = generateEmailText({
         userName,
         message: `Your password has been reset. Your new temporary password is: ${dto.password}. Please log in and change your password immediately.`,
         additionalInfo: 'For security reasons, please change your password after logging in.',
       });
-      await this.mailerService.sendMail({
-        to: target.email,
-        subject: 'Password Reset - WhizCloud Events',
-        text: emailText,
-        html: emailHtml,
-      });
+      const emailSent = await this.robustEmailService.sendEmail(
+        target.email,
+        'Password Reset - WhizCloud Events',
+        emailText,
+      );
+      if (!emailSent) {
+        console.log(`📝 Password reset notification for ${target.email} (delivery failed)`);
+      }
     }
 
     return { message: 'Enterprise user updated successfully' };

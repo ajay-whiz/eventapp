@@ -106,13 +106,16 @@ const EnterpriseList: React.FC = () => {
     }
   };
 
-  const confirmDelete = () => {
-    if (selectedEnterprise) {
-      removeEnterprise(selectedEnterprise.key ?? '');
+  const confirmDelete = async () => {
+    if (!selectedEnterprise) return;
+    try {
+      await removeEnterprise(selectedEnterprise.key ?? '');
       setShowDeleteModal(false);
       setSelectedEnterprise(null);
       toast.success('Enterprise deleted successfully');
-      getEnterpriseList(currentPage, rowsPerPage, searchQuery);
+      await getEnterpriseList(currentPage, rowsPerPage, searchQuery);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete enterprise');
     }
   };
 

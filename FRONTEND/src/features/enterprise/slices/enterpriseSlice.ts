@@ -77,7 +77,10 @@ export const enterpriseSlice = createSlice({
     },
     removeEnterpriseSuccess(state, action: PayloadAction<string>) {
       state.loading = false;
-      state.enterprises = state.enterprises.filter((enterprise: Enterprise) => enterprise.id !== action.payload);
+      state.enterprises = state.enterprises.filter(
+        (enterprise: Enterprise) =>
+          enterprise.id !== action.payload && enterprise.key !== action.payload
+      );
     },
     removeEnterpriseFailure(state, action: PayloadAction<string>) {
       state.loading = false;

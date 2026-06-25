@@ -130,8 +130,8 @@ export class EnterpriseController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), FeatureGuard)
   @Features(FeatureType.USER_MANAGEMENT, FeatureType.EMPLOYEE_MANAGEMENT)
-  getEnterpriseUser(@Param('id') id: string) {
-    return this.enterpriseService.getEnterpriseUser( id);
+  getEnterpriseUser(@Req() req: any, @Param('id') id: string) {
+    return this.enterpriseService.getEnterpriseUser(req.user, id);
   }
 
   @Put('users/:id')

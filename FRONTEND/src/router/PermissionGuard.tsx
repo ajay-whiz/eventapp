@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { usePermissionsByUniqueId } from '../hooks/usePermissions';
-import { getUserDataFromStorage, getUserRoleInfo } from '../utils/permissions';
+import { getUserDataFromStorage, getUserRoleInfo, isSuperAdminOnlyFeature } from '../utils/permissions';
 
 /**
  * Permission-based Route Guard
@@ -85,6 +85,13 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   // Fourth check: Determine required feature from route or prop
   const featureToCheck = requiredFeature || ROUTE_FEATURE_MAPPING[location.pathname];
   
+  if (featureToCheck && isSuperAdminOnlyFeature(featureToCheck) && !userRoleInfo.isSuperAdmin) {
+    return <Navigate to="/unauthorized" state={{ 
+      error: 'This module is only available to Super Admin users',
+      from: location 
+    }} replace />;
+  }
+
   if (!featureToCheck) {
     // Route not in mapping and no explicit feature required - allow access
     // This handles dynamic routes and edge cases

@@ -6,7 +6,7 @@ import { useUser } from '../hooks/useUser';
 import { IMAGE_BASE_URL } from '../config/api';
 import Tooltip from '../components/atoms/ToolTip';
 import LogoutButton from '../features/auth/components/Auth/LogoutButton';
-import { getUserDataFromStorage, isSuperAdmin } from '../utils/permissions';
+import { getUserDataFromStorage, isSuperAdmin, isSuperAdminOnlyFeature } from '../utils/permissions';
 import { getFeatureConfig, type MenuItemFromFeature } from '../config/featureMapping';
 import { Settings } from 'lucide-react';
 
@@ -162,13 +162,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       });
     }
     
-    // Add Form, Role, and Feature management for Super Admin only
+    // Super Admin-only menu items (not driven by feature permissions for other roles)
     if (isUserSuperAdmin) {
-      const superAdminFeatures = ['form_builder', 'role_management', 'feature_management'];
+      const superAdminFeatures = [
+        'role_management',
+        'feature_management',
+        'enterprise_management',
+      ];
       superAdminFeatures.forEach(uniqueId => {
         const config = getFeatureConfig(uniqueId);
         if (config) {
-          // Check if this feature is not already in the list (avoid duplicates)
           const alreadyExists = baseMenuItems.some(item => item.uniqueId === uniqueId);
           if (!alreadyExists) {
             baseMenuItems.push({
@@ -187,14 +190,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
     // Get features from login API response (from roles)
     const userFeatures = userData?.roles?.flatMap(role => role.features || []) || [];
     
-    // Filter out dashboard, profile_setting, and super admin features to avoid duplicates
-    // Also filter out features without uniqueId
+    // Filter out dashboard, profile, settings, and super-admin-only features
     const filteredFeatures = userFeatures.filter(
       feature => feature && feature.uniqueId && 
       feature.uniqueId !== 'dashboard' && 
       feature.uniqueId !== 'profile_setting' &&
       feature.uniqueId !== 'content_policy' &&
-      !(isUserSuperAdmin && ['form_builder', 'role_management', 'feature_management'].includes(feature.uniqueId))
+      !isSuperAdminOnlyFeature(feature.uniqueId) &&
+      !(isUserSuperAdmin && ['role_management', 'feature_management', 'enterprise_management', 'content_policy'].includes(feature.uniqueId))
     );
     
     // Add features from login response only
@@ -228,19 +231,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       }
     });
     
-    // Always add Settings (before Profile)
-    const settingsConfig = getFeatureConfig('content_policy');
-    if (settingsConfig) {
-      const settingsExists = baseMenuItems.some(item => item.uniqueId === 'content_policy');
-      if (!settingsExists) {
-        baseMenuItems.push({
-          to: settingsConfig.route,
-          label: settingsConfig.defaultLabel,
-          icon: settingsConfig.icon,
-          badge: null,
-          feature: settingsConfig.defaultLabel,
-          uniqueId: settingsConfig.uniqueId,
-        });
+    // Settings at the bottom (Super Admin only), above Profile
+    if (isUserSuperAdmin) {
+      const settingsConfig = getFeatureConfig('content_policy');
+      if (settingsConfig) {
+        const settingsExists = baseMenuItems.some(item => item.uniqueId === 'content_policy');
+        if (!settingsExists) {
+          baseMenuItems.push({
+            to: settingsConfig.route,
+            label: settingsConfig.defaultLabel,
+            icon: settingsConfig.icon,
+            badge: null,
+            feature: settingsConfig.defaultLabel,
+            uniqueId: settingsConfig.uniqueId,
+          });
+        }
       }
     }
 

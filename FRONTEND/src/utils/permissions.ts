@@ -18,40 +18,59 @@ export interface UserData {
   organizationName?: string;
 }
 
+export const SUPER_ADMIN_ONLY_FEATURE_IDS = [
+  'role_management',
+  'feature_management',
+  'enterprise_management',
+  'content_policy',
+] as const;
+
+export const isSuperAdminOnlyFeature = (uniqueId: string): boolean =>
+  (SUPER_ADMIN_ONLY_FEATURE_IDS as readonly string[]).includes(uniqueId);
+
+const normalizeRoleName = (name?: string): string =>
+  (name ?? '').toLowerCase().trim().replace(/_/g, ' ');
+
+/** Enterprise roles are named like SUPERTECH_ADMIN, ACME_ADMIN — not platform Super Admin */
+export const isEnterpriseScopedAdminRole = (roleName?: string): boolean => {
+  const normalized = (roleName ?? '').toLowerCase().trim();
+  if (!normalized.endsWith('_admin')) {
+    return false;
+  }
+  return normalized !== 'super_admin';
+};
+
+export const isPlatformSuperAdminRole = (role: UserRole): boolean => {
+  const roleName = role.name?.toLowerCase().trim() ?? '';
+  const normalized = normalizeRoleName(role.name);
+
+  if (isEnterpriseScopedAdminRole(role.name)) {
+    return false;
+  }
+
+  return (
+    normalized === 'super admin' ||
+    roleName === 'super_admin' ||
+    roleName === 'superadmin' ||
+    roleName === 'super-admin' ||
+    role.name === 'Super Admin' ||
+    role.name === 'SUPER_ADMIN' ||
+    role.name === 'SuperAdmin'
+  );
+};
+
 /**
- * Check if user has Super Admin role
- */
-/**
- * Check if user is Super Admin (NOT regular Admin)
- * 
- * System has 2 roles:
- * - "Super Admin" / "SUPER_ADMIN" = Full access to all modules (bypass permissions)
- * - "Admin" / "ADMIN" = Standard permissions-based access
+ * Check if user is Super Admin (NOT regular Admin or enterprise admin)
+ *
+ * Platform Super Admin: "Super Admin" / "SUPER_ADMIN"
+ * Enterprise admin roles like "SUPERTECH_ADMIN" are excluded
  */
 export const isSuperAdmin = (userData: UserData | null): boolean => {
   if (!userData?.roles || !Array.isArray(userData.roles)) {
     return false;
   }
 
-  return userData.roles.some((role: UserRole) => {
-    const roleName = role.name?.toLowerCase().trim();
-    return (
-      // Exact Super Admin matches ONLY
-      roleName === 'super admin' ||
-      roleName === 'super_admin' ||
-      roleName === 'superadmin' ||
-      roleName === 'super-admin' ||
-      roleName === 'super' ||
-      // Also check original case from API
-      role.name === 'Super Admin' ||
-      role.name === 'SUPER_ADMIN' ||
-      role.name === 'SuperAdmin' ||
-      // Check for specific admin patterns (not just any admin)
-      (roleName.includes('super') && roleName.includes('admin')) ||
-      // Check for internal admin roles only if they have super admin privileges
-      ((role as any).isInternal === true && roleName.includes('super'))
-    );
-  });
+  return userData.roles.some((role: UserRole) => isPlatformSuperAdminRole(role));
 };
 
 /**
@@ -80,17 +99,7 @@ export const getSuperAdminRoles = (userData: UserData | null): string[] => {
   }
 
   return userData.roles
-    .filter((role: UserRole) => {
-      const roleName = role.name?.toLowerCase().trim();
-      return (
-        roleName === 'super admin' ||
-        roleName === 'super_admin' ||
-        roleName === 'superadmin' ||
-        roleName === 'super-admin' ||
-        roleName === 'super' ||
-        (roleName.includes('super') && roleName.includes('admin'))
-      );
-    })
+    .filter((role: UserRole) => isPlatformSuperAdminRole(role))
     .map((role: UserRole) => role.name);
 };
 

@@ -46,11 +46,12 @@ export function useEnterpriseActions() {
         },
       });
 
-      dispatch(removeEnterpriseSuccess(_id)); // assuming response.data is an array of users
+      dispatch(removeEnterpriseSuccess(_id));
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || err.message || 'Failed to remove user';
       dispatch(removeEnterpriseFailure(errorMessage));
+      throw new Error(errorMessage);
     }
   }, [dispatch]);
 
