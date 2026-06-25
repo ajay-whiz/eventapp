@@ -1,5 +1,5 @@
 import React from 'react';
-import { XCircle, Clock, DollarSign, Package, User } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, DollarSign, Package, User } from 'lucide-react';
 
 export interface ExtraService {
   name: string;
