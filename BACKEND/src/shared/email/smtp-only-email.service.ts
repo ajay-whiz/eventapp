@@ -6,7 +6,12 @@ import * as nodemailer from 'nodemailer';
 export class SmtpOnlyEmailService {
   constructor(private readonly configService: ConfigService) {}
 
-  async sendEmail(to: string, subject: string, text: string): Promise<boolean> {
+  async sendEmail(
+    to: string,
+    subject: string,
+    text: string,
+    html?: string,
+  ): Promise<boolean> {
     try {
 
       // Get SMTP credentials from environment variables or config
@@ -93,6 +98,7 @@ export class SmtpOnlyEmailService {
             to: to,
             subject: subject,
             text: text,
+            ...(html ? { html } : {}),
           };
 
           const info = await transporter.sendMail(mailOptions);

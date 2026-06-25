@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, BadRequestException, ForbiddenException, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository, Not } from 'typeorm';
 import { Enterprise } from './entity/enterprise.entity';
@@ -23,6 +23,7 @@ import { UpdateEnterpriseUserDto } from './dto/request/update-enterprise-user.dt
 import { UpdateEnterpriseUserStatusDto } from './dto/request/update-enterprise-user-status.dto';
 import { Feature } from '../feature/entities/feature.entity';
 import { MailerService } from '@nestjs-modules/mailer';
+import { SmtpOnlyEmailService } from '@shared/email/smtp-only-email.service';
 import { generateEmailTemplate, generateEmailText, type EmailTemplateOptions } from '@shared/email/email-template.helper';
 
 @Injectable()
@@ -36,6 +37,7 @@ export class EnterpriseService {
     private readonly featureService: FeatureService,
     private readonly userFeaturePermissionService: UserFeaturePermissionService,
     private readonly mailerService: MailerService,
+    private readonly smtpOnlyEmailService: SmtpOnlyEmailService,
   ) {}
 
   private async sendEnterpriseEmail(
@@ -43,7 +45,7 @@ export class EnterpriseService {
     subject: string,
     template: EmailTemplateOptions,
     logContext?: string,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const emailText = generateEmailText(template);
     const emailHtml = generateEmailTemplate(template);
 
@@ -55,14 +57,33 @@ export class EnterpriseService {
         html: emailHtml,
       });
       console.log(`✅ ${logContext ?? 'Enterprise email'} sent to ${to}`);
-      return true;
+      return;
     } catch (error: any) {
-      console.error(`❌ ${logContext ?? 'Enterprise email'} failed for ${to}:`, error?.message || error);
-      if (template.buttonUrl) {
-        console.log(`📝 Invite/reset link (delivery failed): ${template.buttonUrl}`);
-      }
-      return false;
+      console.error(
+        `❌ ${logContext ?? 'Enterprise email'} mailer failed for ${to}:`,
+        error?.message || error,
+      );
     }
+
+    const sentViaSmtp = await this.smtpOnlyEmailService.sendEmail(
+      to,
+      subject,
+      emailText,
+      emailHtml,
+    );
+
+    if (sentViaSmtp) {
+      console.log(`✅ ${logContext ?? 'Enterprise email'} sent via SMTP fallback to ${to}`);
+      return;
+    }
+
+    if (template.buttonUrl) {
+      console.log(`📝 Invite/reset link (delivery failed): ${template.buttonUrl}`);
+    }
+
+    throw new ServiceUnavailableException(
+      'Failed to send email. Verify SMTP credentials in BACKEND/.env and check server logs for the reset link.',
+    );
   }
 
   private isPlatformSuperAdminRoleName(roleName?: string): boolean {

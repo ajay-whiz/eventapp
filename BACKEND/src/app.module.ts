@@ -12,7 +12,6 @@ import { HandlebarsService } from '@common/helper/handlebar';
 import { PdfModule } from '@shared/modules/pdf/pdf.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { UserModule } from '@modules/user/user.module';
-import { MailerModule } from '@nestjs-modules/mailer'; 
 import { EventModule } from '@modules/event/event.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { FeatureModule } from './modules/feature/feature.module';
@@ -52,100 +51,16 @@ import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module
 
 @Module({
   imports: [
-        MailerModule.forRootAsync({
-      imports: [
-        ConfigModule,
-        ServeStaticModule.forRoot({
-          rootPath: join(__dirname, '..', 'uploads'),
-          serveRoot: '/uploads',
-        }),
-      ],
-      useFactory: async (configService: ConfigService) => {
-        // Use SendGrid for production, Gmail SMTP as fallback
-        const isProduction = process.env.NODE_ENV === 'production';
-        
-        if (isProduction) {
-          // Try SendGrid first, fallback to Gmail SMTP
-          const sendGridApiKey = configService.get<string>('sendGrid.apiKey');
-          
-          if (sendGridApiKey && sendGridApiKey.length > 10) {
-
-            return {
-              transport: {
-                host: 'smtp.sendgrid.net',
-                port: 587,
-                secure: false, // Use TLS
-                auth: {
-                  user: 'apikey',
-                  pass: sendGridApiKey,
-                },
-                connectionTimeout: 15000, // 15 seconds
-                greetingTimeout: 15000,   // 15 seconds
-                socketTimeout: 15000,     // 15 seconds
-                pool: true,
-                maxConnections: 3,
-                maxMessages: 50,
-              },
-              defaults: {
-                from: configService.get<string>('sendGrid.fromEmail'),
-              },
-            };
-          } else {
-
-            // Fallback to Gmail SMTP
-            return {
-              transport: {
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false,
-                auth: {
-                  user: configService.get('email.SMTP_USER'),
-                  pass: configService.get('email.SMTP_PASS'),
-                },
-                connectionTimeout: 20000, // 20 seconds
-                greetingTimeout: 20000,   // 20 seconds
-                socketTimeout: 20000,     // 20 seconds
-                pool: true,
-                maxConnections: 3,
-                maxMessages: 50,
-              },
-              defaults: {
-                from: `"No Reply" <${configService.get('email.SMTP_FROM')}>`,
-              },
-            };
-          }
-        } else {
-          // Use Gmail SMTP for development with better timeout settings
-          return {
-            transport: {
-              host: configService.get('email.SMTP_HOST'),
-              port: parseInt(configService.get('email.SMTP_PORT') || '587'),
-              secure: configService.get('email.SMTP_SECURE') === 'true',
-              auth: {
-                user: configService.get('email.SMTP_USER'),
-                pass: configService.get('email.SMTP_PASS'),
-              },
-              connectionTimeout: 15000, // 15 seconds
-              greetingTimeout: 15000,   // 15 seconds
-              socketTimeout: 15000,     // 15 seconds
-              pool: true,               // Use connection pooling
-              maxConnections: 5,        // Max connections in pool
-              maxMessages: 100,         // Max messages per connection
-            },
-            defaults: {
-              from: `"No Reply" <${configService.get('email.SMTP_FROM')}>`,
-            },
-          };
-        }
-      },
-      inject: [ConfigService],
-    }),
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
       load: [configuration],
       ignoreEnvFile: false,
       envFilePath: ['.env'],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
     }),
     TypeOrmModule.forRootAsync({
       name: 'mongo',

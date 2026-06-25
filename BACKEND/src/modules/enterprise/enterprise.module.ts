@@ -4,16 +4,16 @@ import { EnterpriseService } from './enterprise.service';
 import { Enterprise } from './entity/enterprise.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '@modules/user/user.module';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { RoleModule } from '@modules/role/role.module';
 import { UserFeaturePermissionModule } from '@modules/user-feature-permission/user-feature-permission.module';
 import { FeatureModule } from '@modules/feature/feature.module';
+import { EmailModule } from '@shared/email/email.module';
 
 
 @Module({
     imports: [TypeOrmModule.forFeature([Enterprise],'mongo'),
    UserModule,
-   MailerModule,
+   EmailModule,
    RoleModule,
    FeatureModule,
    UserFeaturePermissionModule
