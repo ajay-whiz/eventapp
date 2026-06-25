@@ -12,5 +12,13 @@
       "region": "ap-northeast-1",
       "bucket": "event-apps"
     }
-  }
+  },
+   "email": {
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": 587,
+    "SMTP_SECURE": false,
+    "SMTP_USER": "ajay@whiz-solutions.com",
+    "SMTP_PASS": "gdqvxrxollckctpb",
+    "SMTP_FROM": "ajay@whiz-solutions.com"
+}
 }
