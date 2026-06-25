@@ -283,6 +283,7 @@ export class BookingController {
       amount: data.amount,
       extraServices: data.extraServices,
       notes: data.notes,
+      status: data.status,
       createdAt: data.createdAt,
     }, { excludeExtraneousValues: true });
   }
@@ -332,6 +333,7 @@ export class BookingController {
         amount: offer.amount,
         extraServices: extraServices,
         notes: offer.notes,
+        status: offer.status,
         createdAt: offer.createdAt,
       }, { excludeExtraneousValues: true });
     });

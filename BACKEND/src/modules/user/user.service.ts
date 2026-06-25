@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  OnModuleInit,
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -39,7 +40,7 @@ import { SimpleEmailService } from '@shared/email/simple-email.service';
 import { RobustEmailService } from '@shared/email/robust-email.service';
 import { generateEmailTemplate, generateEmailText } from '@shared/email/email-template.helper';
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   private generalConfig;
   private jwtConfig;
   private awsConfig;
@@ -61,33 +62,101 @@ export class UserService {
     this.awsConfig = this.configService.get('aws');
   }
 
+  async onModuleInit(): Promise<void> {
+    await this.ensureActiveEmailUniqueIndex();
+  }
+
+  private buildActiveUserFilter(filters: Record<string, unknown> = {}) {
+    return {
+      $and: [
+        { $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }] },
+        ...Object.entries(filters).map(([key, value]) => ({ [key]: value })),
+      ],
+    };
+  }
+
+  private async findActiveUsers(
+    filters: Record<string, unknown> = {},
+  ): Promise<User[]> {
+    return this.userRepository.find({
+      where: this.buildActiveUserFilter(filters),
+      order: { createdAt: 'DESC' },
+    } as any);
+  }
+
+  async findActiveByEmail(email: string): Promise<User | null> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const users = await this.findActiveUsers({ email: normalizedEmail });
+    return users[0] ?? null;
+  }
+
+  private async findActiveByPhone(
+    countryCode: string,
+    phoneNumber: string,
+  ): Promise<User | null> {
+    const users = await this.findActiveUsers({ countryCode, phoneNumber });
+    return users[0] ?? null;
+  }
+
+  private async ensureActiveEmailUniqueIndex(): Promise<void> {
+    try {
+      const driver = this.userRepository.manager.connection.driver as any;
+      const db = driver.database;
+      if (!db) {
+        return;
+      }
+
+      const usersCollection = db.collection('users');
+      const indexes = await usersCollection.indexes();
+      const partialIndexName = 'email_unique_active_users';
+
+      if (indexes.some((idx:any) => idx.name === partialIndexName)) {
+        return;
+      }
+
+      const conflictingIndex = indexes.find(
+        (idx:any) =>
+          idx.key?.email === 1 &&
+          idx.unique &&
+          !idx.partialFilterExpression,
+      );
+
+      if (conflictingIndex?.name) {
+        await usersCollection.dropIndex(conflictingIndex.name);
+      }
+
+      await usersCollection.createIndex(
+        { email: 1 },
+        {
+          unique: true,
+          partialFilterExpression: { isDeleted: { $ne: true } },
+          name: partialIndexName,
+        },
+      );
+    } catch (error) {
+      console.error('Failed to ensure users email partial unique index:', error);
+    }
+  }
+
   async signup(body: SignUpReqDto): Promise<{ message: string }> {
     const normalizedEmail = body.email.toLowerCase().trim();
     const countryCode = body.countryCode?.trim() || '';
     const phoneNumber = body.phoneNumber?.trim() || '';
 
-    const existingUser = await this.userRepository.findOneBy({
-      email: normalizedEmail,
-    });
+    const existingUser = await this.findActiveByEmail(normalizedEmail);
 
-    if (existingUser && !existingUser.isDeleted) {
+    if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
     if (countryCode && phoneNumber) {
-      const existingUserByPhone = await this.userRepository.findOneBy({
+      const existingUserByPhone = await this.findActiveByPhone(
         countryCode,
         phoneNumber,
-      });
+      );
 
-      if (existingUserByPhone && !existingUserByPhone.isDeleted) {
-        const reactivatingSameUser =
-          existingUser?.isDeleted &&
-          existingUserByPhone.id?.toString() === existingUser.id?.toString();
-
-        if (!reactivatingSameUser) {
-          throw new ConflictException('Phone number already registered');
-        }
+      if (existingUserByPhone) {
+        throw new ConflictException('Phone number already registered');
       }
     }
 
@@ -112,8 +181,6 @@ export class UserService {
     const otp = '111111'; // Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    let user: User;
-
     const signupFields = {
       firstName: body.firstName,
       lastName: body.lastName ?? '',
@@ -122,38 +189,16 @@ export class UserService {
       phoneNumber,
     };
 
-    if (existingUser?.isDeleted) {
-      Object.assign(existingUser, {
-        ...signupFields,
-        email: normalizedEmail,
-        password: hashedPassword,
-        roleIds: [defaultRole.id],
-        otp,
-        expireAt: expiresAt,
-        isMobileAppUser: true,
-        userType: 'USER',
-        isDeleted: false,
-        isActive: false,
-        isEmailVerified: false,
-        isPhoneVerified: false,
-        deletedAt: null,
-        token: null,
-        fcmToken: null,
-        updatedAt: new Date(),
-      });
-      user = existingUser;
-    } else {
-      user = this.userRepository.create({
-        ...signupFields,
-        email: normalizedEmail,
-        password: hashedPassword,
-        roleIds: [defaultRole.id],
-        otp: otp,
-        expireAt: expiresAt,
-        isMobileAppUser: true,
-        userType: 'USER',
-      });
-    }
+    const user = this.userRepository.create({
+      ...signupFields,
+      email: normalizedEmail,
+      password: hashedPassword,
+      roleIds: [defaultRole.id],
+      otp: otp,
+      expireAt: expiresAt,
+      isMobileAppUser: true,
+      userType: 'USER',
+    });
 
     await this.userRepository.save(user);
     
@@ -191,16 +236,9 @@ export class UserService {
   }
 
   async verify(payload: any) {
-    const user = await this.userRepository.findOne({
-      where: { email: payload.email },
-      relations: ['roles', 'roles.features']
-    });
+    const user = await this.findActiveByEmail(payload.email);
     if (!user) {
       throw new UnauthorizedException('Invalid Authorization');
-    }
-
-    if (user.isDeleted) {
-      throw new UnauthorizedException('This account has been deleted.');
     }
 
     return user;
@@ -209,31 +247,32 @@ export class UserService {
   async validateLogin(payload: LoginReqDto): Promise<User> {
     const { email, password } = payload;
 
-    // Normalize email to lowercase for consistent searching
     const normalizedEmail = email.toLowerCase().trim();
-    
-    // Try case-insensitive email search first (most reliable for MongoDB)
-    let user = await this.userRepository.findOne({ 
-      where: { email: { $regex: new RegExp(`^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } } 
-    } as any);
-    
-    // Fallback to exact match if regex doesn't work
-    if (!user) {
-      user = await this.userRepository.findOne({ where: { email: normalizedEmail } });
-    }
-    
-    // Final fallback: exact match with original email
-    if (!user) {
-      user = await this.userRepository.findOne({ where: { email: email } });
-    }
-    
-    if (!user) {
 
+    let user = await this.findActiveByEmail(normalizedEmail);
+
+    if (!user) {
+      const users = await this.userRepository.find({
+        where: {
+          $and: [
+            { $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }] },
+            {
+              email: {
+                $regex: new RegExp(
+                  `^${normalizedEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
+                  'i',
+                ),
+              },
+            },
+          ],
+        },
+        order: { createdAt: 'DESC' },
+      } as any);
+      user = users[0] ?? null;
+    }
+
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (user.isDeleted) {
-      throw new UnauthorizedException('This account has been deleted.');
     }
 
     // Check if user is blocked
@@ -324,11 +363,9 @@ export class UserService {
     const otp = '111111'; // Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Find the user by email
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.findActiveByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
-      // Or, if you want to create a user here, do so explicitly
     }
 
     // Update OTP and expiry
@@ -355,8 +392,8 @@ export class UserService {
   }
 
   async verifyOtp(email: string, otp: string) {
-    const user = await this.userRepository.findOne({ where: { email, otp } });
-    if (!user || !user.expireAt || user.expireAt < new Date()) {
+    const user = await this.findActiveByEmail(email);
+    if (!user || user.otp !== otp || !user.expireAt || user.expireAt < new Date()) {
       throw new BadRequestException('Invalid or expired OTP');
     }
     // Mark user as verified
@@ -371,7 +408,7 @@ export class UserService {
   }
 
   async findByEmail(email: string) {
-    return this.userRepository.findOne({ where: { email } });
+    return this.findActiveByEmail(email);
   }
 
   async createFromGoogle(payload: any) {
@@ -419,10 +456,7 @@ export class UserService {
   }
 
   async findByPhoneNumber(countryCode: string, phoneNumber: string) {
-    return this.userRepository.findOneBy({
-      countryCode: countryCode,
-      phoneNumber: phoneNumber,
-    });
+    return this.findActiveByPhone(countryCode, phoneNumber);
   }
 
   async save(user: User) {
@@ -1276,8 +1310,13 @@ export class UserService {
   async findByEmailWithRoles(email: string) {
     const users = await this.userRepository
       .aggregate([
-        // Match user by email
-        { $match: { email: email } },
+        // Match active user by email
+        {
+          $match: {
+            email,
+            $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+          },
+        },
         // Lookup roles
         {
           $lookup: {
@@ -1407,10 +1446,7 @@ export class UserService {
       .toArray();
 
     if (users.length === 0) {
-      // If no user found with roles, try to get basic user info
-      const basicUser = await this.userRepository.findOne({
-        where: { email: email },
-      });
+      const basicUser = await this.findActiveByEmail(email);
       if (basicUser) {
         return {
           id: basicUser.id,
@@ -1427,7 +1463,7 @@ export class UserService {
     return users[0];
   }
   async forgotPassword(email: string, isAdmin: boolean = false) {
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.findActiveByEmail(email);
     if (!user) throw new NotFoundException('User not found');
 
     // 2. Generate reset token
@@ -1687,18 +1723,17 @@ export class UserService {
 
     const normalizedEmail = dto.email.toLowerCase().trim();
 
-    const existingByEmail = await this.userRepository.findOne({
-      where: { email: normalizedEmail },
-    });
-    if (existingByEmail && !existingByEmail.isDeleted) {
+    const existingByEmail = await this.findActiveByEmail(normalizedEmail);
+    if (existingByEmail) {
       throw new BadRequestException('Email is already in use');
     }
 
     if (dto.phoneNumber) {
-      const existingByPhone = await this.userRepository.findOne({
-        where: { phoneNumber: dto.phoneNumber, countryCode: dto.countryCode },
-      });
-      if (existingByPhone && !existingByPhone.isDeleted) {
+      const existingByPhone = await this.findActiveByPhone(
+        dto.countryCode,
+        dto.phoneNumber,
+      );
+      if (existingByPhone) {
         throw new BadRequestException('Phone number is already in use');
       }
     }

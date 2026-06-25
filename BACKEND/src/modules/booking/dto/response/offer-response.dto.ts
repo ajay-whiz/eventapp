@@ -1,18 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { OfferStatus } from '../../entities/offer.entity';
 
 export class OfferResponseDto {
   @ApiProperty({ description: 'Offer ID', example: 'OFFER-ABC123' })
   @Expose()
-  offerId: string;
+  offerId!: string;
 
   @ApiProperty({ description: 'Booking ID this offer is for', example: 'BK-7AA6B9CD' })
   @Expose()
-  bookingId: string;
+  bookingId!: string;
 
   @ApiProperty({ description: 'User ID who submitted the offer', example: 'USER-123456' })
   @Expose()
-  userId: string;
+  userId!: string;
 
   @ApiProperty({ description: 'User name who submitted the offer', required: false })
   @Expose()
@@ -24,7 +25,7 @@ export class OfferResponseDto {
 
   @ApiProperty({ description: 'Offer amount', example: 1500 })
   @Expose()
-  amount: number;
+  amount!: number;
 
   @ApiProperty({ description: 'Extra services included in the offer', type: [String], required: false })
   @Expose()
@@ -34,8 +35,12 @@ export class OfferResponseDto {
   @Expose()
   notes?: string;
 
+  @ApiProperty({ description: 'Offer status', enum: OfferStatus, example: OfferStatus.PENDING })
+  @Expose()
+  status!: OfferStatus;
+
   @ApiProperty({ description: 'Creation timestamp' })
   @Expose()
-  createdAt: Date;
+  createdAt!: Date;
 }
 
