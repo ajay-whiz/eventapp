@@ -78,6 +78,15 @@ export class EnterpriseController {
     return this.enterpriseService.resendResetLink(req.user, dto);
   }
 
+  @Post('resend-reset-link')
+  @ApiOperation({ summary: 'Resend reset password link to an enterprise admin by email (Enterprise Management)' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'), FeatureGuard)
+  @Features(FeatureType.ENTERPRISE_MANAGEMENT)
+  resendEnterpriseAdminResetLink(@Req() req: any, @Body() dto: ResendResetLinkDto) {
+    return this.enterpriseService.resendResetLink(req.user, dto);
+  }
+
   @Get('features')
   @ApiOperation({ summary: 'Get accessible features for enterprise admin' })
   @ApiBearerAuth()

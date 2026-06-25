@@ -22,7 +22,6 @@ import { ObjectId } from 'mongodb';
 import { UpdateEnterpriseUserDto } from './dto/request/update-enterprise-user.dto';
 import { UpdateEnterpriseUserStatusDto } from './dto/request/update-enterprise-user-status.dto';
 import { Feature } from '../feature/entities/feature.entity';
-import { RoleType } from '@shared/enums/roleType';
 import { MailerService } from '@nestjs-modules/mailer';
 import { generateEmailTemplate, generateEmailText, type EmailTemplateOptions } from '@shared/email/email-template.helper';
 
@@ -66,10 +65,57 @@ export class EnterpriseService {
     }
   }
 
-  private isSuperAdminUser(user: any): boolean {
-    return user?.roles?.some(
-      (role: any) => role.name?.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase(),
+  private isPlatformSuperAdminRoleName(roleName?: string): boolean {
+    if (!roleName) {
+      return false;
+    }
+
+    const roleNameLower = roleName.toLowerCase().trim();
+    const normalized = roleNameLower.replace(/_/g, ' ');
+
+    // Enterprise roles like WHIZCLOUD5_ADMIN are not platform super admin
+    if (roleNameLower.endsWith('_admin') && roleNameLower !== 'super_admin') {
+      return false;
+    }
+
+    return (
+      normalized === 'super admin' ||
+      roleNameLower === 'super_admin' ||
+      roleNameLower === 'superadmin' ||
+      roleNameLower === 'super-admin' ||
+      roleName === 'Super Admin' ||
+      roleName === 'SUPER_ADMIN' ||
+      roleName === 'SuperAdmin'
     );
+  }
+
+  private isSuperAdminUser(user: any): boolean {
+    if (user?.userType?.toUpperCase() === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (!user?.roles?.length) {
+      return false;
+    }
+
+    return user.roles.some((role: any) =>
+      this.isPlatformSuperAdminRoleName(role.name),
+    );
+  }
+
+  private isEnterpriseAdminUser(user: any): boolean {
+    if (!user?.roles?.length) {
+      return user?.isEnterpriseAdmin === true;
+    }
+
+    return user.roles.some((role: any) => {
+      const name = (role.name ?? '').toUpperCase();
+      return name.endsWith('_ADMIN') && !this.isPlatformSuperAdminRoleName(role.name);
+    });
+  }
+
+  private async resolveUserRoles(email: string): Promise<any> {
+    return this.userService.findByEmailWithRoles(email);
   }
 
   private async resolveEnterpriseAdminRole(currentUser: any, enterpriseId: string) {
@@ -411,12 +457,13 @@ export class EnterpriseService {
   }
 
   async resendResetLink(currentUser: any, dto: ResendResetLinkDto): Promise<{ message: string }> {
-    // Validate enterprise context and permissions
-    const isSuperAdmin = currentUser.roles.some((role: any) => role.name.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase());
-    const requester = await this.userService.findByEmailWithRoles(currentUser.email);
-    const isEnterpriseAdmin = requester?.roles?.some((r: any) => r.name?.includes('_ADMIN'));
+    const requester = await this.resolveUserRoles(currentUser.email);
+    const isSuperAdmin =
+      this.isSuperAdminUser(currentUser) || this.isSuperAdminUser(requester);
+    const isEnterpriseAdmin = this.isEnterpriseAdminUser(requester);
+
     if (!isEnterpriseAdmin && !isSuperAdmin) {
-      throw new ForbiddenException('Only enterprise admins can resend reset link');
+      throw new ForbiddenException('Only enterprise admins or super admins can resend reset link');
     }
 
     // Find target user by email
@@ -455,7 +502,9 @@ export class EnterpriseService {
 
   async addEnterpriseUser(currentUser: any, dto: AddEnterpriseUserDto): Promise<{ message: string; }> {
     // Verify user has enterprise context
-    const isSuperAdmin = currentUser.roles.some((role: any) => role.name.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase());
+    const isSuperAdmin =
+      this.isSuperAdminUser(currentUser) ||
+      this.isSuperAdminUser(await this.resolveUserRoles(currentUser.email));
     let enterpriseUser: any;
     if (!currentUser.enterpriseId && !isSuperAdmin) {
       throw new BadRequestException('Enterprise ID not found in user context');
@@ -563,7 +612,9 @@ export class EnterpriseService {
 
   async getAccessibleFeatures(currentUser: any, enterpriseId?: string): Promise<{ features: any[] }> {
     // Verify user has enterprise context
-    const isSuperAdmin = currentUser.roles.some((role: any) => role.name.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase());
+    const isSuperAdmin =
+      this.isSuperAdminUser(currentUser) ||
+      this.isSuperAdminUser(await this.resolveUserRoles(currentUser.email));
     
     // If no enterpriseId is provided but user has enterpriseId, use user's enterpriseId
     if (!enterpriseId && currentUser?.enterpriseId && !isSuperAdmin) {
@@ -690,7 +741,9 @@ export class EnterpriseService {
     if (!enterprise) throw new NotFoundException('Enterprise not found');
     const user = await this.userService.findByEmail(enterprise.email);
     if (!user) throw new NotFoundException('Enterprise admin user not found');
-    const isSuperAdmin = currentUser.roles.some((role: any) => role.name.toLowerCase() === RoleType.SUPER_ADMIN.toLowerCase());
+    const isSuperAdmin =
+      this.isSuperAdminUser(currentUser) ||
+      this.isSuperAdminUser(await this.resolveUserRoles(currentUser.email));
 
     if (!isSuperAdmin && user.enterpriseId?.toString() !== currentUser.enterpriseId?.toString()) {
       throw new ForbiddenException('User does not belong to your enterprise');
