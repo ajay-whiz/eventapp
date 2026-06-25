@@ -5,69 +5,69 @@ import { DetailLocationItemDto } from '@shared/dto/detail-location-item.dto';
 class LocationDto {
   @ApiProperty({ description: 'Full address' })
   @Expose()
-  address: string;
+  address!: string;
 
   @ApiProperty({ description: 'City name' })
   @Expose()
-  city: string;
+  city!: string;
 
   @ApiProperty({ description: 'Latitude coordinate' })
   @Expose()
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({ description: 'Longitude coordinate' })
   @Expose()
-  longitude: number;
+  longitude!: number;
 
   @ApiProperty({ description: 'Pin title for map' })
   @Expose()
-  pinTitle: string;
+  pinTitle!: string;
 
   @ApiProperty({ description: 'Map image URL' })
   @Expose()
-  mapImageUrl: string;
+  mapImageUrl!: string;
 }
 export class VendorUserResponseDto {
   @ApiProperty({ description: 'MongoDB ObjectId' })
   @Expose()
   @Transform(({ obj }) => obj._id?.toString() || obj.id?.toString())
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'Unique key for frontend components' })
   @Expose({ name: 'key' })
   @Transform(({ obj }) => obj._id?.toString() || obj.id?.toString())
-  key: string; 
+  key!: string; 
 
   @ApiProperty({ description: 'Title of the vendor' })
   @Expose()
   @Transform(({ obj }) => obj.title || obj.name)
-  title: string;
+  title!: string;
 
   @ApiProperty({ description: 'Description of the vendor' })
   @Expose()
-  description: string;
+  description!: string;
 
   @ApiProperty({ description: 'Detailed long description of the vendor' })
   @Expose()
-  longDescription: string;
+  longDescription!: string;
 
   @ApiProperty()
   @Expose()
-  categoryId: string;
+  categoryId!: string;
 
   @ApiProperty()
   @Expose()
-  categoryName: string;
+  categoryName!: string;
 
   @ApiProperty({ description: 'Location details' })
   @Expose()
   @Type(() => LocationDto)
-  location: LocationDto;
+  location!: LocationDto;
 
   @ApiProperty({ description: 'Nearest or primary location' })
   @Expose()
   @Type(() => DetailLocationItemDto)
-  primaryLocation: DetailLocationItemDto;
+  primaryLocation!: DetailLocationItemDto;
 
   @ApiProperty({
     description: 'All locations for this vendor',
@@ -75,7 +75,7 @@ export class VendorUserResponseDto {
   })
   @Expose()
   @Type(() => DetailLocationItemDto)
-  locations: DetailLocationItemDto[];
+  locations!: DetailLocationItemDto[];
 
   @ApiProperty({ description: 'Price of the vendor' })
   @Expose()
@@ -97,7 +97,7 @@ export class VendorUserResponseDto {
     // Return 0 if no price found
     return 0;
   })
-  price: number;
+  price!: number;
 
   @ApiProperty({ 
     description: 'Dynamic pricing array based on category',
@@ -108,20 +108,20 @@ export class VendorUserResponseDto {
     ]
   })
   @Expose()
-  pricing: Array<{
+  pricing!: Array<{
     title: string;
     price: number;
   }>;
 
   @ApiProperty({ description: 'Average rating of the vendor' })
   @Expose()
-  @Transform(({ obj }) => obj.averageRating || 4.4)
-  rating: number;
+  @Transform(({ obj }) => obj.averageRating || 0)
+  rating!: number;
 
   @ApiProperty({ description: 'Total number of ratings for the vendor' })
   @Expose()
-  @Transform(({ obj }) => obj.totalRatings || 453)
-  reviews: number;
+  @Transform(({ obj }) => obj.totalRatings || 0)
+  reviews!: number;
 
   @ApiProperty({ description: "URL of the vendor's image" })
   @Expose()
@@ -177,5 +177,5 @@ export class VendorUserResponseDto {
     // NEVER return an array - always return a string
     return '';
   })
-  image: string;
+  image!: string;
 }

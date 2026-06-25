@@ -1234,7 +1234,7 @@ export class BookingService {
             imagePath: imagePath,
             rating: venueOrVendor.averageRating || 5,
             reviews: venueOrVendor.totalRatings || 0,
-            ratingLabel: this.getRatingLabel(venueOrVendor.averageRating || 4.4)
+            ratingLabel: this.getRatingLabel(venueOrVendor?.averageRating || 0)
           };
         }
       }
@@ -1714,7 +1714,7 @@ export class BookingService {
 
       // Return updated booking using the actual bookingId
       return await this.findByBookingId(actualBookingId, userId);
-    } catch (error) {
+    } catch (error:any) {
 
 
       // Re-throw known exceptions
@@ -1723,7 +1723,7 @@ export class BookingService {
       }
       
       // Wrap unexpected errors
-      throw new BadRequestException('Failed to reject booking: ' + (error.message || 'Unknown error'));
+      throw new BadRequestException('Failed to reject booking: ' + (error?.message || 'Unknown error'));
     }
   }
 
@@ -1887,9 +1887,9 @@ export class BookingService {
         updated: updatedCount + convertedCount,
         message: `Successfully updated ${updatedCount} bookings to pending status and converted ${convertedCount} uppercase statuses to lowercase`
       };
-    } catch (error) {
+    } catch (error:any) {
 
-      throw new BadRequestException(`Failed to migrate booking status: ${error.message}`);
+      throw new BadRequestException(`Failed to migrate booking status: ${error?.message}`);
     }
   }
 
@@ -2316,9 +2316,9 @@ export class BookingService {
             { status: rejectedStatus, updatedAt: new Date() } as any
           );
           console.log(`[INFO] Offer ${offerId} updated via update() method. Result:`, updateResult);
-        } catch (updateError) {
+        } catch (updateError:any) {
           console.error(`[ERROR] Failed to update offer using update() method:`, updateError);
-          throw new BadRequestException(`Failed to update offer status: ${updateError.message}`);
+          throw new BadRequestException(`Failed to update offer status: ${updateError?.message}`);
         }
       }
       

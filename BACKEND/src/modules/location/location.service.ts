@@ -371,8 +371,8 @@ export class LocationService {
               id: vendor.id.toString(),
               title: vendor.title || vendor.name,
               price: price,
-              rating: vendor.averageRating || 4.4,
-              reviews: vendor.totalRatings || 453,
+              rating: vendor.averageRating,
+              reviews: vendor.totalRatings,
               image: imageUrl, // Use dynamically extracted image
               distance: Math.round(distance), // Add distance in meters
               coordinates: coords // Add coordinates for debugging
@@ -438,8 +438,8 @@ export class LocationService {
               id: venue.id.toString(),
               title: venue.title || venue.name,
               price: price,
-              rating: venue.averageRating || 4.4,
-              reviews: venue.totalRatings || 453,
+              rating: venue.averageRating || 0,
+              reviews: venue.totalRatings || 0,
               image: imageUrl, // Use dynamically extracted image
               distance: Math.round(distance), // Add distance in meters
               coordinates: coords // Add coordinates for debugging
@@ -463,7 +463,7 @@ export class LocationService {
           searchParams: { lng, lat, radiusMeters, type: searchType }
         }
       };
-    } catch (error) {
+    } catch (error:any) {
 
       throw new Error(`Failed to find nearby locations: ${error.message}`);
     }

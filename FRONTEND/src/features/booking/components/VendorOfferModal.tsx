@@ -145,13 +145,9 @@ export const VendorOfferModal: React.FC<VendorOfferModalProps> = ({
       };
 
       if (existingOffer) {
-        // Update existing offer
         await updateVendorOffer(bookingId, existingOffer.id, payload);
-        toast.success('Offer updated successfully!');
       } else {
-        // Create new offer
         await submitVendorOffer(bookingId, payload);
-        toast.success('Offer submitted successfully!');
       }
 
       setOfferData({
@@ -160,11 +156,9 @@ export const VendorOfferModal: React.FC<VendorOfferModalProps> = ({
         notes: '',
       });
       onClose();
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error: any) {
-      toast.error(error.message || `Failed to ${existingOffer ? 'update' : 'submit'} offer`);
+      onSuccess?.();
+    } catch {
+      // Error toast is shown by useBookingActions
     } finally {
       setIsSubmitting(false);
     }
