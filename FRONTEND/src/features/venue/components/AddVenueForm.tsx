@@ -35,7 +35,7 @@ const getVenueImageBaseUrl = (): string => {
     return String(import.meta.env.VITE_API_BASE_URL).replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
   }
 
-  return import.meta.env.PROD ? 'https://events-api.whizapps.cloud' : 'http://localhost:10030';
+  return import.meta.env.PROD ? 'https://events.whizapps.cloud' : 'http://localhost:10030';
 };
 
 const extractStoredImageUrl = (img: any): string => {
