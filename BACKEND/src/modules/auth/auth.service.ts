@@ -262,13 +262,10 @@ export class AuthService {
     if (dto.firstName) user.firstName = dto.firstName;
     if (dto.lastName) user.lastName = dto.lastName;
     if (dto.email) user.email = dto.email;
-    if (dto.phoneNumber) user.phoneNumber = dto.phoneNumber;
-    if (dto.countryCode) user.countryCode = dto.countryCode;
     if (dto.gender) user.gender = dto.gender;
     if (dto.birthday) user.birthday = dto.birthday;
     const updatedUser = await this.userService.save(user);
-    const { password, ...safeUser } = updatedUser;
-    return safeUser;
+    return this.userService.sanitizeClientUserProfile(updatedUser);
   }
 
 

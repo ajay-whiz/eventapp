@@ -27,14 +27,15 @@ export class UserController {
     @UseGuards(AuthGuard('jwt'))
     getUser(@Req() req: any) {
     const userId = req.user.id;
-     return this.userService.findById(userId);
+     return this.userService.findPublicProfile(userId);
     }
 
     @Patch('update-profile')
     @UseGuards(AuthGuard('jwt'))
     async updateProfile(@Req() req: any , @Body() dto: UpdateProfileDto) {
       const userId = req.user.id;
-      return this.userService.updateUser(userId, dto);
+      const updatedUser = await this.userService.updateUser(userId, dto);
+      return this.userService.sanitizeClientUserProfile(updatedUser);
     }
 
     @Put('update-profile-image')

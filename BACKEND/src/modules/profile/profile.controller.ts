@@ -84,7 +84,8 @@ export class ProfileController {
   })
   async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto) {
     const userId = req.user.id;
-    return this.userService.updateUser(userId, dto);
+    const updatedUser = await this.userService.updateUser(userId, dto);
+    return this.userService.sanitizeClientUserProfile(updatedUser);
   }
 
   @Put('image')

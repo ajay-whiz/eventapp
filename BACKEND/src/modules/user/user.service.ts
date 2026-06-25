@@ -63,6 +63,8 @@ export class UserService {
 
   async signup(body: SignUpReqDto): Promise<{ message: string }> {
     const normalizedEmail = body.email.toLowerCase().trim();
+    const countryCode = body.countryCode?.trim() || '';
+    const phoneNumber = body.phoneNumber?.trim() || '';
 
     const existingUser = await this.userRepository.findOneBy({
       email: normalizedEmail,
@@ -72,18 +74,20 @@ export class UserService {
       throw new ConflictException('Email already registered');
     }
 
-    const existingUserByPhone = await this.userRepository.findOneBy({
-      countryCode: body.countryCode,
-      phoneNumber: body.phoneNumber,
-    });
+    if (countryCode && phoneNumber) {
+      const existingUserByPhone = await this.userRepository.findOneBy({
+        countryCode,
+        phoneNumber,
+      });
 
-    if (existingUserByPhone && !existingUserByPhone.isDeleted) {
-      const reactivatingSameUser =
-        existingUser?.isDeleted &&
-        existingUserByPhone.id?.toString() === existingUser.id?.toString();
+      if (existingUserByPhone && !existingUserByPhone.isDeleted) {
+        const reactivatingSameUser =
+          existingUser?.isDeleted &&
+          existingUserByPhone.id?.toString() === existingUser.id?.toString();
 
-      if (!reactivatingSameUser) {
-        throw new ConflictException('Phone number already registered');
+        if (!reactivatingSameUser) {
+          throw new ConflictException('Phone number already registered');
+        }
       }
     }
 
@@ -110,9 +114,17 @@ export class UserService {
 
     let user: User;
 
+    const signupFields = {
+      firstName: body.firstName,
+      lastName: body.lastName ?? '',
+      organizationName: body.organizationName,
+      countryCode,
+      phoneNumber,
+    };
+
     if (existingUser?.isDeleted) {
       Object.assign(existingUser, {
-        ...body,
+        ...signupFields,
         email: normalizedEmail,
         password: hashedPassword,
         roleIds: [defaultRole.id],
@@ -132,7 +144,7 @@ export class UserService {
       user = existingUser;
     } else {
       user = this.userRepository.create({
-        ...body,
+        ...signupFields,
         email: normalizedEmail,
         password: hashedPassword,
         roleIds: [defaultRole.id],
@@ -448,8 +460,37 @@ export class UserService {
     }
   }
 
+  sanitizeClientUserProfile<T extends Record<string, any>>(user: T | null): Omit<T, 'password' | 'phoneNumber' | 'countryCode' | 'isPhoneVerified' | 'otp' | 'expireAt' | 'token'> | null {
+    if (!user) {
+      return null;
+    }
+
+    const plainUser =
+      typeof (user as any).toObject === 'function'
+        ? (user as any).toObject()
+        : { ...user };
+
+    const {
+      password: _password,
+      phoneNumber: _phoneNumber,
+      countryCode: _countryCode,
+      isPhoneVerified: _isPhoneVerified,
+      otp: _otp,
+      expireAt: _expireAt,
+      token: _token,
+      ...safeUser
+    } = plainUser;
+
+    return safeUser;
+  }
+
   async findById(id: string) {
     return this.userRepository.findOneBy({ _id: new ObjectId(id) });
+  }
+
+  async findPublicProfile(id: string) {
+    const user = await this.findById(id);
+    return this.sanitizeClientUserProfile(user);
   }
 
   async updateFcmToken(userId: string, fcmToken: string): Promise<User> {
@@ -1577,14 +1618,12 @@ export class UserService {
         return null;
       }
 
-      return {
+      return this.sanitizeClientUserProfile({
         id: basicUser.id,
         firstName: basicUser.firstName,
         lastName: basicUser.lastName,
         email: basicUser.email,
         organizationName: basicUser.organizationName,
-        countryCode: basicUser.countryCode,
-        phoneNumber: basicUser.phoneNumber,
         address: basicUser.address,
         city: basicUser.city,
         state: basicUser.state,
@@ -1592,9 +1631,9 @@ export class UserService {
         isActive: basicUser.isActive,
         isEmailVerified: basicUser.isEmailVerified,
         roles: [],
-      };
+      });
     }
-    return users[0];
+    return this.sanitizeClientUserProfile(users[0]);
   }
 
   async deleteAccount(userId: string): Promise<{ success: boolean; message: string }> {

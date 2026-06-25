@@ -10,7 +10,7 @@ export class SignUpReqDto {
   @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
     message: 'Email must be in valid format (e.g., user@example.com)'
   })
-  email: string;
+  email!: string;
 
   @ApiProperty({ 
     example: 'MySecure123!', 
@@ -23,43 +23,43 @@ export class SignUpReqDto {
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
     message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'
   })
-  password: string;
+  password!: string;
   
   @ApiProperty({ example: 'john' })
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  firstName!: string;
 
   @ApiPropertyOptional({ example: 'smith' })
   @IsString()
   @IsOptional()
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({ example: 'quantum' })
   @IsString()
   @IsNotEmpty()
-  organizationName: string;
+  organizationName!: string;
 
-  @ApiProperty({ 
-    example: '+91', 
-    description: 'Country code with + prefix (e.g., +1, +91, +44)'
+  @ApiPropertyOptional({
+    example: '+91',
+    description: 'Optional country code with + prefix (e.g., +1, +91, +44)',
   })
+  @IsOptional()
   @IsString({ message: 'Country code must be a string' })
-  @IsNotEmpty({ message: 'Country code is required' })
   @Matches(/^\+[1-9]\d{0,3}$/, {
-    message: 'Country code must start with + followed by 1-4 digits (e.g., +1, +91, +44)'
+    message: 'Country code must start with + followed by 1-4 digits (e.g., +1, +91, +44)',
   })
-  countryCode: string;
+  countryCode?: string;
 
-  @ApiProperty({ 
-    example: '1234567890', 
-    description: 'Phone number without country code (7-12 digits)'
+  @ApiPropertyOptional({
+    example: '1234567890',
+    description: 'Optional phone number without country code (7-12 digits)',
   })
+  @IsOptional()
   @IsString({ message: 'Phone number must be a string' })
-  @IsNotEmpty({ message: 'Phone number is required' })
   @Matches(/^[1-9]\d{6,11}$/, {
-    message: 'Phone number must be 7-12 digits and cannot start with 0'
+    message: 'Phone number must be 7-12 digits and cannot start with 0',
   })
-  phoneNumber: string;
+  phoneNumber?: string;
 
 }

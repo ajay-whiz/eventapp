@@ -264,7 +264,7 @@ const AddVenueForm: React.FC = () => {
     // Get user name for createdBy/updatedBy
     const currentUserName = userData?.firstName && userData?.lastName 
       ? `${userData.firstName} ${userData.lastName}`.trim()
-      : (userData as any)?.firstName || (userData as any)?.lastName || (userData as any)?.name || null;
+      : userData?.firstName || userData?.lastName || userData?.name || null;
     
     const jsonData: any = {
       name: data.name,

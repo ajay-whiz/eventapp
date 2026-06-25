@@ -17,28 +17,28 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEmail()
   email?: string;
-  
-  @ApiProperty({ 
-    example: '+91', 
-    description: 'Country code with + prefix (e.g., +1, +91, +44)'
-  })
-  @IsString({ message: 'Country code must be a string' })
-  @IsNotEmpty({ message: 'Country code is required' })
-  @Matches(/^\+[1-9]\d{0,3}$/, {
-    message: 'Country code must start with + followed by 1-4 digits (e.g., +1, +91, +44)'
-  })
-  countryCode: string;
 
-  @ApiProperty({ 
-    example: '1234567890', 
-    description: 'Phone number without country code (7-12 digits)'
+  @ApiPropertyOptional({
+    example: '+91',
+    description: 'Optional country code with + prefix (e.g., +1, +91, +44)',
   })
+  @IsOptional()
+  @IsString({ message: 'Country code must be a string' })
+  @Matches(/^\+[1-9]\d{0,3}$/, {
+    message: 'Country code must start with + followed by 1-4 digits (e.g., +1, +91, +44)',
+  })
+  countryCode?: string;
+
+  @ApiPropertyOptional({
+    example: '1234567890',
+    description: 'Optional phone number without country code (7-12 digits)',
+  })
+  @IsOptional()
   @IsString({ message: 'Phone number must be a string' })
-  @IsNotEmpty({ message: 'Phone number is required' })
   @Matches(/^[1-9]\d{6,11}$/, {
-    message: 'Phone number must be 7-12 digits and cannot start with 0'
+    message: 'Phone number must be 7-12 digits and cannot start with 0',
   })
-  phoneNumber: string;
+  phoneNumber?: string;
 
   @ApiPropertyOptional({ enum: Gender, example: 'Male', description: 'Gender of the user' })
   @IsOptional()

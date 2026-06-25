@@ -14,6 +14,10 @@ export interface UserRole {
 }
 
 export interface UserData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  name?: string;
   roles?: UserRole[];
   enterpriseId?: string;
   organizationName?: string;
