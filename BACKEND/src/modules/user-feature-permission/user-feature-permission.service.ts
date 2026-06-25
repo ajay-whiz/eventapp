@@ -28,6 +28,7 @@ export class UserFeaturePermissionService {
 
       if (existingPermission) {
         // Update the existing record
+        existingPermission.view = perm.view ?? existingPermission.view;
         existingPermission.read = perm.read;
         existingPermission.write = perm.write;
         existingPermission.admin = perm.admin;
@@ -38,6 +39,7 @@ export class UserFeaturePermissionService {
         const newPermission = this.repo.create({
           roleId: dto.roleId,
           featureId: perm.featureId,
+          view: perm.view ?? false,
           read: perm.read,
           write: perm.write,
           admin: perm.admin,
@@ -81,6 +83,7 @@ export class UserFeaturePermissionService {
         id: '$_id',
         roleId: 1,
         featureId: 1,
+        view: 1,
         read: 1,
         write: 1,
         admin: 1,
@@ -100,12 +103,13 @@ export class UserFeaturePermissionService {
 }
 
  async bulkInsert(roleId:string, dto:CreateRoleDto){
-    dto.featurePermissions=dto.featurePermissions?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
+    dto.featurePermissions=dto.featurePermissions?.filter((feature) => feature.permissions.view || feature.permissions.read || feature.permissions.write || feature.permissions.admin);
 
     const permissionsToSave = dto.featurePermissions?.map((fp:any) => {
       return this.repo.create({
         roleId: roleId,
         featureId: fp.featureId,
+        view: fp.permissions.view,
         read: fp.permissions.read,
         write: fp.permissions.write,
         admin: fp.permissions.admin,
@@ -118,7 +122,7 @@ export class UserFeaturePermissionService {
      return; // No permissions to update
    }
 
-   dto.featurePermissions=dto.featurePermissions?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
+   dto.featurePermissions=dto.featurePermissions?.filter((feature) => feature.permissions.view || feature.permissions.read || feature.permissions.write || feature.permissions.admin);
    for (const featurePermission of dto.featurePermissions) {
      // Check if permission already exists for this role + feature
      const existingPermission = await this.repo.findOne({
@@ -130,6 +134,7 @@ export class UserFeaturePermissionService {
 
      if (existingPermission) {
        // Update existing permission
+       existingPermission.view = featurePermission.permissions.view ?? existingPermission.view;
        existingPermission.read = featurePermission.permissions.read ?? existingPermission.read;
        existingPermission.write = featurePermission.permissions.write ?? existingPermission.write;
        existingPermission.admin = featurePermission.permissions.admin ?? existingPermission.admin;
@@ -139,6 +144,7 @@ export class UserFeaturePermissionService {
        const newPermission = this.repo.create({
          roleId: roleId,
          featureId: featurePermission.featureId,
+         view: featurePermission.permissions.view ?? false,
          read: featurePermission.permissions.read ?? false,
          write: featurePermission.permissions.write ?? false,
          admin: featurePermission.permissions.admin ?? false,
@@ -161,6 +167,7 @@ export class UserFeaturePermissionService {
    const enabledFeatures =
      dto.featurePermissions?.filter(
        (feature) =>
+         feature.permissions.view ||
          feature.permissions.read ||
          feature.permissions.write ||
          feature.permissions.admin,
@@ -174,6 +181,7 @@ export class UserFeaturePermissionService {
      this.repo.create({
        roleId,
        featureId: fp.featureId,
+       view: fp.permissions.view ?? false,
        read: fp.permissions.read ?? false,
        write: fp.permissions.write ?? false,
        admin: fp.permissions.admin ?? false,

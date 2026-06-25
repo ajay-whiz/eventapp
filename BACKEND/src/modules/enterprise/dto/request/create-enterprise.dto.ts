@@ -6,6 +6,12 @@ import { ObjectId } from 'mongodb';
 
 class PermissionsDto {
   @ApiProperty({
+    description: 'The view permission of the feature',
+    example: true,
+  })
+  @IsBoolean()
+  view: boolean;
+  @ApiProperty({
     description: 'The read permission of the feature',
     example: true,
   })

@@ -48,6 +48,7 @@ function TableComponent<T extends TableRow>(props: TableComponentProps<T>) {
     showCategoryInputsOption = false,
     showQuotationOption = false,
     showViewOption = false,
+    viewActionLabel = 'View',
   } = props;
 
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -334,6 +335,7 @@ function TableComponent<T extends TableRow>(props: TableComponentProps<T>) {
                             showCategoryInputsOption={showCategoryInputsOption}
                             showQuotationOption={showQuotationOption}
                             showViewOption={showViewOption}
+                            viewActionLabel={viewActionLabel}
                           />
                         </td>
                       )}

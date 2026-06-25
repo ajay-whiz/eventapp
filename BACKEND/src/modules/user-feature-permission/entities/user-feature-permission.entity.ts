@@ -16,6 +16,9 @@ export class UserFeaturePermission  extends BaseModel{
   featureId: string;
 
   @Column({ default: false })
+  view: boolean;
+
+  @Column({ default: false })
   read: boolean;
 
   @Column({ default: false })

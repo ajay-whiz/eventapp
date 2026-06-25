@@ -7,45 +7,21 @@ import TableComponent from '../../../components/atoms/Table';
 import type { TableColumn, TableAction } from '../../../types/table';
 import { useToast } from '../../../components/atoms/Toast';
 import { ConfirmModal } from '../../../components/molecules/ConfirmModal';
+import EnterprisePermissionsModal from './EnterprisePermissionsModal';
 import { Button } from '../../../components/atoms/Button';
 import { X, User as UserIcon, Mail, Building, Phone, MapPin, CheckCircle, XCircle, FileText } from 'lucide-react';
+import type { Enterprise, EnterpriseFeature } from '../../../types/Enterprise';
 
-// Define types inline or import from your types file
-interface EnterprisePermission {
-  read: boolean;
-  write: boolean;
-  admin: boolean;
-}
+type EnterpriseRow = Enterprise & { key: string };
 
-interface EnterpriseFeature {
-  featureId: string;
-  permissions: EnterprisePermission;
-}
-
-export interface Enterprise {
-  key: string;
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  enterpriseName: string;
-  description: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-  countryCode: string;
-  features?: EnterpriseFeature[];
-  isActive: boolean;
-  isEmailVerified: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+const normalizeEnterprise = (enterprise: Enterprise): Enterprise => ({
+  ...enterprise,
+  featureIds: enterprise.featureIds ?? [],
+});
 
 const EnterpriseList: React.FC = () => {
-  const { enterprises = [], pagination, loading, selectedEnterprise: fullEnterpriseDetails } = useEnterprise();
-  const { getEnterpriseList, removeEnterprise, resetEnterprisePassword, updateEnterpriseStatus, fetchEnterpriseById } = useEnterpriseActions();
+  const { enterprises = [], pagination, loading, selectedEnterprise: fullEnterpriseDetails, features } = useEnterprise();
+  const { getEnterpriseList, removeEnterprise, resetEnterprisePassword, updateEnterpriseStatus, fetchEnterpriseById, fetchFeatures } = useEnterpriseActions();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +33,14 @@ const EnterpriseList: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEnterprise, setSelectedEnterprise] = useState<Enterprise | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [permissionsEnterprise, setPermissionsEnterprise] = useState<Enterprise | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingPermissions, setLoadingPermissions] = useState(false);
+
+  useEffect(() => {
+    fetchFeatures();
+  }, []);
 
   // Fetch enterprises when page or search changes
   useEffect(() => {
@@ -84,6 +67,20 @@ const EnterpriseList: React.FC = () => {
         toast.success('Password reset link sent successfully!');
       } catch (error: any) {
         toast.error(error.message || 'Failed to send reset link');
+      }
+    }
+    else if (action === 'view') {
+      setPermissionsEnterprise(enterprise);
+      setShowPermissionsModal(true);
+      setLoadingPermissions(true);
+      try {
+        await fetchEnterpriseById(enterprise.key || enterprise.id);
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to load enterprise permissions');
+        setShowPermissionsModal(false);
+        setPermissionsEnterprise(null);
+      } finally {
+        setLoadingPermissions(false);
       }
     }
     else if (action === 'activate') {
@@ -141,8 +138,6 @@ const EnterpriseList: React.FC = () => {
     }
   };
 
-  type EnterpriseRow = Enterprise;
-
   // Truncate description helper
   const truncateDescription = (text: string | undefined, maxLength: number = 50): string => {
     if (!text) return 'No description';
@@ -182,8 +177,12 @@ const EnterpriseList: React.FC = () => {
     },
   ];  
 
-  const sanitizedEnterprises: Enterprise[] =
-  enterprises?.filter(Boolean).map((e:any) => ({ ...e, key: e.key || e.id })) ?? [];
+  const sanitizedEnterprises: EnterpriseRow[] =
+  enterprises?.filter(Boolean).map((e: Enterprise) => ({
+    ...e,
+    key: e.key || e.id,
+    featureIds: e.featureIds ?? [],
+  })) ?? [];
 
   return (
     <Layout>
@@ -231,6 +230,8 @@ const EnterpriseList: React.FC = () => {
           ) : null
         }
         loading={loading}
+        showViewOption={true}
+        viewActionLabel="Permissions"
       />
 
       {showDeleteModal && selectedEnterprise && (
@@ -412,6 +413,11 @@ const EnterpriseList: React.FC = () => {
                               {feature.featureId}
                             </div>
                             <div className="flex flex-wrap gap-2">
+                              {feature.permissions.view && (
+                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                  View
+                                </span>
+                              )}
                               {feature.permissions.read && (
                                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-sky-100 text-sky-700">
                                   Read
@@ -488,6 +494,28 @@ const EnterpriseList: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showPermissionsModal && permissionsEnterprise && (
+        <EnterprisePermissionsModal
+          enterprise={normalizeEnterprise(
+            fullEnterpriseDetails &&
+            (fullEnterpriseDetails.key === permissionsEnterprise.key ||
+              fullEnterpriseDetails.id === permissionsEnterprise.id)
+              ? fullEnterpriseDetails
+              : permissionsEnterprise,
+          )}
+          features={features || []}
+          loading={loadingPermissions}
+          onClose={() => {
+            setShowPermissionsModal(false);
+            setPermissionsEnterprise(null);
+          }}
+          onSaved={() => {
+            toast.success('Enterprise permissions updated successfully');
+            getEnterpriseList(currentPage, rowsPerPage, searchQuery);
+          }}
+        />
       )}
     </Layout>
   );

@@ -33,6 +33,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => isClickable && onTabChange(tab.id)}
               disabled={!isClickable}
               className={`

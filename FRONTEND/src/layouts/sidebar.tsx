@@ -204,8 +204,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
     const userFeatures = userData?.roles?.flatMap(role => role.features || []) || [];
     
     // Filter out dashboard, profile, settings, and super-admin-only features
+      // Only show modules the user can actually access
+    const hasFeatureAccess = (feature: {
+      permission?: { view?: boolean; read?: boolean; write?: boolean; admin?: boolean };
+    }) =>
+      !!(
+        feature?.permission?.view ||
+        feature?.permission?.read ||
+        feature?.permission?.write ||
+        feature?.permission?.admin
+      );
+
     const filteredFeatures = userFeatures.filter(
-      feature => feature && feature.uniqueId && 
+      feature => feature && feature.uniqueId && hasFeatureAccess(feature) &&
       feature.uniqueId !== 'dashboard' && 
       feature.uniqueId !== 'profile_setting' &&
       feature.uniqueId !== 'content_policy' &&

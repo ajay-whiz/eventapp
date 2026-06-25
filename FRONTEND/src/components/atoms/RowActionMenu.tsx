@@ -30,6 +30,7 @@ type RowActionMenuProps = {
   showCategoryInputsOption?: boolean;
   showQuotationOption?: boolean;
   showViewOption?: boolean;
+  viewActionLabel?: string;
 };
 
 export const RowActionMenu = ({
@@ -59,6 +60,7 @@ export const RowActionMenu = ({
   showCategoryInputsOption = false,
   showQuotationOption = false,
   showViewOption = false,
+  viewActionLabel = 'View',
 }: RowActionMenuProps) => {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<'top' | 'bottom'>('bottom');
@@ -171,7 +173,7 @@ export const RowActionMenu = ({
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 text-sky-700 cursor-pointer"
                 role="menuitem"
               >
-                <Eye className="size-4" /> View
+                <Eye className="size-4" /> {viewActionLabel}
               </li>
             )}
             {canDelete && (

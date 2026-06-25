@@ -273,7 +273,7 @@ export class RoleService {
       // Handle featureIds update - only if featurePermissions are provided
       if (updateRoleDto.featurePermissions && updateRoleDto.featurePermissions.length > 0) {
         const validFeaturePermissions = updateRoleDto.featurePermissions.filter(fp =>
-          fp.permissions.read || fp.permissions.write || fp.permissions.admin
+          fp.permissions.view || fp.permissions.read || fp.permissions.write || fp.permissions.admin
         );
 
         if (validFeaturePermissions.length > 0) {
@@ -491,6 +491,7 @@ export class RoleService {
         read: fp.read,
         write: fp.write,
         admin: fp.admin,
+        view: fp.view,
       },
     }));
     return {savedRole, userFeaturePermissions};
@@ -499,6 +500,7 @@ export class RoleService {
   async updateEnterpriseRole(roleId: string, roleName: string, features: CreateFeaturePermissionDto[]) {
     const enabledFeatures = features.filter(
       (feature) =>
+        feature.permissions.view ||
         feature.permissions.read ||
         feature.permissions.write ||
         feature.permissions.admin,

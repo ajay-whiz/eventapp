@@ -23,6 +23,7 @@ export interface Enterprise {
   export interface EnterpriseFeature {
     featureId: string;
     permissions: {
+      view: boolean;
       read: boolean;
       write: boolean;
       admin: boolean;

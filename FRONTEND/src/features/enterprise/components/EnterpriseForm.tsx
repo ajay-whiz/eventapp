@@ -83,6 +83,7 @@ const EnterpriseForm: React.FC = () => {
         return {
           featureId: String(f.id),
           permissions: {
+            view: existing?.permissions?.view ?? false,
             read: existing?.permissions?.read ?? false,
             write: existing?.permissions?.write ?? false,
             admin: existing?.permissions?.admin ?? false,
@@ -107,6 +108,7 @@ const EnterpriseForm: React.FC = () => {
           : selectedEnterprise.features?.map((f: EnterpriseFeature) => ({
               featureId: String(f.featureId),
               permissions: {
+                view: f.permissions?.view ?? false,
                 read: f.permissions?.read ?? false,
                 write: f.permissions?.write ?? false,
                 admin: f.permissions?.admin ?? false,
@@ -118,7 +120,7 @@ const EnterpriseForm: React.FC = () => {
         ...prev,
         features: features.map((f) => ({
           featureId: String(f.id),
-          permissions: { read: false, write: false, admin: false },
+          permissions: { view: false, read: false, write: false, admin: false },
         })),
       }));
     }

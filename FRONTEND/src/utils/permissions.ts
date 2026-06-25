@@ -5,6 +5,7 @@ export interface UserRole {
     name: string;
     uniqueId: string;
     permission?: {
+      view?: boolean;
       read?: boolean;
       write?: boolean;
       admin?: boolean;
@@ -24,6 +25,18 @@ export const SUPER_ADMIN_ONLY_FEATURE_IDS = [
   'enterprise_management',
   'content_policy',
 ] as const;
+
+/** DB/API may use alternate uniqueIds for the same module */
+const FEATURE_UNIQUE_ID_ALIASES: Record<string, string> = {
+  booking__management: 'booking_management',
+  booking_management: 'booking_management',
+};
+
+export const normalizeFeatureUniqueId = (uniqueId: string): string =>
+  FEATURE_UNIQUE_ID_ALIASES[uniqueId] ?? uniqueId;
+
+export const featureUniqueIdsMatch = (a: string, b: string): boolean =>
+  normalizeFeatureUniqueId(a) === normalizeFeatureUniqueId(b);
 
 export const isSuperAdminOnlyFeature = (uniqueId: string): boolean =>
   (SUPER_ADMIN_ONLY_FEATURE_IDS as readonly string[]).includes(uniqueId);
@@ -168,18 +181,18 @@ export const getFeaturePermissions = (
       .flatMap((r: UserRole) => r.features || [])
       .find((f: any) => f.name === featureNameOrUniqueId || f.uniqueId === featureNameOrUniqueId);
 
+    const hasView = !!matchedFeature?.permission?.view;
     const hasRead = !!matchedFeature?.permission?.read;
     const hasWrite = !!matchedFeature?.permission?.write;
     const hasAdmin = !!matchedFeature?.permission?.admin;
 
-    // If all permissions are false, module should not be accessible
-    const hasAnyPermission = hasRead || hasWrite || hasAdmin;
+    const hasAnyPermission = hasView || hasRead || hasWrite || hasAdmin;
 
     return {
       canAdd: hasWrite || hasAdmin,
       canEdit: hasWrite || hasAdmin,
       canDelete: hasAdmin,
-      canView: hasRead || hasWrite || hasAdmin,
+      canView: hasView || hasRead || hasWrite || hasAdmin,
       canResetPassword: hasWrite || hasAdmin,
       hasAccess: hasAnyPermission,
     };
@@ -226,20 +239,20 @@ export const getFeaturePermissionsByUniqueId = (
     const roles = Array.isArray(userData?.roles) ? userData.roles : [];
     const matchedFeature = roles
       .flatMap((r: UserRole) => r.features || [])
-      .find((f: any) => f.uniqueId === uniqueId);
+      .find((f: any) => featureUniqueIdsMatch(f.uniqueId ?? '', uniqueId));
 
+    const hasView = !!matchedFeature?.permission?.view;
     const hasRead = !!matchedFeature?.permission?.read;
     const hasWrite = !!matchedFeature?.permission?.write;
     const hasAdmin = !!matchedFeature?.permission?.admin;
 
-    // If all permissions are false, module should not be accessible
-    const hasAnyPermission = hasRead || hasWrite || hasAdmin;
+    const hasAnyPermission = hasView || hasRead || hasWrite || hasAdmin;
 
     return {
       canAdd: hasWrite || hasAdmin,
       canEdit: hasWrite || hasAdmin,
       canDelete: hasAdmin,
-      canView: hasRead || hasWrite || hasAdmin,
+      canView: hasView || hasRead || hasWrite || hasAdmin,
       canResetPassword: hasWrite || hasAdmin,
       hasAccess: hasAnyPermission,
     };
@@ -283,6 +296,7 @@ export const getAccessibleFeatures = (userData: UserData | null): string[] => {
       role?.features
         ?.filter(
           (feature: any) =>
+            feature?.permission?.view ||
             feature?.permission?.read ||
             feature?.permission?.write ||
             feature?.permission?.admin

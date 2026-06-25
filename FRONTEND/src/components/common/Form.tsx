@@ -17,6 +17,7 @@ export type FormProps<T extends FieldValues> = {
   defaultValues?: UseFormProps<T>['defaultValues'];
   className?: string;
   mode?: UseFormProps<T>['mode'];
+  onKeyDown?: React.FormHTMLAttributes<HTMLFormElement>['onKeyDown'];
 };
 
 export function Form<T extends FieldValues>({
@@ -26,6 +27,7 @@ export function Form<T extends FieldValues>({
   defaultValues,
   className,
   mode = 'onSubmit',
+  onKeyDown,
 }: FormProps<T>) {
   let methods: ReturnType<typeof useForm<T>> | null = null;
 
@@ -48,7 +50,7 @@ export function Form<T extends FieldValues>({
 
     return (
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className={className}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className={className} onKeyDown={onKeyDown}>
           {children}
         </form>
       </FormProvider>
@@ -57,7 +59,7 @@ export function Form<T extends FieldValues>({
 
   // Already inside a FormProvider
   return (
-    <form onSubmit={methods?.handleSubmit(onSubmit)} className={className}>
+    <form onSubmit={methods?.handleSubmit(onSubmit)} className={className} onKeyDown={onKeyDown}>
       {children}
     </form>
   );

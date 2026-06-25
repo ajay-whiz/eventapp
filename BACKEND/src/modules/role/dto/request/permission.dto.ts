@@ -5,6 +5,11 @@ export class PermissionsDto {
   @ApiProperty({ example: true })
   @IsBoolean()
   @IsOptional()
+  view?: boolean;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  @IsOptional()
   write?: boolean;
 
   @ApiProperty({ example: true })

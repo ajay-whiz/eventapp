@@ -16,6 +16,7 @@ export const enterpriseSchema = z.object({
     z.object({
       featureId: z.string(),
       permissions: z.object({
+        view: z.boolean().optional(),
         read: z.boolean().optional(),
         write: z.boolean().optional(),
         admin: z.boolean().optional(),

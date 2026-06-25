@@ -8,6 +8,10 @@ class PermissionsDto {
   @ApiProperty()
   @Expose()
   @IsBoolean()
+  view: boolean;
+  @ApiProperty()
+  @Expose()
+  @IsBoolean()
   read: boolean;
   @ApiProperty()
   @Expose()

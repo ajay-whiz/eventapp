@@ -121,7 +121,7 @@ export class EnterpriseService {
       throw new ConflictException('User already exists. Please login to continue.');
     }
     const enterpriseRoleName = `${dto.enterpriseName}_ADMIN`.toUpperCase().replaceAll(/ /g, '_');
-    dto.features=dto.features?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
+    dto.features=dto.features?.filter((feature) => feature.permissions.view || feature.permissions.read || feature.permissions.write || feature.permissions.admin);
     let savedRole: any;
     const enterpriseRole = await this.roleService.createEnterpriseRole(enterpriseRoleName, dto?.features?.map(feature => ({
       featureId: feature.featureId,
@@ -221,6 +221,7 @@ export class EnterpriseService {
               $push: {
                 featureId: '$featurePermissions.featureId',
                 permissions: {
+                  view: '$featurePermissions.view',
                   read: '$featurePermissions.read',
                   write: '$featurePermissions.write',
                   admin: '$featurePermissions.admin'
@@ -306,6 +307,7 @@ export class EnterpriseService {
             $push: {
               featureId: '$featurePermissions.featureId',
               permissions: {
+                view: '$featurePermissions.view',
                 read: '$featurePermissions.read',
                 write: '$featurePermissions.write',
                 admin: '$featurePermissions.admin'
@@ -352,6 +354,7 @@ export class EnterpriseService {
     const enabledFeatures =
       dto.features?.filter(
         (feature) =>
+          feature.permissions.view ||
           feature.permissions.read ||
           feature.permissions.write ||
           feature.permissions.admin,
@@ -503,7 +506,7 @@ export class EnterpriseService {
     const newRoleName = `${adminRole.name}_USER_${new Date().getTime()}`.replaceAll(/ /g, '_');
 
     // Create the role with features
-    dto.features=dto.features?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
+    dto.features=dto.features?.filter((feature) => feature.permissions.view || feature.permissions.read || feature.permissions.write || feature.permissions.admin);
     const roleResult = await this.roleService.createEnterpriseRole(newRoleName, dto.features);
 
     // Generate token for reset password flow (no temporary password)
@@ -594,6 +597,7 @@ export class EnterpriseService {
           id: feature.id,
           name: feature.name,
           permissions: {
+            view: feature.permission?.view || false,
             read: feature.permission?.read || false,
             write: feature.permission?.write || false,
             admin: feature.permission?.admin || false,
@@ -603,7 +607,7 @@ export class EnterpriseService {
     }
     );
 
-    accessibleFeatures = accessibleFeatures.filter((fp:any) => fp.permissions.read || fp.permissions.write || fp.permissions.admin);
+    accessibleFeatures = accessibleFeatures.filter((fp:any) => fp.permissions.view || fp.permissions.read || fp.permissions.write || fp.permissions.admin);
 
     return { features: accessibleFeatures };
   }
@@ -632,7 +636,7 @@ export class EnterpriseService {
     this.assertEnterpriseUserAccess(currentUser, target.enterpriseId?.toString());
 
     // If features array provided, create/update enterprise-scoped role for this user
-    dto.features=dto.features?.filter((feature) => feature.permissions.read || feature.permissions.write || feature.permissions.admin);
+    dto.features=dto.features?.filter((feature) => feature.permissions.view || feature.permissions.read || feature.permissions.write || feature.permissions.admin);
 
     if (dto.features && dto.features.length > 0) {
       const enterpriseId = target.enterpriseId?.toString();

@@ -381,6 +381,14 @@ const EmployeeForm: React.FC = () => {
     data: EmployeeFormValues,
   ) => {
     try {
+      // Basic tab should only advance to permissions — never save yet
+      if (activeTab === 'basic') {
+        if (validateBasicInfo()) {
+          setActiveTab('permissions');
+        }
+        return;
+      }
+
       // Final validation before submission
       if (!validateBasicInfo()) {
         setActiveTab('basic');
@@ -467,6 +475,12 @@ const EmployeeForm: React.FC = () => {
           schema={dynamicSchema}
           onSubmit={onSubmit}
           className="min-w-full px-0 py-0"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && activeTab === 'basic') {
+              e.preventDefault();
+              handleTabChange('permissions');
+            }
+          }}
         >
           <div className="bg-white shadow-sm border border-gray-200 rounded-xl">
             {/* Tab Navigation */}
@@ -532,7 +546,10 @@ const EmployeeForm: React.FC = () => {
                       type="button"
                       variant="primary"
                       size="sm"
-                      onClick={() => handleTabChange('permissions')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleTabChange('permissions');
+                      }}
                       disabled={formLoading}
                     >
                       Next: Permissions →

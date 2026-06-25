@@ -1266,10 +1266,15 @@ export class UserService {
 
         // Lookup permissions for this role's features
         {
+          $addFields: {
+            currentRoleId: { $toString: '$roles._id' },
+          },
+        },
+        {
           $lookup: {
             from: 'user_feature_permissions',
-            localField: 'roleId',
-            foreignField: 'roles._id',
+            localField: 'currentRoleId',
+            foreignField: 'roleId',
             as: 'rolePermissions',
           },
         },
@@ -1314,6 +1319,7 @@ export class UserService {
                         },
                       },
                       in: {
+                        view: { $ifNull: ['$$perm.view', false] },
                         read: { $ifNull: ['$$perm.read', false] },
                         write: { $ifNull: ['$$perm.write', false] },
                         admin: { $ifNull: ['$$perm.admin', false] },
@@ -1462,10 +1468,15 @@ export class UserService {
 
         // Lookup permissions for this role's features
         {
+          $addFields: {
+            currentRoleId: { $toString: '$roles._id' },
+          },
+        },
+        {
           $lookup: {
             from: 'user_feature_permissions',
-            localField: 'roleId',
-            foreignField: 'roles._id',
+            localField: 'currentRoleId',
+            foreignField: 'roleId',
             as: 'rolePermissions',
           },
         },
@@ -1510,6 +1521,7 @@ export class UserService {
                         },
                       },
                       in: {
+                        view: { $ifNull: ['$$perm.view', false] },
                         read: { $ifNull: ['$$perm.read', false] },
                         write: { $ifNull: ['$$perm.write', false] },
                         admin: { $ifNull: ['$$perm.admin', false] },

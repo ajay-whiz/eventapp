@@ -6,6 +6,10 @@ export class FeaturePermissionItem {
   @IsMongoId()
   featureId: string;
 
+  @ApiProperty({ example: false })
+  @IsBoolean()
+  view: boolean;
+
   @ApiProperty({ example: true })
   @IsBoolean()
   read: boolean;
