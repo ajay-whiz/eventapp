@@ -47,6 +47,7 @@ import { AdditionalServiceModule } from './modules/additional-service/additional
 import { SimilarModule } from './modules/similar/similar.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { ServiceCategoryFormInputsModule } from './modules/service-category-form-inputs/service-category-form-inputs.module';
+import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module';
 
 @Module({
@@ -106,7 +107,8 @@ import { FileUploadModule } from '@shared/modules/file-upload/file-upload.module
     AdditionalServiceModule,
     SupabaseModule,
     FileUploadModule,
-    ChatModule
+    ChatModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import jwt from 'jsonwebtoken';
 import { LoginResDto, IAuthPayload } from '@shared/dto/login.res.dto';
 import { SignUpReqDto } from '@modules/auth/dto/request/sign-up.req.dto';
+import { UpdateProfileDto } from '@modules/auth/dto/request/update-profile.req.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { RoleService } from '@modules/role/role.service';
 import { FeatureService } from '@modules/feature/feature.service';
@@ -100,22 +101,31 @@ export class UserService implements OnModuleInit {
 
   private async ensureActiveEmailUniqueIndex(): Promise<void> {
     try {
-      const driver = this.userRepository.manager.connection.driver as any;
-      const db = driver.database;
-      if (!db) {
+      const connection = this.userRepository.manager.connection;
+      const driver = connection.driver as {
+        database?: string;
+        queryRunner?: {
+          databaseConnection?: { db: (name: string) => { collection: (name: string) => any } };
+        };
+      };
+
+      const mongoClient = driver.queryRunner?.databaseConnection;
+      const databaseName = driver.database;
+
+      if (!mongoClient?.db || !databaseName) {
         return;
       }
 
-      const usersCollection = db.collection('users');
+      const usersCollection = mongoClient.db(databaseName).collection('users');
       const indexes = await usersCollection.indexes();
       const partialIndexName = 'email_unique_active_users';
 
-      if (indexes.some((idx:any) => idx.name === partialIndexName)) {
+      if (indexes.some((idx: any) => idx.name === partialIndexName)) {
         return;
       }
 
       const conflictingIndex = indexes.find(
-        (idx:any) =>
+        (idx: any) =>
           idx.key?.email === 1 &&
           idx.unique &&
           !idx.partialFilterExpression,
@@ -129,7 +139,7 @@ export class UserService implements OnModuleInit {
         { email: 1 },
         {
           unique: true,
-          partialFilterExpression: { isDeleted: { $ne: true } },
+          partialFilterExpression: { isDeleted: false },
           name: partialIndexName,
         },
       );
@@ -494,7 +504,7 @@ export class UserService implements OnModuleInit {
     }
   }
 
-  sanitizeClientUserProfile<T extends Record<string, any>>(user: T | null): Omit<T, 'password' | 'phoneNumber' | 'countryCode' | 'isPhoneVerified' | 'otp' | 'expireAt' | 'token'> | null {
+  sanitizeClientUserProfile<T extends Record<string, any>>(user: T | null): Omit<T, 'password' | 'isPhoneVerified' | 'otp' | 'expireAt' | 'token'> | null {
     if (!user) {
       return null;
     }
@@ -506,8 +516,6 @@ export class UserService implements OnModuleInit {
 
     const {
       password: _password,
-      phoneNumber: _phoneNumber,
-      countryCode: _countryCode,
       isPhoneVerified: _isPhoneVerified,
       otp: _otp,
       expireAt: _expireAt,
@@ -1274,6 +1282,51 @@ export class UserService implements OnModuleInit {
       throw new NotFoundException('User not found');
     }
     return docs[0];
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOneBy({ _id: new ObjectId(userId) });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (dto.firstName !== undefined) {
+      user.firstName = dto.firstName;
+    }
+    if (dto.lastName !== undefined) {
+      user.lastName = dto.lastName;
+    }
+    if (dto.email !== undefined) {
+      user.email = dto.email.toLowerCase().trim();
+    }
+    if (dto.gender !== undefined) {
+      user.gender = dto.gender;
+    }
+    if (dto.birthday !== undefined) {
+      user.birthday = dto.birthday;
+    }
+
+    if (dto.countryCode !== undefined) {
+      user.countryCode = dto.countryCode.trim();
+    }
+    if (dto.phoneNumber !== undefined) {
+      user.phoneNumber = dto.phoneNumber.trim();
+    }
+
+    const effectiveCountryCode = user.countryCode?.trim();
+    const effectivePhoneNumber = user.phoneNumber?.trim();
+    if (effectiveCountryCode && effectivePhoneNumber) {
+      const existingUserByPhone = await this.findActiveByPhone(
+        effectiveCountryCode,
+        effectivePhoneNumber,
+      );
+      if (existingUserByPhone && existingUserByPhone.id?.toString() !== userId) {
+        throw new ConflictException('Phone number already registered');
+      }
+    }
+
+    user.updatedAt = new Date();
+    return this.userRepository.save(user);
   }
 
   async updateUser(id: string, userData: Partial<UpdateUserDto>) {

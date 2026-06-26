@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '@shared/enums/genderType';
-import { IsOptional, IsString, IsEmail, IsNotEmpty, Matches, IsEnum, IsDateString } from 'class-validator';
+import { IsOptional, IsString, IsEmail, Matches, IsEnum, IsDateString, ValidateIf } from 'class-validator';
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'john', description: 'First name of the user' })
@@ -23,6 +23,7 @@ export class UpdateProfileDto {
     description: 'Optional country code with + prefix (e.g., +1, +91, +44)',
   })
   @IsOptional()
+  @ValidateIf((_, value) => value !== undefined && value !== null && value !== '')
   @IsString({ message: 'Country code must be a string' })
   @Matches(/^\+[1-9]\d{0,3}$/, {
     message: 'Country code must start with + followed by 1-4 digits (e.g., +1, +91, +44)',
@@ -34,6 +35,7 @@ export class UpdateProfileDto {
     description: 'Optional phone number without country code (7-12 digits)',
   })
   @IsOptional()
+  @ValidateIf((_, value) => value !== undefined && value !== null && value !== '')
   @IsString({ message: 'Phone number must be a string' })
   @Matches(/^[1-9]\d{6,11}$/, {
     message: 'Phone number must be 7-12 digits and cannot start with 0',

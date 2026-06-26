@@ -257,14 +257,7 @@ export class AuthService {
       }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
-    if (dto.firstName) user.firstName = dto.firstName;
-    if (dto.lastName) user.lastName = dto.lastName;
-    if (dto.email) user.email = dto.email;
-    if (dto.gender) user.gender = dto.gender;
-    if (dto.birthday) user.birthday = dto.birthday;
-    const updatedUser = await this.userService.save(user);
+    const updatedUser = await this.userService.updateProfile(userId, dto);
     return this.userService.sanitizeClientUserProfile(updatedUser);
   }
 

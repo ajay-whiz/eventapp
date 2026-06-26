@@ -23,6 +23,7 @@ API_ROUTES = {
     VENDORS: "vendors",
     CONTENT_POLICIES: "content-policies",
     BOOKINGS: "booking",
+    DASHBOARD_STATS: "admin/dashboard/stats",
     QUOTATIONS: "quotations",
     VENDOR_CATEGORIES: "vendor-category",
     VENUE_CATEGORIES: "venue-category",
