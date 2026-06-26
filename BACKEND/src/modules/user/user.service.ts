@@ -99,6 +99,13 @@ export class UserService implements OnModuleInit {
     return users[0] ?? null;
   }
 
+  private getUserIdString(user: { id?: any; _id?: any } | null, fallback = ''): string {
+    if (!user) {
+      return fallback;
+    }
+    return user.id?.toString?.() || user._id?.toString?.() || fallback;
+  }
+
   private async ensureActiveEmailUniqueIndex(): Promise<void> {
     try {
       const connection = this.userRepository.manager.connection;
@@ -1290,6 +1297,9 @@ export class UserService implements OnModuleInit {
       throw new NotFoundException('User not found');
     }
 
+    const originalCountryCode = user.countryCode?.trim() || '';
+    const originalPhoneNumber = user.phoneNumber?.trim() || '';
+
     if (dto.firstName !== undefined) {
       user.firstName = dto.firstName;
     }
@@ -1313,14 +1323,23 @@ export class UserService implements OnModuleInit {
       user.phoneNumber = dto.phoneNumber.trim();
     }
 
-    const effectiveCountryCode = user.countryCode?.trim();
-    const effectivePhoneNumber = user.phoneNumber?.trim();
-    if (effectiveCountryCode && effectivePhoneNumber) {
+    const effectiveCountryCode = user.countryCode?.trim() || '';
+    const effectivePhoneNumber = user.phoneNumber?.trim() || '';
+    const phoneFieldsSent =
+      dto.countryCode !== undefined || dto.phoneNumber !== undefined;
+    const phoneChanged =
+      effectiveCountryCode !== originalCountryCode ||
+      effectivePhoneNumber !== originalPhoneNumber;
+
+    if (phoneFieldsSent && phoneChanged && effectiveCountryCode && effectivePhoneNumber) {
       const existingUserByPhone = await this.findActiveByPhone(
         effectiveCountryCode,
         effectivePhoneNumber,
       );
-      if (existingUserByPhone && existingUserByPhone.id?.toString() !== userId) {
+      const currentUserId = this.getUserIdString(user, userId);
+      const existingUserId = this.getUserIdString(existingUserByPhone);
+
+      if (existingUserByPhone && existingUserId && existingUserId !== currentUserId) {
         throw new ConflictException('Phone number already registered');
       }
     }
