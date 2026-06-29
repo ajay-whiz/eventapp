@@ -86,14 +86,14 @@ export class VenueController {
     name: 'lat',
     required: false,
     type: Number,
-    description: 'User latitude for nearest location sorting and distance',
+    description: 'User latitude for 50km radius filtering, distance sorting, and distance field',
     example: 37.785834,
   })
   @ApiQuery({
     name: 'lng',
     required: false,
     type: Number,
-    description: 'User longitude for nearest location sorting and distance',
+    description: 'User longitude for 50km radius filtering, distance sorting, and distance field',
     example: -122.406417,
   })
   @ApiResponse({
@@ -120,6 +120,7 @@ export class VenueController {
         categoryName: originalVenue?.categoryName || venue.categoryName || 'General Venue',
         primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
         locations: originalVenue?.locations || venue.locations,
+        distance: originalVenue?.distance ?? venue.distance,
       };
     });
     
@@ -161,14 +162,14 @@ export class VenueController {
     name: 'lat',
     required: false,
     type: Number,
-    description: 'User latitude for nearest location sorting and distance',
+    description: 'User latitude for 50km radius filtering, distance sorting, and distance field',
     example: 37.785834,
   })
   @ApiQuery({
     name: 'lng',
     required: false,
     type: Number,
-    description: 'User longitude for nearest location sorting and distance',
+    description: 'User longitude for 50km radius filtering, distance sorting, and distance field',
     example: -122.406417,
   })
   @ApiResponse({
@@ -199,6 +200,7 @@ export class VenueController {
         categoryName: originalVenue?.categoryName || venue.categoryName || 'General Venue',
         primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
         locations: originalVenue?.locations || venue.locations,
+        distance: originalVenue?.distance ?? venue.distance,
       };
     });
 
@@ -415,14 +417,14 @@ export class VenueController {
     name: 'lat',
     required: false,
     type: Number,
-    description: 'User latitude for nearest location sorting and distance',
+    description: 'User latitude for 50km radius filtering, distance sorting, and distance field',
     example: 37.785834,
   })
   @ApiQuery({
     name: 'lng',
     required: false,
     type: Number,
-    description: 'User longitude for nearest location sorting and distance',
+    description: 'User longitude for 50km radius filtering, distance sorting, and distance field',
     example: -122.406417,
   })
   @ApiResponse({

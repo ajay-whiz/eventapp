@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsOptional, IsNumber, IsString, Min, Max } from 'class-validator';
 
 export class VenuePaginationDto {
@@ -53,6 +53,11 @@ export class VenuePaginationDto {
     example: 37.785834,
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value == null) return undefined;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : value;
+  })
   @Type(() => Number)
   @IsNumber()
   lat?: number;
@@ -63,6 +68,11 @@ export class VenuePaginationDto {
     example: -122.406417,
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value == null) return undefined;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : value;
+  })
   @Type(() => Number)
   @IsNumber()
   lng?: number;

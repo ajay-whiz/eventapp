@@ -83,6 +83,20 @@ export class SimilarController {
     description: 'Filter vendors by maximum price',
     example: 100000,
   })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for 50km radius filtering and distance sorting',
+    example: 37.4219983,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for 50km radius filtering and distance sorting',
+    example: -122.084,
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Similar vendors retrieved successfully',
@@ -129,6 +143,20 @@ export class SimilarController {
     type: String,
     description: 'Filter venues by category ObjectId',
     example: '507f1f77bcf86cd799439011',
+  })
+  @ApiQuery({
+    name: 'lat',
+    required: false,
+    type: Number,
+    description: 'User latitude for 50km radius filtering and distance sorting',
+    example: 37.4219983,
+  })
+  @ApiQuery({
+    name: 'lng',
+    required: false,
+    type: Number,
+    description: 'User longitude for 50km radius filtering and distance sorting',
+    example: -122.084,
   })
   @ApiResponse({
     status: HttpStatus.OK,

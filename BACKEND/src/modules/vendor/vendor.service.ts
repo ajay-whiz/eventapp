@@ -40,6 +40,10 @@ import {
   buildListingDetailLocationsFromRecords,
   groupLocationsByServiceId,
 } from '@shared/utils/listing-detail-location.util';
+import {
+  applyLocationRadiusListingFilter,
+  parseQueryCoordinates,
+} from '@shared/utils/listing-location-filter.util';
 import { extractImagesFromFormData, extractPrimaryImageFromFormData } from '@shared/utils/listing-form-images.util';
 import { Rating } from '../rating/entity/rating.entity'; // New import
 import { User } from '../user/entities/user.entity';
@@ -174,6 +178,7 @@ export class VendorService {
 
   async findAll(paginationDto: VendorPaginationDto): Promise<VendorPaginatedResponseDto> {
     const { page = 1, limit = 10, search, categoryId, location, minPrice, maxPrice, lat, lng } = paginationDto;
+    const queryCoords = parseQueryCoordinates(lat, lng);
     const skip = (page - 1) * limit;
   
     // Base query
@@ -287,8 +292,8 @@ export class VendorService {
             {
               entityName: vendor.name,
               formData: vendor.formData,
-              queryLat: lat,
-              queryLng: lng,
+              queryLat: queryCoords?.lat,
+              queryLng: queryCoords?.lng,
             },
           );
           
@@ -440,6 +445,14 @@ export class VendorService {
         });
       }
 
+      if (queryCoords) {
+        filteredVendors = applyLocationRadiusListingFilter(
+          filteredVendors,
+          queryCoords.lat,
+          queryCoords.lng,
+        );
+      }
+
       // Apply pagination to filtered results
       const total = filteredVendors.length;
       const paginatedVendors = filteredVendors.slice(skip, skip + limit);
@@ -453,12 +466,20 @@ export class VendorService {
         if (originalVendor) {
           vendorDto.categoryId = originalVendor.categoryId;
           vendorDto.categoryName = originalVendor.categoryName;
-          // Preserve imageUrl and formData for controller to use
           if (originalVendor.imageUrl !== undefined) {
             vendorDto.imageUrl = originalVendor.imageUrl;
           }
           if (originalVendor.formData) {
             vendorDto.formData = originalVendor.formData;
+          }
+          if (originalVendor.primaryLocation) {
+            vendorDto.primaryLocation = originalVendor.primaryLocation;
+          }
+          if (originalVendor.locations) {
+            vendorDto.locations = originalVendor.locations;
+          }
+          if ((originalVendor as any).distance != null) {
+            vendorDto.distance = (originalVendor as any).distance;
           }
         }
         return vendorDto;

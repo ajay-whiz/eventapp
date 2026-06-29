@@ -112,14 +112,14 @@ export class VendorController {
     name: 'lat',
     required: false,
     type: Number,
-    description: 'User latitude for nearest location sorting and distance',
+    description: 'User latitude for 50km radius filtering, distance sorting, and distance field',
     example: 37.785834,
   })
   @ApiQuery({
     name: 'lng',
     required: false,
     type: Number,
-    description: 'User longitude for nearest location sorting and distance',
+    description: 'User longitude for 50km radius filtering, distance sorting, and distance field',
     example: -122.406417,
   })
   @ApiResponse({
@@ -171,7 +171,7 @@ export class VendorController {
       let transformedData;
       try {
         transformedData = plainToInstance(VendorUserResponseDto, rawData, { excludeExtraneousValues: true });
-      } catch (transformError) {
+      } catch (transformError:any) {
 
         throw new Error(`Failed to transform vendor data: ${transformError.message}`);
       }
@@ -184,7 +184,7 @@ export class VendorController {
           
           // Remove any unwanted fields that might have been exposed (like "Image", "formData", etc.)
           const cleanedDto: any = {};
-          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'primaryLocation', 'locations', 'price', 'pricing', 'rating', 'reviews', 'image'];
+          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'primaryLocation', 'locations', 'distance', 'price', 'pricing', 'rating', 'reviews', 'image'];
           allowedFields.forEach(field => {
             if (vendorDto && vendorDto[field] !== undefined) {
               cleanedDto[field] = vendorDto[field];
@@ -196,6 +196,9 @@ export class VendorController {
             cleanedDto.categoryName = originalVendor.categoryName || '';
             cleanedDto.primaryLocation = originalVendor.primaryLocation || vendorDto.primaryLocation;
             cleanedDto.locations = originalVendor.locations || vendorDto.locations;
+            if (originalVendor.distance != null) {
+              cleanedDto.distance = originalVendor.distance;
+            }
             
             // Extract image URL - ensure it's always a string from index 0
             let extractedImageUrl = '';
@@ -427,14 +430,14 @@ export class VendorController {
     name: 'lat',
     required: false,
     type: Number,
-    description: 'User latitude for nearest location sorting and distance',
+    description: 'User latitude for 50km radius filtering, distance sorting, and distance field',
     example: 37.785834,
   })
   @ApiQuery({
     name: 'lng',
     required: false,
     type: Number,
-    description: 'User longitude for nearest location sorting and distance',
+    description: 'User longitude for 50km radius filtering, distance sorting, and distance field',
     example: -122.406417,
   })
   @ApiResponse({

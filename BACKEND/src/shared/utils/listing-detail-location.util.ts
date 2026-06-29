@@ -1,6 +1,11 @@
 import { LocationService } from '@modules/location/location.service';
 import { Location } from '@modules/location/entity/location.entity';
 import { extractCityFromAddress } from './location-city.util';
+import {
+  extractCoordinatesFromFormData,
+  hasUsableCoordinates,
+  parseQueryCoordinates,
+} from './geo-distance.util';
 
 export type ListingDetailLocationItem = {
   id?: string;
@@ -26,27 +31,11 @@ export type ListingDetailLocationsResult = {
   locations: ListingDetailLocationItem[];
 };
 
-function isValidCoordinate(lat: number, lng: number): boolean {
-  return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
-
-function hasUsableCoordinates(lat: number, lng: number): boolean {
-  return isValidCoordinate(lat, lng) && !(lat === 0 && lng === 0);
-}
-
 export function parseDetailLocationQuery(
-  lat?: number,
-  lng?: number,
+  lat?: unknown,
+  lng?: unknown,
 ): { lat: number; lng: number } | null {
-  if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return null;
-  }
-
-  if (!isValidCoordinate(lat, lng)) {
-    return null;
-  }
-
-  return { lat, lng };
+  return parseQueryCoordinates(lat, lng);
 }
 
 function resolveLocationCity(
@@ -84,8 +73,9 @@ function buildFallbackLocation(
   entityName: string,
   formData?: Record<string, any>,
 ): ListingDetailLocationItem {
-  const lat = Number(formData?.latitude ?? formData?.lat ?? 0) || 0;
-  const lng = Number(formData?.longitude ?? formData?.lng ?? 0) || 0;
+  const formCoords = extractCoordinatesFromFormData(formData);
+  const lat = formCoords?.lat ?? 0;
+  const lng = formCoords?.lng ?? 0;
 
   return {
     address:
@@ -142,9 +132,9 @@ export function buildListingDetailLocationsFromRecords(
 ): ListingDetailLocationsResult {
   const { entityName, formData, queryLat, queryLng } = params;
 
-  let locations: ListingDetailLocationItem[] = storedLocations.map((location) =>
-    mapStoredLocation(location, entityName, formData),
-  );
+  let locations: ListingDetailLocationItem[] = storedLocations
+    .map((location) => mapStoredLocation(location, entityName, formData))
+    .filter((location) => hasUsableCoordinates(location.lat, location.lng));
 
   if (locations.length === 0) {
     locations = [buildFallbackLocation(entityName, formData)];

@@ -42,6 +42,11 @@ import {
   buildListingDetailLocationsFromRecords,
   groupLocationsByServiceId,
 } from '@shared/utils/listing-detail-location.util';
+import {
+  applyLocationRadiusListingFilter,
+  parseQueryCoordinates,
+  paginateInMemoryList,
+} from '@shared/utils/listing-location-filter.util';
 import { extractImagesFromFormData, extractPrimaryImageFromFormData } from '@shared/utils/listing-form-images.util';
 
 @Injectable()
@@ -229,7 +234,9 @@ export class VenueService {
 
   async findAll(paginationDto: VenuePaginationDto): Promise<VenuePaginatedResponseDto> {
     const { page = 1, limit = 10, search, categoryId, lat, lng } = paginationDto;
+    const queryCoords = parseQueryCoordinates(lat, lng);
     const skip = (page - 1) * limit;
+    const useLocationFilter = queryCoords != null;
 
     // Build query conditions
     const query: ObjectLiteral = {
@@ -249,15 +256,21 @@ export class VenueService {
     }
 
     try {
-      const [venues, total] = await Promise.all([
-        this.venueRepo.find({
-          where: query,
-          skip,
-          take: limit,
-          order: { createdAt: 'DESC' }
-        }),
-        this.venueRepo.count(query)
-      ]);
+      const venues = useLocationFilter
+        ? await this.venueRepo.find({
+            where: query,
+            order: { createdAt: 'DESC' },
+          })
+        : await this.venueRepo.find({
+            where: query,
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+          });
+
+      const total = useLocationFilter
+        ? 0
+        : await this.venueRepo.count(query);
 
       const serviceIds = venues
         .map((venue) => venue.id?.toString())
@@ -273,8 +286,8 @@ export class VenueService {
           {
             entityName: venue.name,
             formData: venue.formData,
-            queryLat: lat,
-            queryLng: lng,
+            queryLat: queryCoords?.lat,
+            queryLng: queryCoords?.lng,
           },
         );
         
@@ -317,19 +330,43 @@ export class VenueService {
           pricing: venue.formData?.pricing || categoryPricing
         };
       }));
+
+      let listingVenues = transformedVenues;
+      let pagination: IPaginationMeta;
+
+      if (useLocationFilter) {
+        const filteredVenues = applyLocationRadiusListingFilter(
+          listingVenues,
+          queryCoords!.lat,
+          queryCoords!.lng,
+        );
+        const paginated = paginateInMemoryList(filteredVenues, page, limit);
+        listingVenues = paginated.data;
+        pagination = paginated.pagination;
+      } else {
+        pagination = {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
   
-      const data = plainToInstance(VenueResponseDto, transformedVenues, {
+      const data = plainToInstance(VenueResponseDto, listingVenues, {
         excludeExtraneousValues: true
       });
 
       // Explicitly ensure categoryId and categoryName are present after transformation
       const finalData = data.map((venueDto: any, index: number) => {
-        const originalVenue = transformedVenues[index];
+        const originalVenue = listingVenues[index];
         if (originalVenue) {
           venueDto.categoryId = originalVenue.categoryId;
           venueDto.categoryName = originalVenue.categoryName;
           venueDto.primaryLocation = originalVenue.primaryLocation;
           venueDto.locations = originalVenue.locations;
+          if ((originalVenue as any).distance != null) {
+            venueDto.distance = (originalVenue as any).distance;
+          }
           if (originalVenue.imageUrl !== undefined) {
             venueDto.imageUrl = originalVenue.imageUrl;
           }
@@ -340,13 +377,6 @@ export class VenueService {
         return venueDto;
       });
 
-      const pagination: IPaginationMeta = {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      };
-
       return { data: finalData, pagination };
     } catch (error) {
       throw new BadRequestException('Failed to fetch venues');
@@ -355,7 +385,9 @@ export class VenueService {
 
   async findAllForUser(paginationDto: VenuePaginationDto): Promise<{ data: any[], pagination: IPaginationMeta }> {
     const { page = 1, limit = 10, search, categoryId, lat, lng } = paginationDto;
+    const queryCoords = parseQueryCoordinates(lat, lng);
     const skip = (page - 1) * limit;
+    const useLocationFilter = queryCoords != null;
 
     // Build query conditions
     const query: ObjectLiteral = {
@@ -375,15 +407,21 @@ export class VenueService {
     }
 
     try {
-      const [venues, total] = await Promise.all([
-        this.venueRepo.find({
-          where: query,
-          skip,
-          take: limit,
-          order: { createdAt: 'DESC' }
-        }),
-        this.venueRepo.count(query)
-      ]);
+      const venues = useLocationFilter
+        ? await this.venueRepo.find({
+            where: query,
+            order: { createdAt: 'DESC' },
+          })
+        : await this.venueRepo.find({
+            where: query,
+            skip,
+            take: limit,
+            order: { createdAt: 'DESC' },
+          });
+
+      const total = useLocationFilter
+        ? 0
+        : await this.venueRepo.count(query);
 
       const serviceIds = venues
         .map((venue) => venue.id?.toString())
@@ -400,8 +438,8 @@ export class VenueService {
           {
             entityName: venue.name,
             formData: venue.formData,
-            queryLat: lat,
-            queryLng: lng,
+            queryLat: queryCoords?.lat,
+            queryLng: queryCoords?.lng,
           },
         );
         
@@ -473,6 +511,17 @@ export class VenueService {
           locations: locationFields.locations,
         };
       }));
+
+      if (useLocationFilter) {
+        const filteredVenues = applyLocationRadiusListingFilter(
+          transformedVenues,
+          queryCoords!.lat,
+          queryCoords!.lng,
+        );
+        const paginated = paginateInMemoryList(filteredVenues, page, limit);
+        return { data: paginated.data, pagination: paginated.pagination };
+      }
+
       const pagination: IPaginationMeta = {
         total,
         page,

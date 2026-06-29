@@ -55,6 +55,14 @@ export class VenueUserResponseDto {
   @Type(() => DetailLocationItemDto)
   locations!: DetailLocationItemDto[];
 
+  @ApiProperty({
+    description: 'Distance from query coordinates in kilometers',
+    required: false,
+    example: 4.2,
+  })
+  @Expose()
+  distance?: number;
+
   @ApiProperty({ description: 'Title of the venue' })
   @Expose()
   @Transform(({ obj }) => obj.title || obj.name)
