@@ -37,6 +37,7 @@ const ROUTE_FEATURE_MAPPING: Record<string, string> = {
   '/vendor-management': 'vendor_management',
   '/content-policy': 'content_policy',
   '/settings': 'content_policy',
+  '/testimonial': 'testimonial_management',
   '/booking-management': 'booking_management',
 };
 

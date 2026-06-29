@@ -220,6 +220,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
       feature.uniqueId !== 'dashboard' && 
       feature.uniqueId !== 'profile_setting' &&
       feature.uniqueId !== 'content_policy' &&
+      feature.uniqueId !== 'testimonial_management' &&
       feature.uniqueId !== 'form_builder' &&
       !isSuperAdminOnlyFeature(feature.uniqueId) &&
       !(isUserSuperAdmin && ['role_management', 'feature_management', 'enterprise_management', 'content_policy'].includes(feature.uniqueId))
@@ -273,6 +274,32 @@ const Sidebar: React.FC<SidebarProps> = ({ isExpanded, toggleSidebar }) => {
             badge: null,
             feature: settingsConfig.defaultLabel,
             uniqueId: settingsConfig.uniqueId,
+          });
+        }
+      }
+    }
+
+    const hasTestimonialAccess =
+      isUserSuperAdmin ||
+      userFeatures.some(
+        (feature) =>
+          feature?.uniqueId === 'testimonial_management' && hasFeatureAccess(feature),
+      );
+
+    if (hasTestimonialAccess) {
+      const testimonialConfig = getFeatureConfig('testimonial_management');
+      if (testimonialConfig) {
+        const testimonialExists = baseMenuItems.some(
+          (item) => item.uniqueId === 'testimonial_management',
+        );
+        if (!testimonialExists) {
+          baseMenuItems.push({
+            to: testimonialConfig.route,
+            label: testimonialConfig.defaultLabel,
+            icon: testimonialConfig.icon,
+            badge: null,
+            feature: testimonialConfig.defaultLabel,
+            uniqueId: testimonialConfig.uniqueId,
           });
         }
       }

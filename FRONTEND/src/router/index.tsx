@@ -50,6 +50,8 @@ import VendorForm from '../features/vendorManagement/components/VendorForm';
 import ContentPolicyList from '../features/content-policy/components/ContentPolicyList';
 import ContentPolicyForm from '../features/content-policy/components/ContentPolicyForm';
 import ContentPolicyDynamicRoute from '../features/content-policy/components/ContentPolicyDynamicRoute';
+import TestimonialList from '../features/testimonial/components/TestimonialList';
+import TestimonialForm from '../features/testimonial/components/TestimonialForm';
 
 // Booking Management
 import BookingIndex from '../features/booking/components/BookingIndex';
@@ -153,6 +155,11 @@ const AppRoutes = () => {
         <Route path={ROUTING.SETTINGS} element={<Navigate to={`/${ROUTING.CONTENT_POLICY}`} replace />} />
         <Route path={ROUTING.CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="read"><ContentPolicyList /></ProtectedRoute>} />
         <Route path={ROUTING.ADD_CONTENT_POLICY} element={<ProtectedRoute requiredFeature="content_policy" requiredPermission="write"><ContentPolicyForm /></ProtectedRoute>} />
+
+        {/* Testimonials - Protected by Testimonial Management feature permission */}
+        <Route path={ROUTING.TESTIMONIALS} element={<ProtectedRoute requiredFeature="testimonial_management" requiredPermission="read"><TestimonialList /></ProtectedRoute>} />
+        <Route path={ROUTING.ADD_TESTIMONIAL} element={<ProtectedRoute requiredFeature="testimonial_management" requiredPermission="write"><TestimonialForm /></ProtectedRoute>} />
+        <Route path={ROUTING.UPDATE_TESTIMONIAL} element={<ProtectedRoute requiredFeature="testimonial_management" requiredPermission="write"><TestimonialForm /></ProtectedRoute>} />
 
         {/* Booking Management - Protected by Booking Management feature permission */}
         <Route path={ROUTING.BOOKING_MANAGEMENT} element={<ProtectedRoute requiredFeature="booking_management" requiredPermission="read"><BookingIndex /></ProtectedRoute>} />

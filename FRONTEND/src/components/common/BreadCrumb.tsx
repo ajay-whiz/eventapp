@@ -36,6 +36,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps & { separator?: React.ReactNode }> 
     'form-builder': 'Form Builder',
     'form-list': 'Form List',
     'content-policy': 'Content Policy',
+    'testimonial': 'Testimonials',
     'settings': 'Settings',
     'privacy-policy': 'Privacy Policy',
     'terms-of-service': 'Terms of Service',

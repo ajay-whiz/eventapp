@@ -19,13 +19,26 @@ export class TestimonialController {
   @ApiOperation({ summary: 'List testimonials (admin)' })
   @ApiQuery({ name: 'page', type: Number, required: false })
   @ApiQuery({ name: 'limit', type: Number, required: false })
+  @ApiQuery({ name: 'search', type: String, required: false })
+  @ApiQuery({ name: 'sortBy', type: String, required: false })
+  @ApiQuery({ name: 'sortOrder', enum: ['asc', 'desc'], required: false })
   @ApiQuery({ name: 'isActive', type: Boolean, required: false })
   findAll(
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Query('search') search = '',
+    @Query('sortBy') sortBy = 'createdAt',
+    @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
     @Query('isActive') isActive?: string,
   ) {
-    return this.testimonialService.findAll(page, limit, isActive === undefined ? undefined : isActive === 'true');
+    return this.testimonialService.findAll(
+      Number(page),
+      Number(limit),
+      search,
+      sortBy,
+      sortOrder,
+      isActive === undefined ? undefined : isActive === 'true',
+    );
   }
 
   @Get('mobile')
@@ -49,4 +62,3 @@ export class TestimonialController {
     return this.testimonialService.remove(id);
   }
 }
-

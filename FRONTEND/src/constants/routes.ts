@@ -27,6 +27,7 @@ API_ROUTES = {
     QUOTATIONS: "quotations",
     VENDOR_CATEGORIES: "vendor-category",
     VENUE_CATEGORIES: "venue-category",
+    TESTIMONIALS: "testimonial",
 }
 export const ROUTING = {
     GET_ALL_FIELDS: "fields",
@@ -101,4 +102,7 @@ export const ROUTING = {
     ADD_QUOTATION: "quotation-management/create",
     UPDATE_QUOTATION: "quotation-management/:id/edit",
     VIEW_QUOTATION: "quotation-management/:id",
+    TESTIMONIALS: "testimonial",
+    ADD_TESTIMONIAL: "testimonial/new",
+    UPDATE_TESTIMONIAL: "testimonial/:id",
 }

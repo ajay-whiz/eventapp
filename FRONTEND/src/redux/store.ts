@@ -11,6 +11,7 @@ import vendorReducer from '../features/vendorManagement/slices/VendorSlice';
 import { contentPolicySlice } from '../features/content-policy/slices/contentPolicySlice';
 import bookingReducer from '../features/booking/slices/bookingSlice';
 import { venueCategorySlice } from '../features/venue-category/slices/venueCategorySlice';
+import { testimonialSlice } from '../features/testimonial/slices/testimonialSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     venueCategories: venueCategorySlice.reducer,
     contentPolicy: contentPolicySlice.reducer,
     booking: bookingReducer,
+    testimonial: testimonialSlice.reducer,
   },
 });
 

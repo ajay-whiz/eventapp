@@ -13,6 +13,7 @@ import {
   FileText,
   Calendar,
   Shield,
+  MessageSquareQuote,
 } from 'lucide-react';
 
 export interface FeatureConfig {
@@ -111,6 +112,12 @@ export const FEATURE_MAPPING: Record<string, FeatureConfig> = {
     icon: <Settings size={24} />,
     defaultLabel: 'Settings',
   },
+  testimonial_management: {
+    uniqueId: 'testimonial_management',
+    route: '/testimonial',
+    icon: <MessageSquareQuote size={24} />,
+    defaultLabel: 'Testimonials',
+  },
   booking_management: {
     uniqueId: 'booking_management',
     route: '/booking-management',
@@ -185,6 +192,7 @@ export const generateAllMenuItems = (): MenuItemFromFeature[] => {
     'booking_management',
     'quotation_management',
     'content_policy',
+    'testimonial_management',
   ];
 
   allFeatureIds.forEach(uniqueId => {
