@@ -31,9 +31,16 @@ export class DetailLocationItemDto {
   mapImageUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Distance from query coordinates in kilometers',
-    example: 1.2,
+    description: 'Distance from query coordinates in kilometers (2 decimal places)',
+    example: 8.7,
   })
   @Expose()
   distance?: number;
+
+  @ApiPropertyOptional({
+    description: 'Unit for the distance field',
+    example: 'km',
+  })
+  @Expose()
+  distanceUnit?: string;
 }

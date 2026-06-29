@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UsePipes, ValidationPipe, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UsePipes, ValidationPipe, Patch, BadRequestException } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/request/create-location.dto';
 import { UpdateLocationDto } from './dto/request/update-location.dto';
 import { LocationResponseDto } from './dto/response/location.dto';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { parseQueryCoordinates } from '@shared/utils/geo-distance.util';
 
 @ApiTags('Location')
 @Controller('location')
@@ -78,10 +79,14 @@ export class LocationController {
   }
   
   @Get('nearby/search')
-  @ApiOperation({ summary: 'Find nearby vendors/venues by coordinates (defaults to vendors only)' })
+  @ApiOperation({
+    summary: 'Find nearby vendors/venues by coordinates (defaults to vendors only)',
+    description:
+      'Returns results sorted by distance. Distance is returned in kilometers (2 decimal places) with distanceUnit set to "km".',
+  })
   @ApiQuery({ name: 'lng', type: Number })
   @ApiQuery({ name: 'lat', type: Number })
-  @ApiQuery({ name: 'radius', type: Number, required: false, description: 'Meters', example: 5000 })
+  @ApiQuery({ name: 'radius', type: Number, required: false, description: 'Search radius in meters', example: 5000 })
   @ApiQuery({ name: 'type', type: String, required: false, description: 'vendor (default) | venue', enum: ['vendor', 'venue'] })
   findNearby(
     @Query('lng') lng: string,
@@ -89,9 +94,20 @@ export class LocationController {
     @Query('radius') radius?: string,
     @Query('type') type?: 'vendor' | 'venue',
   ) {
-    // Default to 'vendor' if type is not specified - only return vendor services
+    const queryCoords = parseQueryCoordinates(lat, lng);
+    if (!queryCoords) {
+      throw new BadRequestException('Valid lat and lng query parameters are required');
+    }
+
     const searchType = type || 'vendor';
-    return this.service.findNearby(parseFloat(lng), parseFloat(lat), radius ? parseInt(radius, 10) : 5000, searchType);
+    const radiusMeters = radius ? parseInt(radius, 10) : 5000;
+
+    return this.service.findNearby(
+      queryCoords.lng,
+      queryCoords.lat,
+      Number.isFinite(radiusMeters) ? radiusMeters : 5000,
+      searchType,
+    );
   }
 }
 

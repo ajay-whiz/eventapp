@@ -1,17 +1,21 @@
 import {
-  haversineDistanceKm,
+  DISTANCE_UNIT_KM,
+  LOCATION_RADIUS_KM,
+  LOCATION_RADIUS_METERS,
+  metersToDistanceKm,
   parseQueryCoordinates,
-  resolveNearestDistanceKm,
+  resolveNearestDistanceMeters,
 } from './geo-distance.util';
 
-export const LOCATION_RADIUS_KM = 50;
+export { LOCATION_RADIUS_KM, LOCATION_RADIUS_METERS };
 
 export type ListingItemWithLocations = {
-  primaryLocation?: { lat?: number; lng?: number; distance?: number };
-  locations?: Array<{ lat?: number; lng?: number; distance?: number }>;
+  primaryLocation?: { lat?: number; lng?: number; distance?: number; distanceUnit?: string };
+  locations?: Array<{ lat?: number; lng?: number; distance?: number; distanceUnit?: string }>;
   location?: { latitude?: number; longitude?: number };
   formData?: Record<string, any>;
   distance?: number;
+  distanceUnit?: string;
 };
 
 export function hasLocationQuery(lat?: unknown, lng?: unknown): boolean {
@@ -22,28 +26,35 @@ export function applyLocationRadiusListingFilter<T extends ListingItemWithLocati
   items: T[],
   lat?: unknown,
   lng?: unknown,
-): Array<T & { distance: number }> {
+): Array<T & { distance: number; distanceUnit: typeof DISTANCE_UNIT_KM }> {
   const queryCoords = parseQueryCoordinates(lat, lng);
   if (!queryCoords) {
-    return items as Array<T & { distance: number }>;
+    return items as Array<T & { distance: number; distanceUnit: typeof DISTANCE_UNIT_KM }>;
   }
 
-  const filtered: Array<T & { distance: number }> = [];
+  const filtered: Array<T & { distance: number; distanceUnit: typeof DISTANCE_UNIT_KM }> = [];
 
   for (const item of items) {
-    const distance = resolveNearestDistanceKm(item, queryCoords.lat, queryCoords.lng);
+    const distanceMeters = resolveNearestDistanceMeters(
+      item,
+      queryCoords.lat,
+      queryCoords.lng,
+    );
 
-    if (distance == null || distance > LOCATION_RADIUS_KM) {
+    if (distanceMeters == null || distanceMeters > LOCATION_RADIUS_METERS) {
       continue;
     }
+
+    const distance = metersToDistanceKm(distanceMeters);
 
     filtered.push({
       ...item,
       distance,
+      distanceUnit: DISTANCE_UNIT_KM,
       primaryLocation: item.primaryLocation
-        ? { ...item.primaryLocation, distance }
+        ? { ...item.primaryLocation, distance, distanceUnit: DISTANCE_UNIT_KM }
         : item.primaryLocation,
-    } as T & { distance: number });
+    } as T & { distance: number; distanceUnit: typeof DISTANCE_UNIT_KM });
   }
 
   return filtered.sort((left, right) => left.distance - right.distance);
@@ -76,5 +87,4 @@ export function paginateInMemoryList<T>(
   };
 }
 
-// Re-export for callers that need normalized coordinates.
-export { parseQueryCoordinates, haversineDistanceKm };
+export { parseQueryCoordinates, metersToDistanceKm, DISTANCE_UNIT_KM };

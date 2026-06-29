@@ -367,6 +367,9 @@ export class VenueService {
           if ((originalVenue as any).distance != null) {
             venueDto.distance = (originalVenue as any).distance;
           }
+          if ((originalVenue as any).distanceUnit) {
+            venueDto.distanceUnit = (originalVenue as any).distanceUnit;
+          }
           if (originalVenue.imageUrl !== undefined) {
             venueDto.imageUrl = originalVenue.imageUrl;
           }

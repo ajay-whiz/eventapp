@@ -76,12 +76,20 @@ export class VendorResponseDto {
   locations: DetailLocationItemDto[];
 
   @ApiProperty({
-    description: 'Distance from query coordinates in kilometers',
+    description: 'Distance from query coordinates in kilometers (2 decimal places)',
     required: false,
-    example: 4.2,
+    example: 8.7,
   })
   @Expose()
   distance?: number;
+
+  @ApiProperty({
+    description: 'Unit for the distance field',
+    required: false,
+    example: 'km',
+  })
+  @Expose()
+  distanceUnit?: string;
 
   @ApiProperty({ description: 'Price of the vendor' })
   @Expose()

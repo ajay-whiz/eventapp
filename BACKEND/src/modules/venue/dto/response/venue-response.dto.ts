@@ -5,73 +5,73 @@ import { DetailLocationItemDto } from '@shared/dto/detail-location-item.dto';
 class LocationDto {
   @ApiProperty({ description: 'Full address' })
   @Expose()
-  address: string;
+  address!: string;
 
   @ApiProperty({ description: 'City name' })
   @Expose()
-  city: string;
+  city!: string;
 
   @ApiProperty({ description: 'Latitude coordinate' })
   @Expose()
-  latitude: number;
+  latitude!: number;
 
   @ApiProperty({ description: 'Longitude coordinate' })
   @Expose()
-  longitude: number;
+  longitude!: number;
 
   @ApiProperty({ description: 'Pin title for map' })
   @Expose()
-  pinTitle: string;
+  pinTitle!: string;
 
   @ApiProperty({ description: 'Map image URL' })
   @Expose()
-  mapImageUrl: string;
+  mapImageUrl!: string;
 }
 
 export class VenueResponseDto {
   @ApiProperty({ description: 'MongoDB ObjectId' })
   @Expose()
   @Transform(({ obj }) => obj.id?.toString())
-  id: string;
+  id!: string;
 
   @ApiProperty({ description: 'Service Category ObjectId of the venue' })
   @Expose()
-  serviceCategoryId: string;
+  serviceCategoryId!: string;
 
   @ApiProperty({ description: 'Category ID of the venue' })
   @Expose()
   @Transform(({ obj }) => obj.categoryId || obj.serviceCategoryId)
-  categoryId: string;
+  categoryId!: string;
 
   @ApiProperty({ description: 'Category name of the venue' })
   @Expose()
   @Transform(({ obj }) => obj.categoryName || 'General Venue')
-  categoryName: string;
+  categoryName!: string;
 
   @ApiProperty({ description: 'Name of the venue' })
   @Expose()
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Title of the venue' })
   @Expose()
-  title: string;
+  title!: string;
 
   @ApiProperty({ description: 'Description of the venue' })
   @Expose()
-  description: string;
+  description!: string;
 
   @ApiProperty({ description: 'Detailed long description of the venue' })
   @Expose()
-  longDescription: string;
+  longDescription!: string;
 
   @ApiProperty({ description: 'Location details' })
   @Expose()
-  location: LocationDto;
+  location!: LocationDto;
 
   @ApiProperty({ description: 'Nearest or primary location' })
   @Expose()
   @Type(() => DetailLocationItemDto)
-  primaryLocation: DetailLocationItemDto;
+  primaryLocation!: DetailLocationItemDto;
 
   @ApiProperty({
     description: 'All locations for this venue',
@@ -79,20 +79,28 @@ export class VenueResponseDto {
   })
   @Expose()
   @Type(() => DetailLocationItemDto)
-  locations: DetailLocationItemDto[];
+  locations!: DetailLocationItemDto[];
 
   @ApiProperty({
-    description: 'Distance from query coordinates in kilometers',
+    description: 'Distance from query coordinates in kilometers (2 decimal places)',
     required: false,
-    example: 4.2,
+    example: 8.7,
   })
   @Expose()
   distance?: number;
 
+  @ApiProperty({
+    description: 'Unit for the distance field',
+    required: false,
+    example: 'km',
+  })
+  @Expose()
+  distanceUnit?: string;
+
   @ApiProperty({ description: 'Price of the venue' })
   @Expose()
   @Transform(({ obj }) => obj.price || 0)
-  price: number;
+  price!: number;
 
   @ApiProperty({ 
     description: 'Dynamic pricing array based on category',
@@ -103,7 +111,7 @@ export class VenueResponseDto {
     ]
   })
   @Expose()
-  pricing: Array<{
+  pricing!: Array<{
     title: string;
     price: number;
   }>;
@@ -132,46 +140,46 @@ export class VenueResponseDto {
     }
   })
   @Expose()
-  formData: Record<string, any>;
+  formData!: Record<string, any>;
 
   @ApiProperty({ description: 'Creation timestamp' })
   @Expose()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty({ description: 'Last update timestamp' })
   @Expose()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @ApiProperty({ description: 'Created by user' })
   @Expose()
-  createdBy: string;
+  createdBy!: string;
 
   @ApiProperty({ description: 'Last updated by user' })
   @Expose()
-  updatedBy: string;
+  updatedBy!: string;
 
   @ApiProperty({ description: 'Whether the venue is active' })
   @Expose()
-  isActive: boolean;
+  isActive!: boolean;
 
   @ApiProperty({ description: 'Whether the venue is deleted' })
   @Expose()
-  isDeleted: boolean;
+  isDeleted!: boolean;
 
   @ApiProperty({ description: "URL of the venue's image" })
   @Expose()
   @Transform(({ obj }) => obj.imageUrl || obj.formData?.imageUrl || obj.formData?.images?.[0] || '')
-  image: string;
+  image!: string;
 
   @ApiProperty({ description: 'Average rating of the venue' })
   @Expose()
   @Transform(({ obj }) => obj.averageRating || 0)
-  rating: number;
+  rating!: number;
 
   @ApiProperty({ description: 'Total number of ratings/reviews for the venue' })
   @Expose()
   @Transform(({ obj }) => obj.totalRatings || 0)
-  reviews: number;
+  reviews!: number;
 
   @ApiProperty({ description: 'Enterprise ID associated with the venue', required: false })
   @Expose()

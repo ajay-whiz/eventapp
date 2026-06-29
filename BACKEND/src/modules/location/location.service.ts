@@ -8,6 +8,15 @@ import { ObjectId } from 'mongodb';
 import { Vendor } from '../vendor/entity/vendor.entity';
 import { Venue } from '../venue/entity/venue.entity';
 import { extractCityFromAddress } from '@shared/utils/location-city.util';
+import {
+  coerceCoordinate,
+  DISTANCE_UNIT_KM,
+  extractCoordinatesFromFormData,
+  haversineDistanceKm,
+  haversineDistanceMeters,
+  hasUsableCoordinates,
+  metersToDistanceKm,
+} from '@shared/utils/geo-distance.util';
 
 @Injectable()
 export class LocationService {
@@ -58,8 +67,23 @@ export class LocationService {
     lat2: number,
     lon2: number,
   ): number {
-    const meters = this.calculateDistance(lat1, lon1, lat2, lon2);
-    return Math.round((meters / 1000) * 10) / 10;
+    return haversineDistanceKm(lat1, lon1, lat2, lon2);
+  }
+
+  private resolveEntityCoordinates(
+    location: Location | null,
+    formData?: Record<string, any> | null,
+  ): { lat: number; lng: number } | null {
+    if (location) {
+      const lat = coerceCoordinate(location.latitude);
+      const lng = coerceCoordinate(location.longitude);
+
+      if (lat != null && lng != null && hasUsableCoordinates(lat, lng)) {
+        return { lat, lng };
+      }
+    }
+
+    return extractCoordinatesFromFormData(formData);
   }
 
   async create(dto: CreateLocationDto) {
@@ -114,80 +138,6 @@ export class LocationService {
     const entity = await this.findOne(id);
     await this.repo.delete(entity.id as any);
     return { message: 'Location deleted successfully' };
-  }
-
-  // Helper function to calculate distance between two coordinates using Haversine formula
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371000; // Earth's radius in meters
-    const dLat = this.toRadians(lat2 - lat1);
-    const dLon = this.toRadians(lon2 - lon1);
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * 
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in meters
-  }
-
-  private toRadians(degrees: number): number {
-    return degrees * (Math.PI / 180);
-  }
-
-  // Helper function to extract coordinates from formData
-  private extractCoordinates(formData: any): { lat: number; lng: number } | null {
-    if (!formData) return null;
-    
-    // Try different possible location formats in formData
-    if (formData.latitude && formData.longitude) {
-      const lat = parseFloat(formData.latitude);
-      const lng = parseFloat(formData.longitude);
-      if (!isNaN(lat) && !isNaN(lng) && this.isValidCoordinate(lat, lng)) {
-        return { lat, lng };
-      }
-    }
-    
-    if (formData.lat && formData.lng) {
-      const lat = parseFloat(formData.lat);
-      const lng = parseFloat(formData.lng);
-      if (!isNaN(lat) && !isNaN(lng) && this.isValidCoordinate(lat, lng)) {
-        return { lat, lng };
-      }
-    }
-    
-    if (formData.location && typeof formData.location === 'string') {
-      // Try to parse coordinates from location string (e.g., "lat,lng" or "lat, lng")
-      const coords = formData.location.split(',').map((s: string) => parseFloat(s.trim()));
-      if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1]) && this.isValidCoordinate(coords[0], coords[1])) {
-        return { lat: coords[0], lng: coords[1] };
-      }
-    }
-    
-    // Try nested coordinate objects
-    if (formData.coordinates) {
-      if (formData.coordinates.latitude && formData.coordinates.longitude) {
-        const lat = parseFloat(formData.coordinates.latitude);
-        const lng = parseFloat(formData.coordinates.longitude);
-        if (!isNaN(lat) && !isNaN(lng) && this.isValidCoordinate(lat, lng)) {
-          return { lat, lng };
-        }
-      }
-      if (formData.coordinates.lat && formData.coordinates.lng) {
-        const lat = parseFloat(formData.coordinates.lat);
-        const lng = parseFloat(formData.coordinates.lng);
-        if (!isNaN(lat) && !isNaN(lng) && this.isValidCoordinate(lat, lng)) {
-          return { lat, lng };
-        }
-      }
-    }
-    
-    // If no valid coordinates found, return null
-    // This ensures only vendors/venues with proper coordinates are included in results
-    return null;
-  }
-
-  // Helper function to validate if coordinates are within valid ranges
-  private isValidCoordinate(lat: number, lng: number): boolean {
-    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   }
 
   // Helper function to extract image URL from formData (similar to vendor/venue listing endpoints)
@@ -333,49 +283,41 @@ export class LocationService {
         totalVendors = vendors.length;
 
         for (const vendor of vendors) {
-          // First try to get coordinates from the locations collection using serviceId
-          let coords = null;
-          
-          // Look for location data using vendor ID as serviceId
           const location = await this.repo.findOne({
-            where: { 
+            where: {
               serviceId: vendor.id.toString(),
               isDeleted: false,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
-          
-          if (location && location.latitude && location.longitude) {
-            coords = { lat: location.latitude, lng: location.longitude };
-          } else {
-            // Fallback to formData if no location record found
-            coords = this.extractCoordinates(vendor.formData);
-          }
-          
-          // If no coordinates found, skip this vendor
+
+          const coords = this.resolveEntityCoordinates(location, vendor.formData);
+
           if (!coords) continue;
           vendorsWithCoords++;
-          
-          // Calculate distance
-          const distance = this.calculateDistance(lat, lng, coords.lat, coords.lng);
-          
-          // Only include if within radius
-          if (distance <= radiusMeters) {
+
+          const distanceMeters = haversineDistanceMeters(
+            lat,
+            lng,
+            coords.lat,
+            coords.lng,
+          );
+
+          if (distanceMeters <= radiusMeters) {
             vendorsInRadius++;
-            // Extract image URL dynamically from formData
             const imageUrl = this.extractImageUrl(vendor);
-            // Extract price dynamically from formData (prioritizing field with name "price")
             const price = this.extractPriceFromFormData(vendor);
-            
+
             results.push({
               id: vendor.id.toString(),
               title: vendor.title || vendor.name,
               price: price,
               rating: vendor.averageRating,
               reviews: vendor.totalRatings,
-              image: imageUrl, // Use dynamically extracted image
-              distance: Math.round(distance), // Add distance in meters
-              coordinates: coords // Add coordinates for debugging
+              image: imageUrl,
+              distance: metersToDistanceKm(distanceMeters),
+              distanceUnit: DISTANCE_UNIT_KM,
+              coordinates: coords,
             });
           }
         }
@@ -402,47 +344,39 @@ export class LocationService {
         });
 
         for (const venue of venues) {
-          // First try to get coordinates from the locations collection using serviceId
-          let coords = null;
-          
-          // Look for location data using venue ID as serviceId
           const location = await this.repo.findOne({
-            where: { 
+            where: {
               serviceId: venue.id.toString(),
               isDeleted: false,
-              isActive: true
-            }
+              isActive: true,
+            },
           });
-          
-          if (location && location.latitude && location.longitude) {
-            coords = { lat: location.latitude, lng: location.longitude };
-          } else {
-            // Fallback to formData if no location record found
-            coords = this.extractCoordinates(venue.formData);
-          }
-          
-          // If no coordinates found, skip this venue
+
+          const coords = this.resolveEntityCoordinates(location, venue.formData);
+
           if (!coords) continue;
-          
-          // Calculate distance
-          const distance = this.calculateDistance(lat, lng, coords.lat, coords.lng);
-          
-          // Only include if within radius
-          if (distance <= radiusMeters) {
-            // Extract image URL dynamically from formData
+
+          const distanceMeters = haversineDistanceMeters(
+            lat,
+            lng,
+            coords.lat,
+            coords.lng,
+          );
+
+          if (distanceMeters <= radiusMeters) {
             const imageUrl = this.extractImageUrl(venue);
-            // Extract price dynamically from formData (prioritizing field with name "price")
             const price = this.extractPriceFromFormData(venue);
-            
+
             results.push({
               id: venue.id.toString(),
               title: venue.title || venue.name,
               price: price,
               rating: venue.averageRating || 0,
               reviews: venue.totalRatings || 0,
-              image: imageUrl, // Use dynamically extracted image
-              distance: Math.round(distance), // Add distance in meters
-              coordinates: coords // Add coordinates for debugging
+              image: imageUrl,
+              distance: metersToDistanceKm(distanceMeters),
+              distanceUnit: DISTANCE_UNIT_KM,
+              coordinates: coords,
             });
           }
         }

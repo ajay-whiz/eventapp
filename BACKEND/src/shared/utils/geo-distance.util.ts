@@ -35,7 +35,7 @@ export function parseQueryCoordinates(
   return { lat: parsedLat, lng: parsedLng };
 }
 
-export function haversineDistanceKm(
+export function haversineDistanceMeters(
   lat1: number,
   lng1: number,
   lat2: number,
@@ -53,9 +53,29 @@ export function haversineDistanceKm(
       Math.sin(dLng / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const meters = EARTH_RADIUS_METERS * c;
 
-  return Math.round((meters / 1000) * 10) / 10;
+  return EARTH_RADIUS_METERS * c;
+}
+
+export const DISTANCE_UNIT_KM = 'km' as const;
+export const LOCATION_RADIUS_KM = 50;
+export const LOCATION_RADIUS_METERS = LOCATION_RADIUS_KM * 1000;
+
+export function metersToDistanceKm(meters: number): number {
+  if (!Number.isFinite(meters) || meters <= 0) {
+    return 0;
+  }
+
+  return Math.round((meters / 1000) * 100) / 100;
+}
+
+export function haversineDistanceKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  return metersToDistanceKm(haversineDistanceMeters(lat1, lng1, lat2, lng2));
 }
 
 function readCoordinatePair(
@@ -172,7 +192,7 @@ export function collectEntityCoordinatePoints(entity: {
   return points;
 }
 
-export function resolveNearestDistanceKm(
+export function resolveNearestDistanceMeters(
   entity: {
     primaryLocation?: { lat?: number; lng?: number };
     locations?: Array<{ lat?: number; lng?: number }>;
@@ -189,8 +209,27 @@ export function resolveNearestDistanceKm(
   }
 
   const distances = points.map((point) =>
-    haversineDistanceKm(queryLat, queryLng, point.lat, point.lng),
+    haversineDistanceMeters(queryLat, queryLng, point.lat, point.lng),
   );
 
   return Math.min(...distances);
+}
+
+export function resolveNearestDistanceKm(
+  entity: {
+    primaryLocation?: { lat?: number; lng?: number };
+    locations?: Array<{ lat?: number; lng?: number }>;
+    location?: { latitude?: number; longitude?: number };
+    formData?: Record<string, any>;
+  },
+  queryLat: number,
+  queryLng: number,
+): number | null {
+  const distanceMeters = resolveNearestDistanceMeters(entity, queryLat, queryLng);
+
+  if (distanceMeters == null) {
+    return null;
+  }
+
+  return metersToDistanceKm(distanceMeters);
 }

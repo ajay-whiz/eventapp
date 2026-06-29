@@ -184,7 +184,7 @@ export class VendorController {
           
           // Remove any unwanted fields that might have been exposed (like "Image", "formData", etc.)
           const cleanedDto: any = {};
-          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'primaryLocation', 'locations', 'distance', 'price', 'pricing', 'rating', 'reviews', 'image'];
+          const allowedFields = ['id', 'key', 'title', 'description', 'longDescription', 'categoryId', 'categoryName', 'location', 'primaryLocation', 'locations', 'distance', 'distanceUnit', 'price', 'pricing', 'rating', 'reviews', 'image'];
           allowedFields.forEach(field => {
             if (vendorDto && vendorDto[field] !== undefined) {
               cleanedDto[field] = vendorDto[field];
@@ -198,6 +198,9 @@ export class VendorController {
             cleanedDto.locations = originalVendor.locations || vendorDto.locations;
             if (originalVendor.distance != null) {
               cleanedDto.distance = originalVendor.distance;
+            }
+            if (originalVendor.distanceUnit) {
+              cleanedDto.distanceUnit = originalVendor.distanceUnit;
             }
             
             // Extract image URL - ensure it's always a string from index 0

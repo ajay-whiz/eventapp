@@ -2,8 +2,11 @@ import { LocationService } from '@modules/location/location.service';
 import { Location } from '@modules/location/entity/location.entity';
 import { extractCityFromAddress } from './location-city.util';
 import {
+  DISTANCE_UNIT_KM,
   extractCoordinatesFromFormData,
+  haversineDistanceMeters,
   hasUsableCoordinates,
+  metersToDistanceKm,
   parseQueryCoordinates,
 } from './geo-distance.util';
 
@@ -16,6 +19,7 @@ export type ListingDetailLocationItem = {
   pinTitle?: string;
   mapImageUrl?: string;
   distance?: number;
+  distanceUnit?: string;
 };
 
 export type ListingDetailLocationsResult = {
@@ -151,12 +155,15 @@ export function buildListingDetailLocationsFromRecords(
 
         return {
           ...location,
-          distance: locationService.calculateDistanceInKm(
-            queryCoords.lat,
-            queryCoords.lng,
-            location.lat,
-            location.lng,
+          distance: metersToDistanceKm(
+            haversineDistanceMeters(
+              queryCoords.lat,
+              queryCoords.lng,
+              location.lat,
+              location.lng,
+            ),
           ),
+          distanceUnit: DISTANCE_UNIT_KM,
         };
       })
       .sort((left, right) => {

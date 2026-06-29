@@ -481,6 +481,9 @@ export class VendorService {
           if ((originalVendor as any).distance != null) {
             vendorDto.distance = (originalVendor as any).distance;
           }
+          if ((originalVendor as any).distanceUnit) {
+            vendorDto.distanceUnit = (originalVendor as any).distanceUnit;
+          }
         }
         return vendorDto;
       });

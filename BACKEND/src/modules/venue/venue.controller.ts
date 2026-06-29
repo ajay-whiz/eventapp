@@ -121,6 +121,7 @@ export class VenueController {
         primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
         locations: originalVenue?.locations || venue.locations,
         distance: originalVenue?.distance ?? venue.distance,
+        distanceUnit: originalVenue?.distanceUnit ?? venue.distanceUnit,
       };
     });
     
@@ -201,6 +202,7 @@ export class VenueController {
         primaryLocation: originalVenue?.primaryLocation || venue.primaryLocation,
         locations: originalVenue?.locations || venue.locations,
         distance: originalVenue?.distance ?? venue.distance,
+        distanceUnit: originalVenue?.distanceUnit ?? venue.distanceUnit,
       };
     });
 
